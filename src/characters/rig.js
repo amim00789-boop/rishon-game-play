@@ -4,6 +4,7 @@
 // avatar is about 5 world units tall with its feet at y = 0, facing +z.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { torsoTextures, lowerTorsoTextures, patternTexture, shade } from './textures.js';
 import { faceTexture, FACE_PLANE } from './faces.js';
 
@@ -12,9 +13,6 @@ export const BODY_SCALE = 0.697;
 // Bevel radii (before rbox's x1.3): the head and limbs read rounder and less like crates.
 const HEAD_R = 0.55;
 const LIMB_R = 0.36;
-// Height of the top of each hair style in head space (head box top = 0.8), for things worn on
-// top of the hair such as the kippah.
-const HAIR_TOP = { none: 0.8, bald: 0.8, buzz: 0.87, spiky: 0.94, bob: 0.86, short: 1.0, quiff: 1.0, messy: 1.0, long: 1.0, ponytail: 1.0, bun: 1.0, curly: 1.2, perm: 1.24 };
 
 // Rig dimensions in concept units. Left = +x (the avatar faces +z).
 export const DIMS = {
@@ -304,131 +302,250 @@ function buildShoe(ankle, shoe, skinM, w) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Hair. Head box is 1.7 x 1.6 x 1.5 centred on the head group; top at y = 0.8, face at z = 0.75.
+// Hair, beards and soft hats are all the head's own rounded box pushed out along its normals
+// where they cover it and tucked just under the skin where they do not (headShell). Every edge
+// then follows the skull and tapers into it, instead of standing off it as a square slab (the
+// founder, session C: "not square in the hair and the beard, the hat must not float").
+// Head box is 1.7 x 1.6 x 1.5 centred on the head group; top at y = 0.8, face at z = 0.75; the
+// face decal puts the brows at y = 0.25, the eyes at 0.02 and the mouth at -0.31.
+const sstep = (a, b, x) => {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
+const HEAD_HALF = [0.85, 0.8, 0.75];
+const HEAD_RR = Math.min(HEAD_R * 1.3, 1.5 * 0.48); // the bevel rbox gives the head
+const TUCK = 0.05; // how far uncovered parts of a shell sink under the skin
+
+// `cover(x, y, z)` 0..1 on the head surface, `thick(x, y, z)` the offset where covered, `post(p, c,
+// p0)` an optional last tweak of the moved point. Cached by `key`, so it must name every input.
+// Thin bands (a cuff, a tiara) pass `seg` higher so their edges do not step across the grid.
+function headShell(key, cover, thick, post, seg = 6) {
+  return cachedGeo('shell:' + key + ':' + seg, () => {
+    let g = new RoundedBoxGeometry(1.7, 1.6, 1.5, seg, HEAD_RR);
+    g.deleteAttribute('normal');
+    g.deleteAttribute('uv');
+    g = mergeVertices(g, 1e-4);
+    const pos = g.attributes.position;
+    const uv = new Float32Array(pos.count * 2);
+    const p = new THREE.Vector3(), p0 = new THREE.Vector3(), n = new THREE.Vector3();
+    const cov = new Float32Array(pos.count);
+    for (let i = 0; i < pos.count; i++) {
+      p0.fromBufferAttribute(pos, i);
+      // a rounded box's normal points from the nearest point of its inner (un-bevelled) box
+      n.set(
+        p0.x - Math.max(-(HEAD_HALF[0] - HEAD_RR), Math.min(HEAD_HALF[0] - HEAD_RR, p0.x)),
+        p0.y - Math.max(-(HEAD_HALF[1] - HEAD_RR), Math.min(HEAD_HALF[1] - HEAD_RR, p0.y)),
+        p0.z - Math.max(-(HEAD_HALF[2] - HEAD_RR), Math.min(HEAD_HALF[2] - HEAD_RR, p0.z)),
+      ).normalize();
+      const c = cover(p0.x, p0.y, p0.z);
+      cov[i] = c;
+      p.copy(p0).addScaledVector(n, c * thick(p0.x, p0.y, p0.z) - (1 - c) * TUCK);
+      if (post) post(p, c, p0);
+      pos.setXYZ(i, p.x, p.y, p.z);
+      uv[i * 2] = Math.atan2(p0.x, p0.z) / (Math.PI * 2) + 0.5;
+      uv[i * 2 + 1] = (p0.y + 0.8) / 1.6;
+    }
+    g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    // triangles that are tucked under the skin at all three corners can never be seen
+    const idx = g.index.array, keep = [];
+    for (let t = 0; t < idx.length; t += 3) if (cov[idx[t]] > 0.001 || cov[idx[t + 1]] > 0.001 || cov[idx[t + 2]] > 0.001) keep.push(idx[t], idx[t + 1], idx[t + 2]);
+    g.setIndex(keep);
+    g.computeVertexNormals();
+    return g;
+  });
+}
+
+// The height a line round the head sits at: `front` on the forehead (tilted by `part` across it),
+// `side` above the ears, `back` at the nape.
+function lineY(h, x, z) {
+  const ax = Math.abs(x);
+  const front = sstep(0.15, 0.55, z) * sstep(0.78, 0.5, ax);
+  const rear = sstep(-0.1, -0.55, z);
+  const yt = h.side + (h.back - h.side) * rear;
+  return yt + (h.front + (h.part || 0) * x - yt) * front;
+}
+const above = (h, w = 0.05) => (x, y, z) => { const yt = lineY(h, x, z); return sstep(yt - w, yt + w, y); };
+const band = (h, width, w = 0.03) => (x, y, z) => { const yt = lineY(h, x, z); return sstep(yt - w, yt + w, y) * sstep(yt + width + w, yt + width - w, y); };
+const shellKey = (o) => Object.entries(o).map(([k, v]) => k + (typeof v === 'number' ? v.toFixed(3) : v)).join(',');
+
+// Hairlines and thickness per style: t = thickness, vol = extra lift toward the crown.
+const HAIR = {
+  buzz: { front: 0.5, side: 0.1, back: -0.35, t: 0.045, vol: 0.02 },
+  short: { front: 0.42, side: 0.05, back: -0.5, part: 0.08, t: 0.1, vol: 0.12 },
+  spiky: { front: 0.45, side: 0.1, back: -0.45, t: 0.08, vol: 0.06 },
+  quiff: { front: 0.45, side: 0.05, back: -0.45, t: 0.08, vol: 0.06 },
+  messy: { front: 0.38, side: -0.05, back: -0.6, part: -0.1, t: 0.13, vol: 0.16 },
+  curly: { front: 0.45, side: 0.0, back: -0.55, t: 0.12, vol: 0.1 },
+  perm: { front: 0.4, side: -0.05, back: -0.55, t: 0.14, vol: 0.12 },
+  bun: { front: 0.46, side: 0.05, back: -0.45, t: 0.08, vol: 0.04 },
+  ponytail: { front: 0.44, side: 0.05, back: -0.45, part: 0.06, t: 0.09, vol: 0.05 },
+  long: { front: 0.42, side: -0.65, back: -0.8, part: 0.1, t: 0.12, vol: 0.1 },
+  bob: { front: 0.36, side: -0.45, back: -0.55, t: 0.17, vol: 0.1, flare: 0.08 },
+};
+// Things that cover the crown: under them the hair loses its lift and its top pieces.
+const HATS = new Set(['cap', 'blackHat', 'flatCap', 'tembel', 'beanie', 'tichel', 'sunHat', 'helmet']);
+
+// Top of the hair (head space), for things worn on it such as the kippah.
+function hairTop(style) {
+  if (style === 'curly') return 1.2;
+  if (style === 'perm') return 1.24;
+  const h = HAIR[style];
+  return h ? 0.8 + h.t + h.vol : 0.8;
+}
+
+function hairShell(h, hatted) {
+  const vol = hatted ? 0 : h.vol;
+  return headShell('hair' + shellKey(h) + (hatted ? 'H' : ''), above(h),
+    (x, y, z) => h.t + vol * sstep(0.1, 0.8, y) + 0.04 * sstep(-0.1, -0.6, z) + (h.flare || 0) * sstep(-0.1, -0.45, y));
+}
+
+// A rounded lump: a sphere squashed to (sx, sy, sz).
+function lump(parent, m, r, x, y, z, sx, sy, sz) {
+  const b = addMesh(parent, ball(r, 18, 12), m, x, y, z);
+  b.scale.set(sx, sy, sz);
+  return b;
+}
+// A capsule hanging from its top, narrowing to `taper` at the bottom.
+function strand(r, len, taper = 0.8) {
+  return cachedGeo(`strand${r},${len},${taper}`, () => {
+    const g = new THREE.CapsuleGeometry(r, len, 6, 14).translate(0, -(len / 2 + r), 0);
+    const pos = g.attributes.position, total = len + 2 * r;
+    for (let i = 0; i < pos.count; i++) {
+      const f = 1 + (taper - 1) * (-pos.getY(i) / total);
+      pos.setX(i, pos.getX(i) * f);
+      pos.setZ(i, pos.getZ(i) * f);
+    }
+    g.computeVertexNormals();
+    return g;
+  });
+}
+
 function buildHair(rig, head, hair) {
   const hc = hair.color || '#3b2416';
   const m = mat(hc);
-  // a little fuller than the head so hair reads as hair, not a painted cap
-  // An ellipsoid dome over the same span the old box cap had (bottom to top), so it reads round
-  // from above too; a box's bevel is capped by its thin height and stayed square in plan.
-  const cap = (h = 0.5, y = 0.66) => {
-    const bot = y + 0.04 - (h + 0.08) / 2, tall = h + 0.08;
-    const c = addMesh(head, cachedGeo('hairDome', () => new THREE.SphereGeometry(1, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2)), m, 0, bot, -0.03);
-    c.scale.set(0.95, tall, 0.85);
-    return c;
-  };
-  const back = (len = 1.1) => addMesh(head, rbox(1.8, len, 0.35, 0.17), m, 0, 0.75 - len / 2, -0.66);
-  switch (hair.style) {
-    case 'none':
+  const hatted = (rig.cfg.accessories || []).some((a) => HATS.has(a.type));
+  const style = hair.style || 'short';
+  if (style === 'none') return;
+  if (style === 'bald') {
+    // the horseshoe that is left: a band round the sides and back, the crown bare
+    addMesh(head, headShell('bald', (x, y, z) => sstep(-0.38, -0.26, y) * sstep(0.36, 0.24, y) * sstep(0.4, 0.15, z), () => 0.08), m);
+    return;
+  }
+  const h = HAIR[style] || HAIR.short;
+  addMesh(head, hairShell(h, hatted), m);
+  switch (style) {
+    case 'short':
+      // a soft side-swept wave over the forehead
+      if (!hatted) lump(head, m, 0.5, 0.18, 0.86, 0.42, 1.15, 0.36, 0.72).rotation.z = -0.18;
       break;
-    case 'buzz':
-      addMesh(head, rbox(1.76, 0.3, 1.56, 0.16), m, 0, 0.72, -0.02);
-      back(0.8);
-      break;
-    case 'short': {
-      cap();
-      back();
-      // side-swept fringe over the forehead
-      const fr = addMesh(head, rbox(1.05, 0.32, 0.55, 0.15), m, 0.25, 0.86, 0.5);
-      fr.rotation.z = -0.18;
-      break;
-    }
-    case 'spiky': {
-      cap(0.4);
-      back(1.0);
+    case 'spiky':
+      if (hatted) break;
       for (let i = 0; i < 6; i++) {
-        const s = addMesh(head, cachedGeo('spike', () => new THREE.ConeGeometry(0.28, 0.9, 4)), m, -0.65 + (i % 3) * 0.65, 1.12, -0.35 + Math.floor(i / 3) * 0.6);
-        s.rotation.x = -0.3;
+        const sp = addMesh(head, cachedGeo('spikeR', () => new THREE.ConeGeometry(0.27, 0.8, 8)), m, -0.6 + (i % 3) * 0.6, 1.05, -0.32 + Math.floor(i / 3) * 0.58);
+        sp.rotation.x = -0.3;
       }
       break;
-    }
-    case 'quiff': {
-      cap(0.4);
-      back(1.0);
-      const q = addMesh(head, rbox(1.5, 0.6, 1.0, 0.28), m, 0, 1.02, 0.18);
-      q.rotation.x = -0.35;
+    case 'quiff':
+      if (!hatted) lump(head, m, 0.6, 0, 0.97, 0.26, 1.2, 0.58, 0.9).rotation.x = -0.35;
       break;
-    }
+    case 'messy':
+      for (const [x, y, z, rz] of [[-0.88, 0.15, -0.35, 0.6], [0.88, 0.15, -0.35, -0.6], [0, -0.05, -0.86, 0], [-0.5, 0.05, -0.8, 0.35], [0.45, 0.1, -0.82, -0.3]]) {
+        const t = addMesh(head, strand(0.14, 0.32, 0.5), m, x, y + 0.25, z);
+        t.rotation.z = rz;
+        t.rotation.x = z < -0.5 ? -0.3 : 0;
+      }
+      break;
     case 'curly':
     case 'perm': {
-      cap(0.5, 0.64);
-      back(hair.style === 'perm' ? 0.9 : 0.8);
-      const pts = hair.style === 'perm'
+      const big = style === 'perm';
+      const pts = big
         ? [[-0.6, 0.85, 0.3], [0, 0.95, 0.35], [0.6, 0.85, 0.3], [-0.75, 0.8, -0.3], [0, 0.95, -0.25], [0.75, 0.8, -0.3], [-0.92, 0.35, -0.25], [0.92, 0.35, -0.25], [-0.5, 0.45, -0.75], [0.5, 0.45, -0.75]]
         : [[-0.55, 0.9, 0.25], [0.05, 0.98, 0.3], [0.6, 0.9, 0.2], [-0.45, 0.92, -0.35], [0.4, 0.94, -0.4], [0, 0.6, -0.7]];
-      for (const [x, y, z] of pts) addMesh(head, ball(hair.style === 'perm' ? 0.36 : 0.34), m, x, y, z);
+      for (const [x, y, z] of pts) if (!hatted || y < 0.5) addMesh(head, ball(big ? 0.36 : 0.34), m, x, y, z);
       break;
     }
     case 'bun':
-      cap(0.5, 0.64);
-      back(1.2);
-      addMesh(head, ball(hair.big ? 0.62 : 0.5), m, 0, hair.big ? 1.1 : 1.0, -0.5);
-      break;
-    case 'bob':
-      addMesh(head, rbox(1.92, 1.35, 1.62, 0.35), m, 0, 0.18, -0.1);
-      addMesh(head, rbox(1.75, 0.4, 0.25, 0.12), m, 0, 0.62, 0.72);
+      if (!hatted) addMesh(head, ball(hair.big ? 0.6 : 0.48, 18, 12), m, 0, hair.big ? 1.08 : 0.98, -0.48);
       break;
     case 'long': {
-      cap();
-      const piv = group(head, 'hairLong', 0, 0.6, -0.62);
-      addMesh(piv, rbox(1.9, 2.6, 0.5, 0.22), m, 0, -1.1, 0);
-      addMesh(head, rbox(0.22, 1.5, 0.9, 0.1), m, 0.9, 0.0, -0.2);
-      addMesh(head, rbox(0.22, 1.5, 0.9, 0.1), m, -0.9, 0.0, -0.2);
-      addMesh(head, rbox(1.2, 0.28, 0.2, 0.1), m, -0.2, 0.68, 0.72).rotation.z = 0.12;
+      const piv = group(head, 'hairLong', 0, 0.35, -0.7);
+      const l = addMesh(piv, strand(0.5, 1.5, 0.85), m, 0, 0, 0);
+      l.scale.set(1.75, 1, 0.55);
       rig.jiggles.push(jiggle(piv, 0.6, 1));
       break;
     }
     case 'ponytail': {
-      cap();
-      back(0.9);
-      const piv = group(head, 'ponytail', 0, 0.55, -0.82);
-      addMesh(piv, ball(0.18), mat(hair.tie || '#e8364f'), 0, 0, 0);
-      addMesh(piv, rbox(0.55, 1.4, 0.45, 0.2), m, 0, -0.65, -0.12);
+      const piv = group(head, 'ponytail', 0, 0.5, -0.86);
+      addMesh(piv, cachedGeo('hairTie', () => new THREE.TorusGeometry(0.16, 0.07, 8, 16)), mat(hair.tie || '#e8364f'), 0, 0, 0).rotation.x = Math.PI / 2;
+      const t = addMesh(piv, strand(0.26, 0.9, 0.6), m, 0, -0.05, -0.1);
+      t.scale.set(1.05, 1, 0.85);
       piv.rotation.x = 0.25;
       rig.jiggles.push(jiggle(piv, 1.0, 1, 0.25));
       break;
     }
-    case 'bald':
-      addMesh(head, rbox(0.2, 0.55, 0.9, 0.08), m, 0.86, 0.1, -0.2);
-      addMesh(head, rbox(0.2, 0.55, 0.9, 0.08), m, -0.86, 0.1, -0.2);
-      addMesh(head, rbox(1.6, 0.5, 0.22, 0.08), m, 0, 0.1, -0.74);
-      break;
-    case 'messy': {
-      cap();
-      back(1.1);
-      for (const [x, y, z, rz] of [[-0.9, 0.2, -0.3, 0.5], [0.9, 0.2, -0.3, -0.5], [0, 0.0, -0.85, 0], [-0.5, 0.1, -0.8, 0.3]]) {
-        const t = addMesh(head, rbox(0.3, 0.6, 0.3, 0.1), m, x, y, z);
-        t.rotation.z = rz;
-      }
-      break;
-    }
-    default:
-      cap();
-      back();
   }
 }
 
 function buildBeard(rig, head, beard) {
   const m = mat(beard.color || '#2a1d14');
-  const long = beard.style === 'long';
-  const full = beard.style !== 'trim';
-  if (beard.style === 'goatee') {
-    // chin beard and moustache only, the cheeks stay clean
-    addMesh(head, rbox(0.6, 0.55, 0.32, 0.14), m, 0, -0.78, 0.66);
-    addMesh(head, rbox(0.75, 0.13, 0.12, 0.05), m, 0, -0.27, 0.8);
-    for (const s of [1, -1]) addMesh(head, rbox(0.12, 0.42, 0.1, 0.04), m, s * 0.36, -0.48, 0.78);
-    return;
-  }
-  if (long) {
-    const piv = group(head, 'beard', 0, -0.4, 0.62);
-    addMesh(piv, rbox(1.4, 1.25, 0.36, 0.16), m, 0, -0.6, 0);
+  const style = beard.style || 'full';
+  const P = {
+    goatee: { t: 0.1, drop: 0.12, bulge: 0.04 },
+    trim: { t: 0.06, drop: 0.06, bulge: 0.02, cheek: 0.32 },
+    full: { t: 0.12, drop: 0.24, bulge: 0.08, cheek: 0.38 },
+    long: { t: 0.12, drop: 0.16, bulge: 0.06, cheek: 0.38 },
+  }[style] || { t: 0.12, drop: 0.24, bulge: 0.08, cheek: 0.38 };
+  // The jaw line: under the mouth at the chin, rising along the cheeks into the sideburns; nothing
+  // behind the ear line. A goatee keeps to the chin.
+  const cover = style === 'goatee'
+    ? (x, y, z) => sstep(0.42, 0.28, Math.abs(x)) * sstep(-0.38, -0.5, y) * sstep(0.25, 0.5, z)
+    : (x, y, z) => {
+      let yt = -0.43 + P.cheek * sstep(0.22, 0.7, Math.abs(x));
+      yt += (0.05 - yt) * sstep(0.4, 0.05, z);
+      return sstep(yt + 0.05, yt - 0.05, y) * sstep(-0.35, -0.15, z);
+    };
+  const geo = headShell('beard' + style, cover,
+    (x, y, z) => P.t + P.bulge * sstep(-0.3, -0.8, y) * sstep(-0.1, 0.5, z),
+    // the beard hangs below the chin, most at the front
+    (p, c, p0) => { p.y -= P.drop * c * sstep(-0.5, -0.8, p0.y) * sstep(-0.2, 0.45, p0.z); });
+  addMesh(head, geo, m);
+  if (style === 'long') {
+    const piv = group(head, 'beard', 0, -0.72, 0.58);
+    const b = addMesh(piv, strand(0.42, 0.75, 0.55), m, 0, 0.1, 0);
+    b.scale.set(1.45, 1, 0.62);
     rig.jiggles.push(jiggle(piv, 0.35, 0.7));
-  } else {
-    addMesh(head, rbox(full ? 1.4 : 1.2, full ? 0.62 : 0.42, 0.35, 0.15), m, 0, full ? -0.7 : -0.62, 0.62);
   }
-  // jaw sides join the beard to the hairline
-  for (const s of [1, -1]) addMesh(head, rbox(0.22, 0.9, 0.9, 0.1), m, s * 0.8, -0.3, 0.15);
-  if (beard.mustache !== false) addMesh(head, rbox(0.75, 0.13, 0.12, 0.05), m, 0, -0.27, 0.8);
+  if (beard.mustache !== false) {
+    addMesh(head, cachedGeo('mustache', () => {
+      const g = new THREE.CapsuleGeometry(0.075, 0.5, 4, 10).rotateZ(Math.PI / 2);
+      const pos = g.attributes.position;
+      // droops at the ends and wraps round the face
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        pos.setY(i, pos.getY(i) - 0.35 * x * x);
+        pos.setZ(i, pos.getZ(i) - 0.3 * x * x);
+      }
+      g.computeVertexNormals();
+      return g;
+    }), m, 0, -0.2, 0.8);
+  }
+}
+
+// A turned hat part (crown, band, brim) from an outline of [radius, y] points, slightly oval.
+function lathe(key2, pts, sz = 0.92) {
+  return cachedGeo('lathe' + key2, () => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), 28).scale(1, 1, sz));
+}
+// A flat rounded brim in front of a cap: half an oval, extruded thin and bevelled.
+function capBrim(rx, rz, key2) {
+  return cachedGeo('brim' + key2, () => {
+    const sh = new THREE.Shape();
+    sh.moveTo(-rx, 0);
+    sh.absellipse(0, 0, rx, rz, Math.PI, 0, true);
+    sh.lineTo(-rx, 0);
+    const g = new THREE.ExtrudeGeometry(sh, { depth: 0.05, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.04, bevelSegments: 2, curveSegments: 20 });
+    g.rotateX(Math.PI / 2); // the shape's y becomes +z (forward)
+    return g;
+  });
 }
 
 // z of the shirt's front face in waist space (belly pushes it out)
@@ -449,38 +566,48 @@ function buildAccessory(rig, acc) {
   const c = acc.color;
   switch (acc.type) {
     case 'cap': {
+      // a snug crown over the hair (never above it) and a flat curved brim at the forehead
       const g = group(head, 'cap', 0, 0, 0);
-      addMesh(g, rbox(1.85, 0.6, 1.65, 0.28), mat(c), 0, 0.82, -0.02);
-      addMesh(g, rbox(1.5, 0.12, 0.95, 0.05), mat(acc.brim || c), 0, 0.58, 1.05);
-      if (acc.logo) addMesh(g, rbox(0.5, 0.3, 0.06, 0.03), mat(acc.logo), 0, 0.85, 0.83);
-      addMesh(g, ball(0.1, 8, 6), mat(acc.brim || c), 0, 1.13, -0.02);
+      const crown = { front: 0.46, side: 0.32, back: 0.3 };
+      addMesh(g, headShell('cap' + shellKey(crown), above(crown, 0.035), (x, y) => 0.22 + 0.06 * sstep(0.3, 0.8, y)), mat(c));
+      const brim = addMesh(g, capBrim(0.78, 0.82, 'cap'), mat(acc.brim || c), 0, 0.5, 0.78);
+      brim.rotation.x = 0.14;
+      if (acc.logo) addMesh(g, rbox(0.5, 0.3, 0.06, 0.03), mat(acc.logo), 0, 0.7, 0.97);
+      addMesh(g, ball(0.1, 8, 6), mat(acc.brim || c), 0, 1.09, 0);
       if (acc.backwards) g.rotation.y = Math.PI;
       else g.rotation.y = acc.tilt || 0;
       break;
     }
     case 'blackHat': {
-      const k = mat('#141414');
-      addMesh(head, cyl(1.45, 1.45, 0.12, 24), k, 0, 0.82, 0);
-      addMesh(head, cyl(0.85, 0.95, 1.05, 20), k, 0, 1.38, 0);
-      addMesh(head, cyl(0.97, 0.97, 0.2, 20), mat('#2a2a2a'), 0, 1.0, 0);
+      // a felt fedora: the crown goes round the head and the brim sits at the forehead
+      const k = mat('#141414', { side: THREE.DoubleSide });
+      addMesh(head, lathe('fedoraCrown', [[0.99, 0.46], [0.97, 0.9], [0.93, 1.35], [0.84, 1.55], [0.55, 1.6], [0, 1.58]]), k);
+      addMesh(head, lathe('fedoraBand', [[1.01, 0.52], [1.0, 0.72]]), mat('#2a2a2a', { side: THREE.DoubleSide }));
+      addMesh(head, lathe('fedoraBrim', [[0.95, 0.5], [1.3, 0.5], [1.5, 0.53], [1.52, 0.47], [1.3, 0.44], [0.95, 0.44]], 0.95), k);
       // the pinched crease on top of the crown
-      addMesh(head, rbox(0.25, 0.12, 1.1, 0.05), mat('#0c0c0c'), 0, 1.88, 0);
+      addMesh(head, rbox(0.25, 0.1, 1.0, 0.05), mat('#0c0c0c'), 0, 1.6, 0);
       break;
     }
     case 'flatCap': {
-      const g = group(head, 'flatCap', 0, 0.7, 0.05);
-      g.rotation.x = 0.12;
-      addMesh(g, rbox(1.95, 0.42, 1.8, 0.2), mat(c), 0, 0.16, -0.05);
-      addMesh(g, rbox(1.6, 0.1, 0.65, 0.04), mat(shade(c, -0.1)), 0, 0.0, 0.95);
+      // snug, its top slid forward and flattened, a short brim at the front
+      const crown = { front: 0.45, side: 0.3, back: 0.2 };
+      addMesh(head, headShell('flatCap' + shellKey(crown), above(crown, 0.035), () => 0.2, (p, cv, p0) => {
+        p.z += 0.16 * cv * sstep(0.45, 0.85, p0.y);
+        if (p.y > 0.92) p.y = 0.92 + (p.y - 0.92) * 0.35;
+      }), mat(c));
+      const brim = addMesh(head, capBrim(0.72, 0.42, 'flat'), mat(shade(c, -0.1)), 0, 0.5, 0.86);
+      brim.rotation.x = 0.2;
       break;
     }
     case 'tembel':
-      addMesh(head, cyl(0.55, 1.0, 0.85, 16), mat(c || '#f2e6c4'), 0, 1.15, 0);
+      // the kibbutz bucket cone, worn down round the head
+      addMesh(head, lathe('tembel', [[1.03, 0.36], [1.0, 0.55], [0.84, 0.92], [0.64, 1.2], [0.42, 1.36], [0, 1.4]]), mat(c || '#f2e6c4', { side: THREE.DoubleSide }));
       break;
     case 'beanie': {
-      const b = addMesh(head, ball(0.98, 18, 12), mat(c), 0, 0.6, -0.08);
-      b.scale.set(1, 0.85, 0.95);
-      addMesh(head, rbox(1.95, 0.38, 1.72, 0.15), mat(shade(c, -0.12)), 0, 0.55, -0.05);
+      const edge = { front: 0.36, side: 0.25, back: 0.0 };
+      addMesh(head, headShell('beanie' + shellKey(edge), above(edge, 0.035), (x, y) => 0.2 + 0.18 * sstep(0.2, 0.8, y)), mat(c));
+      // the folded cuff along the lower edge
+      addMesh(head, headShell('beanieCuff' + shellKey(edge), band(edge, 0.2, 0.04), () => 0.27, null, 10), mat(shade(c, -0.12)));
       break;
     }
     case 'kippah': {
@@ -488,29 +615,34 @@ function buildAccessory(rig, acc) {
       // It sits on the hair, not on the scalp: under a full hair cap the old dome was swallowed.
       // A shallow cap (r 0.8, 0.7 rad) is 0.52 wide and 0.19 tall; its rim rests just below the
       // hair top, toward the crown.
-      const top = HAIR_TOP[rig.cfg.hair?.style || 'short'] ?? HAIR_TOP.short;
-      const g = group(head, 'kippah', 0, top - 0.03, -0.22);
+      const top = hairTop(rig.cfg.hair?.style || 'short');
+      const g = group(head, 'kippah', 0, top - 0.07, -0.2);
       g.rotation.x = -0.32;
       addMesh(g, cachedGeo('kippah', () => new THREE.SphereGeometry(0.8, 24, 8, 0, Math.PI * 2, 0, 0.7).translate(0, -0.8 * Math.cos(0.7), 0)), mat('#ffffff', { map: tex }), 0, 0, 0);
       break;
     }
     case 'tichel': {
+      // a scarf over the whole head, fuller at the back where the hair is tucked in
       const m = acc.pattern ? mat('#ffffff', { map: patternTexture({ color: c, pattern: acc.pattern, alt: acc.alt }) }) : mat(c);
-      addMesh(head, rbox(1.98, 0.62, 1.72, 0.3), m, 0, 0.66, -0.1);
-      addMesh(head, rbox(1.98, 1.35, 1.0, 0.42), m, 0, 0.3, -0.4);
-      const piv = group(head, 'tichelKnot', 0, 0.45, -0.95);
-      addMesh(piv, ball(0.5), m, 0, 0, 0);
-      addMesh(piv, rbox(0.5, 0.8, 0.25, 0.1), m, 0.15, -0.6, -0.1).rotation.z = 0.2;
+      const edge = { front: 0.5, side: -0.05, back: -0.6 };
+      addMesh(head, headShell('tichel' + shellKey(edge), above(edge, 0.035), (x, y, z) => 0.18 + 0.08 * sstep(0.2, 0.8, y) + 0.22 * sstep(-0.1, -0.65, z) * sstep(-0.6, 0.2, y)), m);
+      addMesh(head, headShell('tichelBand' + shellKey(edge), band(edge, 0.12, 0.04), () => 0.2, null, 10), mat(shade(c, -0.18)));
+      const piv = group(head, 'tichelKnot', 0, 0.42, -1.02);
+      addMesh(piv, ball(0.36, 16, 12), m, 0, 0, 0);
+      const tail = addMesh(piv, strand(0.18, 0.55, 0.6), m, 0.1, -0.05, -0.05);
+      tail.rotation.z = 0.2;
+      tail.scale.set(1.3, 1, 0.6);
       rig.jiggles.push(jiggle(piv, 0.4, 0.6));
-      addMesh(head, rbox(1.96, 0.14, 1.74, 0.07), mat(shade(c, -0.18)), 0, 0.38, -0.1);
       break;
     }
-    case 'headband':
-      addMesh(head, rbox(1.96, 0.16, 1.68, 0.08), mat(c), 0, 0.62, -0.06);
+    case 'headband': {
+      const edge = { front: 0.5, side: 0.38, back: 0.28 };
+      addMesh(head, headShell('headband' + shellKey(edge), band(edge, 0.16, 0.04), () => 0.21, null, 10), mat(c));
       break;
+    }
     case 'sunglassesOnHead': {
-      const g = group(head, 'shades', 0, 0.98, 0.45);
-      g.rotation.x = -0.35;
+      const g = group(head, 'shades', 0, hairTop(rig.cfg.hair?.style || 'short') - 0.2, 0.42);
+      g.rotation.x = -0.45;
       for (const s of [1, -1]) addMesh(g, rbox(0.6, 0.34, 0.1, 0.1), mat(c || '#1e140f'), s * 0.38, 0, 0.18);
       addMesh(g, rbox(1.4, 0.07, 0.07, 0.03), mat(acc.frame || '#d8b24a'), 0, 0.08, 0.2);
       break;
@@ -567,9 +699,11 @@ function buildAccessory(rig, acc) {
       for (const sd of [1, -1]) addMesh(head, ball(0.12, 8, 6), mat('#ffffff'), sd * 0.88, -0.15, 0.2);
       break;
     case 'sunHat': {
-      addMesh(head, cyl(1.55, 1.55, 0.08, 24), mat(c || '#f2e6c4'), 0, 0.8, 0);
-      addMesh(head, cyl(0.92, 0.98, 0.62, 20), mat(c || '#f2e6c4'), 0, 1.1, -0.02);
-      addMesh(head, cyl(0.99, 0.99, 0.16, 20), mat(acc.band || '#5a3a22'), 0, 0.92, -0.02);
+      const sm = mat(c || '#f2e6c4', { side: THREE.DoubleSide });
+      addMesh(head, lathe('sunCrown', [[0.99, 0.46], [0.96, 0.85], [0.88, 1.12], [0.6, 1.2], [0, 1.2]]), sm);
+      addMesh(head, lathe('sunBand', [[1.01, 0.5], [1.0, 0.68]]), mat(acc.band || '#5a3a22', { side: THREE.DoubleSide }));
+      // a wide brim that droops a little at the rim
+      addMesh(head, lathe('sunBrim', [[0.95, 0.5], [1.3, 0.48], [1.6, 0.38], [1.62, 0.33], [1.3, 0.43], [0.95, 0.45]], 0.96), sm);
       break;
     }
     case 'helmet': {
@@ -648,17 +782,19 @@ function buildAccessory(rig, acc) {
       break;
     }
     case 'matkot': {
-      // the Israeli beach paddle game: one paddle in each hand
-      const wood = mat(c || '#c9874a');
-      for (const side of ['L', 'R']) {
-        const g = group(J['wr' + side], 'matkot', 0, -0.4, 0.1);
-        g.rotation.x = -0.45;
-        const pad = addMesh(g, cyl(0.8, 0.8, 0.14, 20), side === 'L' ? mat(acc.alt || '#e8364f') : wood, 0, -1.05, 0);
-        pad.rotation.z = Math.PI / 2;
-        pad.scale.set(1, 1, 0.9);
-        addMesh(g, rbox(0.25, 0.75, 0.2, 0.06), mat('#6b4a2a'), 0, -0.12, 0);
-        rig.hideInVehicle.push(g);
-      }
+      // the Israeli beach paddle game: one paddle, in the right hand that swings it (emote
+      // 'swing'); the partner across the sand holds the other one
+      const g = group(J.wrR, 'matkot', 0, -0.4, 0.1);
+      g.rotation.x = -0.45;
+      const pad = addMesh(g, cyl(0.8, 0.8, 0.14, 20), mat(c || '#c9874a'), 0, -1.05, 0);
+      pad.rotation.z = Math.PI / 2;
+      pad.scale.set(1, 1, 0.9);
+      // a coloured rim, the way the beach paddles are taped round the edge
+      const rim = addMesh(g, cachedGeo('matkotRim', () => new THREE.TorusGeometry(0.8, 0.06, 6, 24)), mat(acc.alt || '#e8364f'), 0, -1.05, 0);
+      rim.rotation.y = Math.PI / 2;
+      rim.scale.set(0.9, 1, 1);
+      addMesh(g, rbox(0.25, 0.75, 0.2, 0.06), mat('#6b4a2a'), 0, -0.12, 0);
+      rig.hideInVehicle.push(g);
       break;
     }
     case 'coffee': {
@@ -843,12 +979,16 @@ function buildAccessory(rig, acc) {
     }
     // ---- round 5: the bride, the choir ----
     case 'veil': {
-      // tulle from a small tiara down the back to the waist, swaying as she walks
+      // tulle from a small tiara down the back to the waist, swaying as she walks; the tiara
+      // and the tulle's top both lie on the hair (head shells), not on a flat plate above it
       const tm = new THREE.MeshToonMaterial({ color: c || '#ffffff', gradientMap: getGradientMap(), transparent: true, opacity: 0.6, side: THREE.DoubleSide, depthWrite: false });
-      addMesh(head, rbox(1.5, 0.16, 0.2, 0.06), mat(acc.tiara || '#e8d9a8'), 0, 0.98, 0.35);
-      const piv = group(head, 'veil', 0, 0.95, -0.35);
-      addMesh(piv, rbox(1.7, 0.04, 0.9, 0.02), tm, 0, 0.0, -0.2);
-      const fall = addMesh(piv, rbox(1.9, 2.8, 0.04, 0.02), tm, 0, -1.4, -0.75);
+      const hairT = (HAIR[rig.cfg.hair?.style] || HAIR.short).t;
+      const tiara = { front: 0.6, side: 0.42, back: 0.42 };
+      addMesh(head, headShell('tiara' + hairT, (x, y, z) => band(tiara, 0.1, 0.04)(x, y, z) * sstep(-0.15, 0.1, z), () => hairT + 0.1, null, 10), mat(acc.tiara || '#e8d9a8'));
+      const crown = { front: 0.62, side: 0.3, back: 0.15 };
+      addMesh(head, headShell('veilTop' + hairT, (x, y, z) => above(crown)(x, y, z) * sstep(0.1, -0.15, z), () => hairT + 0.16), tm);
+      const piv = group(head, 'veil', 0, 0.35, -0.98);
+      const fall = addMesh(piv, rbox(1.9, 2.8, 0.04, 0.02), tm, 0, -1.4, -0.1);
       fall.rotation.x = 0.12;
       rig.jiggles.push(jiggle(piv, 0.7, 0.9));
       break;
