@@ -1,0 +1,170 @@
+{
+  "_note": "Recording direction per speaker and per bark archetype, read by tools/make_voice_script.mjs. English only; the Hebrew lines live in data/quests/strings.he.json and data/audio/barks.he.json. Every character is played with affection: comic, never mocking.",
+  "speakers": {
+    "player": {
+      "voice": "The player, a young local (male, 20s).",
+      "direction": "Natural, a little amused, the calm one in every scene. Questions are genuine, not sarcastic. Slightly drier than everyone else."
+    },
+    "narrator": {
+      "voice": "Narrator, any adult voice.",
+      "direction": "Warm storyteller, close to the mic, unhurried. A smile in the voice on the punchline. Never announcer-style."
+    },
+    "moshiko": {
+      "voice": "Moshiko, 30s, beach regular with forty speakers in his car.",
+      "direction": "Big, warm, fast, offended-but-loving. Leans on 'achi'. Loud in the scene, but perform at normal level: the volume is in the attitude, not the gain. Soft and embarrassed in his last line."
+    },
+    "alex": {
+      "voice": "Alex, a man in his late 20s, runs a silent disco on the beach.",
+      "direction": "Deadpan, dry, understated. Long pauses on the '...' lines. Lets a real laugh through only at the very end."
+    },
+    "yanki": {
+      "voice": "Yanki, 40s, a Haredi man with a 41-column parking spreadsheet.",
+      "direction": "Precise, polite, earnest; the comedy is his seriousness. Speeds up when he talks about columns. Laughs at himself sincerely in the outro."
+    },
+    "grisha": {
+      "voice": "Grisha, 70s, has parked in the same square for decades.",
+      "direction": "Slow, grand, very sure of himself, dry humour. Short sentences with weight. Any accent must be natural and light; never put one on as a joke."
+    },
+    "orit": {
+      "voice": "Orit, 40s, market stall owner (tomatoes).",
+      "direction": "Warm, quick, dramatic about ten agorot. 'Motek' is affectionate. Mock-scandalised on 'seven-ninety', then softens."
+    },
+    "shiri": {
+      "voice": "Shiri, 30s, the rival tomato stall.",
+      "direction": "Wry and tired at first, slowly won over. The confession about singing in the shower is shy and funny."
+    },
+    "avi": {
+      "voice": "Avi, 40s, father of seven, proud of his mangal.",
+      "direction": "Booming host energy, generous, a little wounded pride. Genuinely baffled in the outro."
+    },
+    "lena": {
+      "voice": "Lena, 30s, a pharmacist with a thermometer.",
+      "direction": "Calm, exact, competitive; every number is a fact. Never shouts. Self-aware and amused in her last line."
+    },
+    "savta": {
+      "voice": "Savta Rachel, 80s.",
+      "direction": "Unbothered, twinkly, totally in charge. She is never in a hurry except for her bus. 'Habibi' is fond."
+    },
+    "heckler": {
+      "voice": "The Heckler, the hooded figure behind the hum; looks like any young local.",
+      "direction": "Soft, close, almost friendly; he invites, never threatens. Sly in the ask lines, then lost and quiet when the city answers him. No villain voice: he is everyone's muttering."
+    },
+    "malul": {
+      "voice": "Malul, the band's founder and heartbeat; muscular, ponytail, goatee; drums and guitar (male, late 20s).",
+      "direction": "Warm, confident, a leader who laughs first. Talks in rhythm; drops into drummer slang when excited.",
+      "assumed": true
+    },
+    "dekel": {
+      "voice": "Dekel, tall, kippah, ukulele; the band's calm centre (male, late 20s).",
+      "direction": "Soft-spoken, steady, gently funny. Never raises his voice; calms others by slowing down.",
+      "assumed": true
+    },
+    "ofir": {
+      "voice": "Ofir, thin, Yemenite, always smiling; a different instrument every scene (male, late 20s).",
+      "direction": "Bright and joyful, quick laughter in the voice, enthusiastic about every small thing.",
+      "assumed": true
+    },
+    "adir": {
+      "voice": "Adir, muscular, short curls, guitar; the band's doer (male, late 20s).",
+      "direction": "Direct, energetic, a bit street; gets things done, impatient but loving.",
+      "assumed": true
+    },
+    "dasha": {
+      "voice": "Dasha, Russian-speaking triathlete, Lena's niece (female, 20s).",
+      "direction": "Competitive, crisp, light Russian accent; dry humour, respects whoever can keep up.",
+      "assumed": true
+    },
+    "hodaya": {
+      "voice": "Hodaya, Avi's daughter, a dati-leumi bride (female, 20s).",
+      "direction": "Stressed but sweet; swings between panic and laughter on her wedding day.",
+      "assumed": true
+    },
+    "itai": {
+      "voice": "Itai, a 16-year-old skater.",
+      "direction": "Speaks almost only in skate slang, laid-back, deadpan; proud when he teaches.",
+      "assumed": true
+    },
+    "ronit": {
+      "voice": "Ronit from Events, City Hall coordinator, secular (female, 40s).",
+      "direction": "Talks fast, juggling two phones; efficient, warm underneath, zero patience for excuses.",
+      "assumed": true
+    },
+    "valentina": {
+      "voice": "Valentina Petrovna, seniors' choir conductor (female, 60s).",
+      "direction": "Fierce and precise, Russian accent; strict pauses, then a rare proud smile.",
+      "assumed": true
+    },
+    "friedman": {
+      "voice": "Mr. Friedman, an older resident of the neighbourhood (male, 70s).",
+      "direction": "Grumpy on the surface, soft inside; complains in long sentences, ends kindly.",
+      "assumed": true
+    },
+    "grandma": {
+      "voice": "A grandma from the neighbourhood (female, 70s).",
+      "direction": "Warm, worried, feeds everyone; scolds with love.",
+      "assumed": true
+    },
+    "family": {
+      "voice": "A family speaking together (mixed voices).",
+      "direction": "Overlapping, lively, everyone talks at once; record as a small group.",
+      "assumed": true
+    },
+    "guy": {
+      "voice": "A random guy on the street (male, 30s).",
+      "direction": "Casual, everyday Israeli tone; quick and natural.",
+      "assumed": true
+    },
+    "merav": {
+      "voice": "Merav, a local mum (female, 40s).",
+      "direction": "Practical, quick, a little sarcastic, kind.",
+      "assumed": true
+    },
+    "nehorai": {
+      "voice": "Nehorai, a young local (male, 20s).",
+      "direction": "Cheerful, a bit loud, eager to help.",
+      "assumed": true
+    },
+    "rafi": {
+      "voice": "Rafi, a local business owner (male, 50s).",
+      "direction": "Gruff, generous, bargaining tone; laughs at his own jokes.",
+      "assumed": true
+    },
+    "shimon": {
+      "voice": "Shimon, an older neighbour (male, 60s).",
+      "direction": "Storyteller, slow and amused; remembers how Rishon used to be.",
+      "assumed": true
+    },
+    "shlomo": {
+      "voice": "Shlomo, a neighbourhood regular (male, 50s).",
+      "direction": "Opinionated, talks with his hands, but listens when asked.",
+      "assumed": true
+    },
+    "ziva": {
+      "voice": "Ziva, a neighbour (female, 60s).",
+      "direction": "Chatty, knows everyone's business, affectionate gossip.",
+      "assumed": true
+    }
+  },
+  "barks": {
+    "haredi_man": "Polite, brisk, warm. A man on his way somewhere.",
+    "haredi_woman": "Busy mother of many, kind, efficient, slightly out of breath.",
+    "dati_leumi_man": "Friendly, upbeat family man, easy-going.",
+    "dati_leumi_woman": "Cheerful, practical, chatty with strangers.",
+    "mizrahi_street_guy": "Loud-hearted, generous, quick, lots of 'achi'. Same world as Moshiko.",
+    "russian_speaking_grandpa": "Slow, dignified, dry humour. Light natural accent only if it is real; never a caricature.",
+    "russian_speaking_young_woman": "Brisk, a bit distracted by her phone, polite.",
+    "secular_woman": "Easy, friendly, Tel Aviv-suburb casual.",
+    "hipster": "Deadpan, ironic, quiet. Lines are written gender-neutral because the archetype has varied looks.",
+    "beach_guy": "Sun-baked, relaxed, big grin in the voice.",
+    "savta": "Warm, feeding everyone, unstoppable.",
+    "kid": "High energy, excited, about 8 years old. Gender-neutral lines.",
+    "ars_crew": "Moshiko's friends: hype, loud, affectionate, never threatening.",
+    "office_worker": "Rushed, on a call, polite but busy. Gender-neutral lines.",
+    "mom_stroller": "Tired, kind, whispering when the baby sleeps.",
+    "teen_phone": "Half-listening, ironic, phone-first. Gender-neutral lines.",
+    "older_man": "Gentle, a bit lost, talking to his wife next to him.",
+    "older_woman": "Bossy-loving, giving directions, talking to her husband.",
+    "delivery_rider": "In a hurry, out of breath, on a scooter. Gender-neutral except 'achi'.",
+    "soldier_on_leave": "Tired and happy to be home for the weekend. Gender-neutral lines."
+  }
+}

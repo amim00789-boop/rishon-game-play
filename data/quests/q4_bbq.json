@@ -1,0 +1,73 @@
+{
+  "id": "q4_bbq",
+  "requires": [
+    "q3_tomatoes"
+  ],
+  "hum": 12,
+  "npcs": {
+    "avi": {
+      "archetype": "dati_leumi_man",
+      "at": {
+        "poi": "superland_lake",
+        "dx": 0,
+        "dz": -150
+      }
+    },
+    "lena": {
+      "archetype": "russian_speaking_young_woman",
+      "at": {
+        "poi": "superland_lake",
+        "dx": 24,
+        "dz": -158
+      }
+    },
+    "savta": {
+      "archetype": "savta",
+      "at": {
+        "poi": "superland_lake",
+        "dx": -26,
+        "dz": -165
+      }
+    }
+  },
+  "giver": "avi",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "lena",
+      "obj": "obj.lena",
+      "dialogue": "d.lena"
+    },
+    {
+      "type": "collect",
+      "item": "charcoal",
+      "count": 4,
+      "at": {
+        "poi": "superland_lake",
+        "dx": 0,
+        "dz": -180
+      },
+      "spread": 40,
+      "obj": "obj.charcoal",
+      "dialogue": "d.charcoal"
+    },
+    {
+      "type": "talk",
+      "npc": "savta",
+      "obj": "obj.savta",
+      "dialogue": "d.savta"
+    },
+    {
+      "type": "talk",
+      "npc": "avi",
+      "gather": [
+        "lena",
+        "savta"
+      ],
+      "obj": "obj.back",
+      "dialogue": "d.outro"
+    }
+  ],
+  "clue": "clue"
+}

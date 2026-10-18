@@ -1,0 +1,131 @@
+{
+  "id": "m08_skate",
+  "act": 2,
+  "requires": [
+    "m07_race"
+  ],
+  "npcs": {
+    "itai": {
+      "archetype": "skater_kid",
+      "at": {
+        "poi": "skate_park",
+        "dx": 8,
+        "dz": 6
+      },
+      "fallback": "kid"
+    },
+    "grisha": {
+      "archetype": "russian_speaking_grandpa",
+      "at": {
+        "poi": "teder",
+        "dx": -20,
+        "dz": -18
+      }
+    }
+  },
+  "giver": "itai",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "grisha",
+      "obj": "obj.grisha",
+      "dialogue": "d.grisha"
+    },
+    {
+      "type": "minigame",
+      "game": "skate",
+      "npc": "itai",
+      "intro": "d.board",
+      "params": {
+        "tricks": [
+          "ollie_kicker",
+          "grind_rail",
+          "quarter_180"
+        ],
+        "need": 3,
+        "seconds": 120,
+        "at": {
+          "poi": "skate_park"
+        }
+      },
+      "obj": "obj.tricks",
+      "dialogue": "d.tricks"
+    },
+    {
+      "type": "choice",
+      "npc": "grisha",
+      "obj": "obj.wobble",
+      "dialogue": "d.wobble",
+      "options": [
+        {
+          "text": "c.post",
+          "reply": "d.rPost",
+          "effects": {
+            "scale": -2,
+            "trust": {
+              "elders": -1
+            },
+            "flag": "mocked_grisha"
+          }
+        },
+        {
+          "text": "c.help",
+          "reply": "d.rHelp",
+          "effects": {
+            "scale": 2,
+            "trust": {
+              "elders": 1,
+              "youth": 1
+            },
+            "flag": "helped_grisha"
+          }
+        }
+      ],
+      "props": [
+        {
+          "hold": "skateboard",
+          "id": "board",
+          "by": "grisha"
+        },
+        {
+          "hold": "phone",
+          "id": "phone",
+          "by": "player"
+        }
+      ],
+      "propsDone": [
+        {
+          "remove": "phone"
+        },
+        {
+          "place": "board",
+          "at": {
+            "npc": "itai",
+            "dx": 1.2,
+            "dz": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "talk",
+      "npc": "itai",
+      "gather": [
+        "grisha"
+      ],
+      "obj": "obj.deal",
+      "dialogue": {
+        "mocked_grisha": "d.outroMocked",
+        "default": "d.outro"
+      },
+      "effects": {
+        "trust": {
+          "youth": 1,
+          "russian": 1
+        }
+      }
+    }
+  ],
+  "after": "page"
+}

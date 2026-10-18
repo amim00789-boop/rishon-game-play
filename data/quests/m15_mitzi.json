@@ -1,0 +1,148 @@
+{
+  "id": "m15_mitzi",
+  "act": 3,
+  "requires": [
+    "m14_blackout"
+  ],
+  "npcs": {
+    "dekel": {
+      "archetype": "dekel",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 0,
+        "dz": 34
+      },
+      "fallback": "dati_leumi_man"
+    },
+    "savta": {
+      "archetype": "savta",
+      "at": {
+        "place": "Kiriyat Ganim",
+        "dx": -30,
+        "dz": 20
+      }
+    },
+    "adir": {
+      "archetype": "adir",
+      "at": {
+        "place": "Kiriyat Ganim",
+        "dx": -24,
+        "dz": 26
+      },
+      "fallback": "beach_guy"
+    },
+    "ofir": {
+      "archetype": "ofir",
+      "at": {
+        "place": "Kiriyat Ganim",
+        "dx": -36,
+        "dz": 26
+      },
+      "fallback": "mizrahi_street_guy"
+    },
+    "malul": {
+      "archetype": "malul",
+      "at": {
+        "place": "Kiriyat Ganim",
+        "dx": -20,
+        "dz": 14
+      },
+      "fallback": "beach_guy"
+    },
+    "moshiko": {
+      "archetype": "mizrahi_street_guy",
+      "at": {
+        "place": "Kiriyat Ganim",
+        "dx": -40,
+        "dz": 12
+      }
+    },
+    "alex": {
+      "archetype": "hipster",
+      "at": {
+        "place": "Kiriyat Ganim",
+        "dx": -44,
+        "dz": 20
+      }
+    }
+  },
+  "giver": "dekel",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "deduce",
+      "answer": {
+        "place": "Kiriyat Ganim",
+        "dx": -30,
+        "dz": 20
+      },
+      "radius": 110,
+      "card": "c.card",
+      "hints": [
+        {
+          "text": "h.hood"
+        },
+        {
+          "text": "h.street"
+        },
+        {
+          "text": "h.area",
+          "circle": true
+        }
+      ],
+      "decoys": [
+        {
+          "at": {
+            "poi": "founders_square"
+          },
+          "joke": "j.square"
+        },
+        {
+          "at": {
+            "poi": "beach_complex"
+          },
+          "joke": "j.beach"
+        },
+        {
+          "at": {
+            "place": "Neve Dekalim"
+          },
+          "joke": "j.dekalim"
+        }
+      ],
+      "obj": "obj.deduce",
+      "objGo": "obj.go",
+      "solved": "t.solved",
+      "dialogue": "d.door"
+    },
+    {
+      "type": "talk",
+      "npc": "savta",
+      "gather": [
+        "dekel",
+        "adir",
+        "ofir",
+        "malul",
+        "moshiko",
+        "alex"
+      ],
+      "obj": "obj.savta",
+      "dialogue": {
+        "snark": "d.revealSnark",
+        "default": "d.reveal"
+      },
+      "effects": {
+        "flag": "page_renamed",
+        "scale": 2
+      },
+      "props": [
+        {
+          "hold": "phone",
+          "id": "phone",
+          "by": "dekel"
+        }
+      ]
+    }
+  ],
+  "after": "page"
+}

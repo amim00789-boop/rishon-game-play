@@ -1,0 +1,310 @@
+{
+  "id": "m16_chairs",
+  "act": 3,
+  "requires": [
+    "m15_mitzi"
+  ],
+  "npcs": {
+    "malul": {
+      "archetype": "malul",
+      "at": {
+        "poi": "gan_hair",
+        "dx": -6,
+        "dz": 30
+      },
+      "fallback": "beach_guy"
+    },
+    "dekel": {
+      "archetype": "dekel",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 0,
+        "dz": 34
+      },
+      "fallback": "dati_leumi_man"
+    },
+    "ofir": {
+      "archetype": "ofir",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 6,
+        "dz": 30
+      },
+      "fallback": "mizrahi_street_guy"
+    },
+    "adir": {
+      "archetype": "adir",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 12,
+        "dz": 34
+      },
+      "fallback": "beach_guy"
+    },
+    "ronit": {
+      "archetype": "office_worker",
+      "at": {
+        "poi": "gan_hair",
+        "dx": -14,
+        "dz": 22
+      },
+      "fallback": "secular_woman"
+    },
+    "yanki": {
+      "archetype": "haredi_man",
+      "at": {
+        "poi": "great_synagogue",
+        "dx": 26,
+        "dz": 22
+      }
+    },
+    "shiri": {
+      "archetype": "secular_woman",
+      "at": {
+        "place": "Neve Dekalim",
+        "dx": 30,
+        "dz": 20
+      }
+    },
+    "grisha": {
+      "archetype": "russian_speaking_grandpa",
+      "at": {
+        "place": "Neot Eshelim",
+        "dx": -20,
+        "dz": 10
+      }
+    },
+    "moshiko": {
+      "archetype": "mizrahi_street_guy",
+      "at": {
+        "poi": "water_tower_dropoff",
+        "dx": -60,
+        "dz": -6
+      }
+    },
+    "avi": {
+      "archetype": "dati_leumi_man",
+      "at": {
+        "place": "Neve Dekalim",
+        "dx": -40,
+        "dz": -30
+      }
+    },
+    "shimon": {
+      "archetype": "older_man",
+      "at": {
+        "place": "Kiriyat Ganim",
+        "dx": -60,
+        "dz": -60,
+        "busStop": true,
+        "within": 400
+      },
+      "fallback": "russian_speaking_grandpa"
+    }
+  },
+  "giver": "ronit",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "minigame",
+      "game": "place",
+      "npc": "ronit",
+      "intro": "d.chairs",
+      "params": {
+        "item": "chair",
+        "stack": 5,
+        "slots": 40,
+        "pile": {
+          "poi": "gan_hair",
+          "dx": -30,
+          "dz": 10
+        },
+        "rows": {
+          "at": {
+            "poi": "gan_hair",
+            "dx": 0,
+            "dz": 50
+          },
+          "cols": 8,
+          "spacing": 3
+        },
+        "limit": 240,
+        "helpers": "trust"
+      },
+      "obj": "obj.chairs",
+      "dialogue": "d.placed",
+      "propsDone": [
+        {
+          "remove": "stack1"
+        },
+        {
+          "remove": "stack2"
+        },
+        {
+          "remove": "stack3"
+        },
+        {
+          "show": "chair_rows",
+          "id": "rows",
+          "at": {
+            "poi": "gan_hair",
+            "dx": 0,
+            "dz": 36
+          }
+        }
+      ]
+    },
+    {
+      "type": "drive",
+      "if": "trust.haredi<1",
+      "npc": "yanki",
+      "at": {
+        "poi": "gan_hair",
+        "dx": -20,
+        "dz": 40
+      },
+      "modes": [
+        "car"
+      ],
+      "limit": 900,
+      "obj": "obj.pick_yanki",
+      "objRun": "obj.bring",
+      "dialogue": "d.ride_yanki"
+    },
+    {
+      "type": "drive",
+      "if": "trust.secular<1",
+      "npc": "shiri",
+      "at": {
+        "poi": "gan_hair",
+        "dx": -20,
+        "dz": 40
+      },
+      "modes": [
+        "car"
+      ],
+      "limit": 900,
+      "obj": "obj.pick_shiri",
+      "objRun": "obj.bring",
+      "dialogue": "d.ride_shiri"
+    },
+    {
+      "type": "drive",
+      "if": "trust.russian<1",
+      "npc": "grisha",
+      "at": {
+        "poi": "gan_hair",
+        "dx": -20,
+        "dz": 40
+      },
+      "modes": [
+        "car"
+      ],
+      "limit": 900,
+      "obj": "obj.pick_grisha",
+      "objRun": "obj.bring",
+      "dialogue": "d.ride_grisha"
+    },
+    {
+      "type": "drive",
+      "if": "trust.street<1",
+      "npc": "moshiko",
+      "at": {
+        "poi": "gan_hair",
+        "dx": -20,
+        "dz": 40
+      },
+      "modes": [
+        "car"
+      ],
+      "limit": 900,
+      "obj": "obj.pick_moshiko",
+      "objRun": "obj.bring",
+      "dialogue": "d.ride_moshiko"
+    },
+    {
+      "type": "drive",
+      "if": "trust.dati<1",
+      "npc": "avi",
+      "at": {
+        "poi": "gan_hair",
+        "dx": -20,
+        "dz": 40
+      },
+      "modes": [
+        "car"
+      ],
+      "limit": 900,
+      "obj": "obj.pick_avi",
+      "objRun": "obj.bring",
+      "dialogue": "d.ride_avi"
+    },
+    {
+      "type": "drive",
+      "if": "passed_shimon",
+      "npc": "shimon",
+      "at": {
+        "poi": "gan_hair",
+        "dx": -20,
+        "dz": 40
+      },
+      "modes": [
+        "car"
+      ],
+      "limit": 900,
+      "obj": "obj.pick_shimon",
+      "objRun": "obj.bring",
+      "dialogue": "d.ride_shimon"
+    },
+    {
+      "type": "talk",
+      "npc": "ronit",
+      "obj": "obj.ready",
+      "dialogue": {
+        "scale>=8": "d.readyFull",
+        "default": "d.ready"
+      }
+    }
+  ],
+  "after": "page",
+  "scene": [
+    {
+      "show": "chair_stack",
+      "id": "stack1",
+      "at": {
+        "poi": "gan_hair",
+        "dx": -30,
+        "dz": 10
+      }
+    },
+    {
+      "show": "chair_stack",
+      "id": "stack2",
+      "at": {
+        "poi": "gan_hair",
+        "dx": -27,
+        "dz": 11
+      }
+    },
+    {
+      "show": "chair_stack",
+      "id": "stack3",
+      "at": {
+        "poi": "gan_hair",
+        "dx": -24,
+        "dz": 10
+      }
+    }
+  ],
+  "leave": [
+    {
+      "show": "chair_rows",
+      "id": "rows",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 0,
+        "dz": 36
+      }
+    }
+  ]
+}

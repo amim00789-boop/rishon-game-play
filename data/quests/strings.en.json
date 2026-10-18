@@ -1,0 +1,867 @@
+{
+  "ui": {
+    "talk": "{k:F} Talk to {name}",
+    "accept": "{k:F} Accept",
+    "later": "{k:Esc} Maybe later",
+    "next": "{k:F} / {k:Space} Next",
+    "newQuest": "New quest",
+    "questDone": "Quest complete!",
+    "findGiver": "Talk to {name} to start",
+    "allDone": "That's all for now. The Hum is still out there... more soon.",
+    "clue": "Clue",
+    "hum": "The Hum",
+    "collected": "{n}/{total}",
+    "player": "You",
+    "narrator": "",
+    "pickup": "{item} · {n}/{total}",
+    "sticker": "THEY'RE ALL LIKE THAT",
+    "choose": "{k:1}–{k:{n}} pick a tone",
+    "wrongTone": "Wrong tone. Give them a moment and try again.",
+    "needWheels": "This delivery goes by {k:2} kick scooter or {k:3} bicycle",
+    "noCar": "The tray won't survive that. Scooter or bike only. Back to pick it up again.",
+    "timeUp": "The food went cold... back to Orit to try again, with a bit more time",
+    "go": "Go, go, go!",
+    "limit": "{t} seconds on the clock",
+    "timer": "⏱ {t}",
+    "wheels": "by {k:2} or {k:3}",
+    "waiting": "{name} is waiting for you",
+    "useMap": "{k:M} map · search the area",
+    "found": "Found: {item}",
+    "theEnd": "The end. Or really, the beginning",
+    "thanks": "Thanks for playing. Rishon is yours: roam free.",
+    "freePlay": "The Hum became a chord. Rishon is yours, roam free."
+  },
+  "npc": {
+    "moshiko": "Moshiko",
+    "alex": "Alex",
+    "yanki": "Yanki",
+    "grisha": "Grisha",
+    "orit": "Orit",
+    "shiri": "Shiri",
+    "avi": "Avi",
+    "lena": "Lena",
+    "savta": "Savta Rachel",
+    "heckler": "The Heckler"
+  },
+  "items": {
+    "cable": "aux cable",
+    "tomato": "tomato",
+    "charcoal": "bag of charcoal",
+    "antenna": "cell antenna",
+    "tray": "kosher catering tray",
+    "sticker": "Heckler sticker"
+  },
+  "q1_speaker": {
+    "title": "The Broken Speaker",
+    "obj": {
+      "alex": "Talk to Alex on the promenade",
+      "cables": "Find the aux cables the seagulls stole",
+      "back": "Bring everyone back to Moshiko"
+    },
+    "d": {
+      "offer": [
+        [
+          "moshiko",
+          "Achi! Achi, come here. You hear that hum? My speaker is humming. Forty speakers in the car, and the one I love is humming."
+        ],
+        [
+          "moshiko",
+          "And the guy with the headphones over there keeps giving me looks. Like I'm the problem. Me! I'm a gift to this beach."
+        ],
+        [
+          "player",
+          "Have you tried... turning it down?"
+        ],
+        [
+          "moshiko",
+          "Down? There is no down. Go talk to him. Tell him it's not me. It's the hum."
+        ]
+      ],
+      "alex": [
+        [
+          "alex",
+          "Oh, hi. I'm doing a silent disco. It's silent. That's the whole point. That man is the opposite of the point."
+        ],
+        [
+          "alex",
+          "Also my headphones started humming too, which is honestly offensive. They're bamboo."
+        ],
+        [
+          "player",
+          "His speaker hums too. Maybe it's not him. Maybe it's not you."
+        ],
+        [
+          "alex",
+          "...Fine. The seagulls stole my aux cables anyway. Three of them. If you find them, I'll plug into his speaker. Ironically."
+        ]
+      ],
+      "cables": [
+        [
+          "narrator",
+          "The last cable is still warm. A seagull glares at you like you broke a contract."
+        ]
+      ],
+      "outro": [
+        [
+          "alex",
+          "Okay. I plugged in. His playlist is... a lot."
+        ],
+        [
+          "moshiko",
+          "His is all whales singing. Whales! Who dances to whales?"
+        ],
+        [
+          "alex",
+          "Everybody on this beach is dancing to the whales right now, Moshiko."
+        ],
+        [
+          "moshiko",
+          "...Wallah. Look at me, crying at a whale remix. Don't tell my cousins."
+        ],
+        [
+          "alex",
+          "And I'm the guy who brought a silent disco to the loudest beach in Israel. We're both kind of ridiculous."
+        ],
+        [
+          "narrator",
+          "They laugh at themselves first. The hum drops. And for a second, under the music, it has a beat."
+        ]
+      ]
+    },
+    "clue": "The Hum has a rhythm. It pulses, like someone muttering the same thing over and over."
+  },
+  "q2_parking": {
+    "title": "Friday Gridlock",
+    "obj": {
+      "grisha": "Talk to Grisha by the square",
+      "shade": "Check Grisha's shady spot by the old water tower",
+      "measure": "Measure Yanki's spot by the synagogue",
+      "back": "Bring Grisha back to Yanki"
+    },
+    "d": {
+      "offer": [
+        [
+          "yanki",
+          "Shalom! You are the one who fixed the beach, yes? I have a spreadsheet of parking spots in the old town. Forty-one columns."
+        ],
+        [
+          "yanki",
+          "There is one spot left before Shabbat. One. And the gentleman over there has been standing in it for two hours. Standing! With a chair."
+        ],
+        [
+          "player",
+          "And the hum?"
+        ],
+        [
+          "yanki",
+          "Every time one of us says 'typical', the street lights flicker. I have that in a column too. Please, talk to him."
+        ]
+      ],
+      "grisha": [
+        [
+          "grisha",
+          "Young man. I have been parking in this square since before it had a square. I know where the shade is. He has a spreadsheet. I have a hat."
+        ],
+        [
+          "grisha",
+          "His spot is in the sun. Mine is in the shade, by the old water tower. Go and look. Then tell him who is right."
+        ],
+        [
+          "player",
+          "What if you're both right?"
+        ],
+        [
+          "grisha",
+          "Then the universe is broken. Go."
+        ]
+      ],
+      "shade": [
+        [
+          "narrator",
+          "It's true. The water tower throws perfect shade here from four o'clock to sunset. Grisha's hat would approve."
+        ]
+      ],
+      "measure": [
+        [
+          "narrator",
+          "Yanki's spot is exactly 4.2 metres long. His spreadsheet said 4.2. You are a little bit scared of his spreadsheet."
+        ]
+      ],
+      "outro": [
+        [
+          "player",
+          "So. Grisha's spot has the shade. Yanki's spot has the length. You each have half of the perfect spot."
+        ],
+        [
+          "yanki",
+          "I could add a column. 'Shade.' And a rota. Fridays in the shade go to whoever comes first..."
+        ],
+        [
+          "grisha",
+          "...and the other one brings the tea. Fine. But I am keeping the chair."
+        ],
+        [
+          "yanki",
+          "Do you know what's funny? I made a forty-one-column spreadsheet to win one parking spot."
+        ],
+        [
+          "grisha",
+          "And I stood in the sun for two hours to defend a shady spot. We are a pair of idiots, Yanki."
+        ],
+        [
+          "narrator",
+          "They laugh. The street lights stop flickering. The hum drops again."
+        ]
+      ]
+    },
+    "clue": "The Hum got louder every time someone said 'typical'. It feeds on the little eye-rolls."
+  },
+  "q3_tomatoes": {
+    "title": "Tomato Truce",
+    "obj": {
+      "shiri": "Talk to Shiri at the next stall",
+      "tomatoes": "Catch the runaway tomatoes",
+      "sticker": "Check the strange sticker on the bench",
+      "back": "Bring Shiri back to Orit's stall"
+    },
+    "d": {
+      "offer": [
+        [
+          "orit",
+          "Motek, help me. My tomatoes are eight shekels a kilo. Shiri, at the next stall, sells hers at seven-ninety. Seven-ninety! Who does seven-ninety?"
+        ],
+        [
+          "orit",
+          "I said 'some people' out loud, the stall shook, and now my tomatoes are rolling all over the market."
+        ],
+        [
+          "player",
+          "Some people?"
+        ],
+        [
+          "orit",
+          "I know, I know. Go talk to her. I'll pretend I'm not watching."
+        ]
+      ],
+      "shiri": [
+        [
+          "shiri",
+          "She's watching. She's always watching. Her stall plays the same song every morning and I know all the words now. Against my will."
+        ],
+        [
+          "shiri",
+          "My tomatoes rolled away too. The hum started, the crates jumped, and boom. Five tomatoes, gone."
+        ],
+        [
+          "player",
+          "Hers too. Same moment."
+        ],
+        [
+          "shiri",
+          "...Huh. Okay, catch them, both piles. I'll think about it."
+        ]
+      ],
+      "tomatoes": [
+        [
+          "narrator",
+          "Five tomatoes, slightly bruised, extremely dramatic. You can't tell whose are whose. Nobody can."
+        ]
+      ],
+      "sticker": [
+        [
+          "narrator",
+          "On the bench there's a sticker of a cartoon eye, mid-roll. Under it, in tiny letters: 'THEY'RE ALL LIKE THAT.'"
+        ],
+        [
+          "narrator",
+          "It hums when you touch it. Someone has been leaving these on purpose."
+        ]
+      ],
+      "outro": [
+        [
+          "shiri",
+          "These are your tomatoes. Or mine. I genuinely can't tell."
+        ],
+        [
+          "orit",
+          "Because they're the same tomatoes, motek. From the same farmer. In the same moshav."
+        ],
+        [
+          "shiri",
+          "One stall. One price. Seven-ninety-five, and the chalkboard says 'Two neighbours, zero discounts.'"
+        ],
+        [
+          "orit",
+          "I argued about ten agorot for three weeks. My husband is going to laugh at me for a year."
+        ],
+        [
+          "shiri",
+          "I know the words to your song. All of them. I sing it in the shower."
+        ],
+        [
+          "narrator",
+          "The whole market laughs. The crates stop shaking. Somewhere far away, a sticker loses its hum."
+        ]
+      ]
+    },
+    "clue": "The first sticker of the Heckler: a rolling eye and 'THEY'RE ALL LIKE THAT'. Someone is planting them."
+  },
+  "q4_bbq": {
+    "title": "The Pharmacist's Barbecue",
+    "obj": {
+      "lena": "Talk to Lena by the swan lake",
+      "charcoal": "Collect the scattered bags of charcoal",
+      "savta": "Find a referee nobody can argue with",
+      "back": "Bring everyone to Avi's grill"
+    },
+    "d": {
+      "offer": [
+        [
+          "avi",
+          "Ahalan! Seven kids, one minivan the size of a bus, and the best mangal in Rishon. Ask anyone."
+        ],
+        [
+          "avi",
+          "But the pharmacist over there says my grill is 'a public health event'. She wants to grill. On MY lawn."
+        ],
+        [
+          "avi",
+          "When we argued, the hum knocked over my charcoal. All four bags. The kids think a swan did it."
+        ],
+        [
+          "player",
+          "I'll talk to her."
+        ]
+      ],
+      "lena": [
+        [
+          "lena",
+          "I am not angry. I am correct. That is different."
+        ],
+        [
+          "lena",
+          "His meat is at forty degrees. It should be seventy-two. I have a thermometer. I always have a thermometer."
+        ],
+        [
+          "player",
+          "So... you want to grill together?"
+        ],
+        [
+          "lena",
+          "I want to win. Shesh-besh. Winner grills. But we need a referee he will not argue with. And his charcoal, obviously."
+        ]
+      ],
+      "charcoal": [
+        [
+          "narrator",
+          "Four bags of charcoal. One has a small handprint from one of the seven kids. Possibly two of them."
+        ]
+      ],
+      "savta": [
+        [
+          "savta",
+          "A referee? For shesh-besh? Habibi, I don't referee. I play."
+        ],
+        [
+          "savta",
+          "Bring me to them. I'll be quick. I have a bus at five."
+        ]
+      ],
+      "outro": [
+        [
+          "narrator",
+          "Savta Rachel beats Avi in four minutes. She beats Lena in three. She doesn't sit down for either game."
+        ],
+        [
+          "avi",
+          "...She didn't even look at the board."
+        ],
+        [
+          "lena",
+          "I calculated every move. She just threw the dice and laughed at me."
+        ],
+        [
+          "savta",
+          "So now you both lost. Good. Lena holds the thermometer, Avi holds the tongs, and I eat first."
+        ],
+        [
+          "avi",
+          "I fought a pharmacist for a lawn next to a pond full of plastic swans. Who am I?"
+        ],
+        [
+          "lena",
+          "And I brought a thermometer to a picnic. I am exactly the person I make fun of."
+        ],
+        [
+          "narrator",
+          "Everyone laughs, Savta loudest of all. The hum drops low, and the eye-rolling sticker on the picnic table peels off by itself."
+        ]
+      ]
+    },
+    "clue": "The stickers are always exactly where someone rolled their eyes. The Heckler knows where we mutter."
+  },
+  "q5_whatsapp": {
+    "title": "The WhatsApp Group",
+    "obj": {
+      "alex": "Talk to Alex by the mall",
+      "ask": "Tell Yanki what Alex said",
+      "retry": "Yanki is hurt. Go back and try another tone",
+      "ant1": "Find the antenna that fell on the beach",
+      "ant2": "Find the antenna near Moshe Dayan station",
+      "ant3": "Find the antenna near Super-Duper Land",
+      "back": "Back to Yanki and Alex at the mall"
+    },
+    "c": {
+      "o1": "Yes. He says you flood the group with flowers every morning.",
+      "o2": "Forget him, you know how they are, those hipsters.",
+      "o3": "He says everyone floods it. Him too. Yesterday he sent a seven-minute voice note about sourdough."
+    },
+    "d": {
+      "offer": [
+        [
+          "yanki",
+          "Shalom again! Remember the spreadsheet? Now I have a bigger problem: the national WhatsApp-Shmatsapp group is stuck."
+        ],
+        [
+          "yanki",
+          "Three million people in one group, all typing 'what happened to the group?' at once. The Hum is sitting on the antennas."
+        ],
+        [
+          "yanki",
+          "And the sourdough guy says it's our fault. Because of the 'good morning' pictures."
+        ],
+        [
+          "player",
+          "Alex? From the promenade?"
+        ],
+        [
+          "yanki",
+          "He moved to the mall. For the air conditioning. Go talk to him, I'll open a column meanwhile."
+        ]
+      ],
+      "alex": [
+        [
+          "alex",
+          "Hi, you again. No, I'm not saying it's their fault. I'm saying when four hundred sunset-with-flowers pictures land every morning, something breaks."
+        ],
+        [
+          "alex",
+          "And me? I send important things. Like voice notes about my sourdough. His name is Bezalel, by the way."
+        ],
+        [
+          "player",
+          "How long are the voice notes?"
+        ],
+        [
+          "alex",
+          "...Seven minutes. But it's Bezalel. Go tell Yanki to tone down the flowers."
+        ]
+      ],
+      "ask": [
+        [
+          "yanki",
+          "Nu? What did he say? He thinks we flood the group, right?"
+        ]
+      ],
+      "retry": [
+        [
+          "yanki",
+          "You're back. Fine. So what did he really say?"
+        ]
+      ],
+      "r1": [
+        [
+          "yanki",
+          "Ah. Like that. Then he can leave the group, if the flowers bother him so much."
+        ],
+        [
+          "narrator",
+          "Yanki turns and walks a few steps away. The Hum gets a little louder. Maybe there's another way to say it."
+        ]
+      ],
+      "r2": [
+        [
+          "yanki",
+          "...I never thought of them like that. But now that you say it..."
+        ],
+        [
+          "narrator",
+          "The Hum jumps. Yanki walks off muttering 'typical'. Oops. That is exactly how the Hum grows."
+        ]
+      ],
+      "r3": [
+        [
+          "yanki",
+          "Seven minutes?! I only send five!"
+        ],
+        [
+          "yanki",
+          "...Wait. I send five-minute voice notes too. Oy vey."
+        ],
+        [
+          "yanki",
+          "Fine. First we bring the antennas back. The Hum knocked out three: one on the beach, one near Moshe Dayan station, one near Super-Duper Land. Open the map, they're somewhere in the area."
+        ]
+      ],
+      "ant1": [
+        [
+          "narrator",
+          "The first antenna lies in the sand, humming. You set it straight, and eighty 'Shabbat shalom' pictures arrive at once."
+        ]
+      ],
+      "ant2": [
+        [
+          "narrator",
+          "The second is stuck by the platform. You turn it, and three million people get Bezalel's voice note at the same moment."
+        ]
+      ],
+      "ant3": [
+        [
+          "narrator",
+          "The third is by the roller coaster. You plug it in and the group comes back to life. Just in time for an argument about parking."
+        ]
+      ],
+      "outro": [
+        [
+          "alex",
+          "So: 'good morning' pictures only after nine."
+        ],
+        [
+          "yanki",
+          "And voice notes up to one minute. Bezalel too."
+        ],
+        [
+          "alex",
+          "Bezalel can say a lot in a minute."
+        ],
+        [
+          "yanki",
+          "You know what's funny? I'm the biggest flooder in the group. I have a column for it."
+        ],
+        [
+          "alex",
+          "And I muted the group a year ago, and still complained about it every day."
+        ],
+        [
+          "narrator",
+          "They both laugh. The national group fills with hearts. The Hum drops, but it's still there. Waiting."
+        ]
+      ]
+    },
+    "clue": "At full strength the Hum jams WhatsApp. It's trying to cut us off from each other."
+  },
+  "q6_wedding": {
+    "title": "Wedding Disaster",
+    "obj": {
+      "ask": "Talk to Moshiko the DJ",
+      "retry": "Moshiko is hurt. Go back and try again",
+      "pickup": "Pick up the catering from Orit at Moshe Dayan station",
+      "run": "Get the catering to the hall before it goes cold!",
+      "meet": "Go to Savta Rachel at the bus stop",
+      "walk": "Walk Savta Rachel to the hall, at her pace",
+      "wait": "Savta stopped. Go back to her",
+      "back": "Back to Avi at the hall"
+    },
+    "c": {
+      "o1": "He says your music is noise.",
+      "o2": "Do what you want, it's their wedding, not yours.",
+      "o3": "He loves Carlebach. What about a remix? Carlebach with bass."
+    },
+    "t": {
+      "go": "Savta: \"Nu, come on. I don't wait for anyone.\"",
+      "wait": "Savta stopped: \"What, I'm supposed to wait for you?\""
+    },
+    "d": {
+      "offer": [
+        [
+          "avi",
+          "Ahalan, friend! Remember the barbecue? My daughter is getting married tonight. Here, at the hall by Cinema-ish City."
+        ],
+        [
+          "avi",
+          "And there's a problem. Orit brought the kosher catering by train from the market and now she's stuck with it at Moshe Dayan station. The groom's grandma is stuck at a bus stop. And the DJ..."
+        ],
+        [
+          "avi",
+          "The DJ is the groom's cousin. Moshiko. He wants trance. I want Carlebach. The Hum already knocked the speakers out twice."
+        ],
+        [
+          "player",
+          "I'll talk to Moshiko."
+        ]
+      ],
+      "ask": [
+        [
+          "moshiko",
+          "Achi! You! Tell me, what did the bride's dad say about me? He hates my music, right?"
+        ]
+      ],
+      "retry": [
+        [
+          "moshiko",
+          "You're back. Nu, what did he really say?"
+        ]
+      ],
+      "r1": [
+        [
+          "moshiko",
+          "Noise? It's art, achi. Forty speakers of art."
+        ],
+        [
+          "narrator",
+          "Moshiko is hurt and goes to sort out cables. The Hum lifts its head. Let's try again, gently."
+        ]
+      ],
+      "r2": [
+        [
+          "moshiko",
+          "\"Theirs\"? Achi, I'm the groom's cousin. It's my wedding too."
+        ],
+        [
+          "narrator",
+          "Moshiko walks off. \"Theirs\" is exactly the word the Hum loves most."
+        ]
+      ],
+      "r3": [
+        [
+          "moshiko",
+          "...Carlebach with bass. Achi. You're a genius. I'm crying."
+        ],
+        [
+          "moshiko",
+          "But no food, no wedding. Bring the trays from Orit at Moshe Dayan station. Scooter or bike, in a car it'll spill. Hurry, before the bride arrives!"
+        ]
+      ],
+      "delivered": [
+        [
+          "avi",
+          "You made it! And the food is still hot! Orit sent tomatoes too. Seven ninety-five."
+        ],
+        [
+          "avi",
+          "Wait, where's the groom's grandma? She's at the bus stop and won't take a taxi. \"I walk, I'm not old.\""
+        ]
+      ],
+      "arrived": [
+        [
+          "savta",
+          "We're here. See? Didn't even get out of breath. You, on the other hand..."
+        ]
+      ],
+      "outro": [
+        [
+          "narrator",
+          "Moshiko plays Carlebach with bass. Avi dances. Savta Rachel dances more."
+        ],
+        [
+          "avi",
+          "I don't believe it. I'm dancing to trance. At my daughter's wedding."
+        ],
+        [
+          "moshiko",
+          "And I'm crying. Like at every wedding. Don't tell anyone."
+        ],
+        [
+          "avi",
+          "I fought a guy over bass, and in the end that bass is the happiest thing here."
+        ],
+        [
+          "moshiko",
+          "And I thought they don't know how to party. Achi, they party harder than me."
+        ],
+        [
+          "savta",
+          "You're both sweet. Now bring me another chicken thigh."
+        ],
+        [
+          "narrator",
+          "Someone stuck an eye-rolling sticker on the cake. From it, a trail of stickers leads to the old cellar of the Camel Cellars."
+        ]
+      ]
+    },
+    "clue": "The sticker trail leads to the Camel Cellars. That's where the Heckler hides."
+  },
+  "q7_together": {
+    "title": "All Together",
+    "obj": {
+      "s1": "Find the sticker near the Great Synagogue",
+      "s2": "Find the sticker near the Founders' Well",
+      "s3": "Find the sticker near Founders Square",
+      "door": "Go down into the Camel Cellars",
+      "ask": "Talk to the person in the hoodie",
+      "retry": "The Heckler backed off. Find him again and try another way",
+      "meet": "Go to the Heckler",
+      "walk": "Walk the Heckler to Founders Square",
+      "wait": "The Heckler is waiting for you",
+      "final": "Talk to Grisha in the square. Everyone's there"
+    },
+    "c": {
+      "o1": "You're the villain! I'll stop you!",
+      "o2": "...You're right. Everyone really is like that.",
+      "o3": "Take off the hood."
+    },
+    "t": {
+      "go": "The Heckler walks slowly. As if he's scared of the square.",
+      "wait": "The Heckler stopped. He won't go without you."
+    },
+    "d": {
+      "offer": [
+        [
+          "savta",
+          "So you came. The Heckler is downstairs, in the cellar. I saw him. Hoodie, stickers, muttering all the time."
+        ],
+        [
+          "savta",
+          "But he's sly. He left a trail of stickers in the old town to send us in circles. Find them and they'll show you the door."
+        ],
+        [
+          "player",
+          "What if he's dangerous?"
+        ],
+        [
+          "savta",
+          "Habibi, I'm a grandmother. I've seen worse in the queue at the health clinic. Go."
+        ]
+      ],
+      "s1": [
+        [
+          "narrator",
+          "Sticker: \"Those religious people...\". Under it, in small print: \"Those secular people...\". Same handwriting."
+        ]
+      ],
+      "s2": [
+        [
+          "narrator",
+          "\"Those street guys...\", \"those hipsters...\". All the stickers come off the same roll."
+        ]
+      ],
+      "s3": [
+        [
+          "narrator",
+          "The third sticker has an arrow. It points at the Camel Cellars."
+        ]
+      ],
+      "door": [
+        [
+          "narrator",
+          "The stairs go down into the dark. A smell of old wine and new stickers. And there, in the corner, someone in a hoodie."
+        ]
+      ],
+      "ask": [
+        [
+          "heckler",
+          "Ah, you came. See? Everyone's like that. The religious, the secular, the street guys, the hipsters. I only say what everyone mutters."
+        ],
+        [
+          "heckler",
+          "Come on, you say it too. \"Those people...\". Feels good, doesn't it?"
+        ]
+      ],
+      "retry": [
+        [
+          "heckler",
+          "You again. Nu, what will you say this time?"
+        ]
+      ],
+      "r1": [
+        [
+          "heckler",
+          "Stop whom, exactly?"
+        ],
+        [
+          "narrator",
+          "He laughs and slips into another corner. You can't beat him by force. Try something else."
+        ]
+      ],
+      "r2": [
+        [
+          "heckler",
+          "Good. That's how I grow."
+        ],
+        [
+          "narrator",
+          "The Hum swells and the hoodie grows a size. He backs away, pleased. That's exactly what he wanted to hear."
+        ]
+      ],
+      "r3": [
+        [
+          "narrator",
+          "He hesitates. Then takes off the hood."
+        ],
+        [
+          "narrator",
+          "Under it: a mirror. In the mirror, you. And Moshiko, and Alex, and Yanki, and Grisha, and Orit, and Shiri, and Avi, and Lena, and Savta."
+        ],
+        [
+          "heckler",
+          "...I'm not a villain. I'm everyone. I'm every \"those people\" you ever muttered."
+        ],
+        [
+          "heckler",
+          "You want me quiet? Then you'll have to answer me. Everyone. Together. In the square."
+        ]
+      ],
+      "square": [
+        [
+          "narrator",
+          "At Founders Square everyone is already waiting. Someone brought falafel. The fryer is still a little offended."
+        ]
+      ],
+      "outro": [
+        [
+          "grisha",
+          "I'll start, because I'm the oldest. Yanki, your spreadsheet saved my Shabbat. I never told you."
+        ],
+        [
+          "yanki",
+          "Grisha, your hat is the wisest thing in town. And Alex, Bezalel is the tastiest sourdough I ever ate."
+        ],
+        [
+          "alex",
+          "Moshiko, your playlist made a whole beach happy. Me too. Me most of all."
+        ],
+        [
+          "moshiko",
+          "Avi, your daughter's wedding was the happiest one I've been to. And I only cried twice."
+        ],
+        [
+          "avi",
+          "Lena, you were right about the thermometer. The meat really was at forty."
+        ],
+        [
+          "lena",
+          "...And you grill the best in Rishon. But only at seventy-two."
+        ],
+        [
+          "orit",
+          "Shiri, I love that you sing my song. Sing it louder."
+        ],
+        [
+          "shiri",
+          "Orit, your tomatoes are better. Don't tell anyone."
+        ],
+        [
+          "savta",
+          "And me? I love all of you. Now somebody bring me a chair."
+        ],
+        [
+          "heckler",
+          "...I don't know what to do with all this. Nobody said \"those people\" about me."
+        ],
+        [
+          "player",
+          "Because you're us. And we're okay."
+        ],
+        [
+          "narrator",
+          "The Hum rises, rounds out, and turns into one warm chord. All over town the street lights come on together. The WhatsApp group sends one giant heart."
+        ],
+        [
+          "narrator",
+          "At dawn everyone walks to the promenade with food. Savta overtakes you with her trolley. Rishon is yours."
+        ]
+      ]
+    },
+    "clue": "The villain was us. So was the answer."
+  }
+}

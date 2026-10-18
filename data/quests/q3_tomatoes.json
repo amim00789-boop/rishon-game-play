@@ -1,0 +1,70 @@
+{
+  "id": "q3_tomatoes",
+  "requires": [
+    "q2_parking"
+  ],
+  "hum": 12,
+  "npcs": {
+    "orit": {
+      "archetype": "dati_leumi_woman",
+      "at": {
+        "poi": "water_tower",
+        "dx": -55,
+        "dz": -30
+      }
+    },
+    "shiri": {
+      "archetype": "secular_woman",
+      "at": {
+        "poi": "water_tower",
+        "dx": -30,
+        "dz": -42
+      }
+    }
+  },
+  "giver": "orit",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "shiri",
+      "obj": "obj.shiri",
+      "dialogue": "d.shiri"
+    },
+    {
+      "type": "collect",
+      "item": "tomato",
+      "count": 5,
+      "at": {
+        "poi": "water_tower",
+        "dx": -45,
+        "dz": -36
+      },
+      "spread": 34,
+      "obj": "obj.tomatoes",
+      "dialogue": "d.tomatoes"
+    },
+    {
+      "type": "reach",
+      "at": {
+        "poi": "water_tower",
+        "dx": -70,
+        "dz": -8
+      },
+      "radius": 7,
+      "obj": "obj.sticker",
+      "dialogue": "d.sticker",
+      "prop": "sticker"
+    },
+    {
+      "type": "talk",
+      "npc": "orit",
+      "gather": [
+        "shiri"
+      ],
+      "obj": "obj.back",
+      "dialogue": "d.outro"
+    }
+  ],
+  "clue": "clue"
+}

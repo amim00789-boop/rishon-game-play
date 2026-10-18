@@ -1,0 +1,301 @@
+{
+  "id": "m01_soundcheck",
+  "act": 1,
+  "requires": [],
+  "npcs": {
+    "malul": {
+      "archetype": "malul",
+      "fallback": "beach_guy",
+      "at": {
+        "poi": "beach_kiosk",
+        "dx": -12,
+        "dz": 26
+      }
+    },
+    "ofir": {
+      "archetype": "ofir",
+      "fallback": "mizrahi_street_guy",
+      "at": {
+        "poi": "beach_kiosk",
+        "dx": -4,
+        "dz": 30
+      },
+      "look": {
+        "accessories": [
+          {
+            "type": "melodica",
+            "color": "#d7263d"
+          }
+        ]
+      }
+    },
+    "adir": {
+      "archetype": "adir",
+      "fallback": "beach_guy",
+      "at": {
+        "poi": "beach_kiosk",
+        "dx": -20,
+        "dz": 32
+      }
+    },
+    "dekel": {
+      "archetype": "dekel",
+      "fallback": "dati_leumi_man",
+      "at": {
+        "poi": "beach_kiosk",
+        "dx": -70,
+        "dz": -10
+      }
+    },
+    "moshiko": {
+      "archetype": "mizrahi_street_guy",
+      "at": {
+        "poi": "beach_kiosk",
+        "dx": 16,
+        "dz": 14
+      }
+    },
+    "alex": {
+      "archetype": "hipster",
+      "at": {
+        "poi": "beach_kiosk",
+        "dx": 26,
+        "dz": 30
+      }
+    },
+    "fan1": {
+      "archetype": "beach_guy",
+      "at": {
+        "poi": "beach_kiosk",
+        "dx": -17,
+        "dz": 21,
+        "yaw": 0.6
+      }
+    },
+    "fan2": {
+      "archetype": "secular_woman",
+      "at": {
+        "poi": "beach_kiosk",
+        "dx": -7,
+        "dz": 20,
+        "yaw": -0.5
+      }
+    },
+    "fan3": {
+      "archetype": "kid",
+      "at": {
+        "poi": "beach_kiosk",
+        "dx": -12,
+        "dz": 18,
+        "yaw": 0
+      }
+    }
+  },
+  "giver": "malul",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "alex",
+      "obj": "obj.alex",
+      "dialogue": "d.argue"
+    },
+    {
+      "type": "minigame",
+      "game": "rhythm",
+      "npc": "malul",
+      "intro": "d.howto",
+      "params": {
+        "chart": {
+          "id": "m01_practice",
+          "title": "quest.m01_soundcheck.practiceTitle",
+          "bpm": 90,
+          "offset": 0,
+          "countIn": 4,
+          "lengthBeats": 16,
+          "kit": "beach",
+          "lanes": 4,
+          "pass": 0,
+          "notes": [
+            [
+              0,
+              0
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              4,
+              2
+            ],
+            [
+              6,
+              3
+            ],
+            [
+              8,
+              0
+            ],
+            [
+              9,
+              1
+            ],
+            [
+              10,
+              2
+            ],
+            [
+              11,
+              3
+            ],
+            [
+              12,
+              0
+            ],
+            [
+              13,
+              1
+            ],
+            [
+              14,
+              2
+            ],
+            [
+              15,
+              3
+            ]
+          ]
+        },
+        "pass": 0
+      },
+      "obj": "obj.practice",
+      "dialogue": "d.practiced"
+    },
+    {
+      "type": "minigame",
+      "game": "rhythm",
+      "npc": "malul",
+      "params": {
+        "chart": "beach_soundcheck",
+        "pass": 0.6
+      },
+      "intro": "d.count",
+      "failText": "fail",
+      "obj": "obj.jam",
+      "dialogue": "d.jam",
+      "props": [
+        {
+          "play": "malul",
+          "how": "drums"
+        }
+      ],
+      "cheer": "cheer"
+    },
+    {
+      "type": "choice",
+      "npc": "ofir",
+      "obj": "obj.forward",
+      "dialogue": "d.clip",
+      "options": [
+        {
+          "text": "c.plain",
+          "reply": "d.rPlain",
+          "effects": {
+            "flag": "clip_forwarded"
+          }
+        },
+        {
+          "text": "c.caption",
+          "reply": "d.rCaption",
+          "effects": {
+            "flag": [
+              "clip_forwarded",
+              "clip_caption"
+            ]
+          }
+        }
+      ],
+      "props": [
+        {
+          "hold": "phone",
+          "id": "phone",
+          "by": "player"
+        }
+      ],
+      "propsDone": [
+        {
+          "remove": "phone"
+        }
+      ]
+    },
+    {
+      "type": "talk",
+      "npc": "adir",
+      "gather": [
+        "dekel",
+        "malul",
+        "ofir"
+      ],
+      "obj": "obj.month",
+      "dialogue": "d.outro",
+      "propsDone": [
+        {
+          "play": "malul",
+          "how": false
+        },
+        {
+          "hold": "drum_kit",
+          "id": "kit",
+          "by": "adir",
+          "how": "back"
+        }
+      ]
+    }
+  ],
+  "after": "page",
+  "scene": [
+    {
+      "show": "speaker",
+      "id": "speaker",
+      "at": {
+        "npc": "moshiko",
+        "dx": -3,
+        "dz": 1
+      }
+    },
+    {
+      "show": "mic_stand",
+      "id": "mic",
+      "at": {
+        "npc": "alex",
+        "dx": 0,
+        "dz": 2
+      }
+    },
+    {
+      "play": "malul",
+      "how": "drums"
+    }
+  ],
+  "leave": [
+    {
+      "show": "speaker",
+      "id": "speaker",
+      "at": {
+        "npc": "moshiko",
+        "dx": -3,
+        "dz": 1
+      }
+    },
+    {
+      "show": "mic_stand",
+      "id": "mic",
+      "at": {
+        "npc": "alex",
+        "dx": 0,
+        "dz": 2
+      }
+    }
+  ]
+}

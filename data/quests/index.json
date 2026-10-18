@@ -1,0 +1,42 @@
+{
+  "version": 2,
+  "strings": [
+    "strings.{lang}.json",
+    "story.{lang}.json"
+  ],
+  "quests": [
+    "m01_soundcheck",
+    "m02_dog",
+    "m03_jachnun",
+    "m04_yardsale",
+    "m05_bride",
+    "m06_repark",
+    "m07_race",
+    "m08_skate",
+    "m09_flag",
+    "m10_generator",
+    "m11_choirs",
+    "m12_sayitback",
+    "m13_rothschild",
+    "m13b_cliff",
+    "m14_blackout",
+    "m15_mitzi",
+    "m16_chairs",
+    "m17_live"
+  ],
+  "side": [
+    "q1_speaker",
+    "q2_parking",
+    "q3_tomatoes",
+    "q4_bbq",
+    "q5_whatsapp",
+    "q6_wedding",
+    "q7_together"
+  ],
+  "minigames": "./engine/minigames/index.js",
+  "intro": "intro.d",
+  "activities": [
+    "act_cliff",
+    "act_surf"
+  ]
+}

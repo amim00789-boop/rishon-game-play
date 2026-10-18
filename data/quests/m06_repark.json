@@ -1,0 +1,146 @@
+{
+  "id": "m06_repark",
+  "act": 1,
+  "requires": [
+    "m05_bride"
+  ],
+  "npcs": {
+    "rafi": {
+      "archetype": "beach_guy",
+      "at": {
+        "poi": "surf_club",
+        "dx": -14,
+        "dz": 20
+      }
+    },
+    "friedman": {
+      "archetype": "haredi_man",
+      "at": {
+        "poi": "beach_stairs",
+        "dx": -12,
+        "dz": -44
+      }
+    },
+    "guy": {
+      "archetype": "beach_guy",
+      "fallback": "hipster",
+      "at": {
+        "poi": "surf_club",
+        "dx": 8,
+        "dz": 6
+      }
+    },
+    "malul": {
+      "archetype": "malul",
+      "fallback": "beach_guy",
+      "at": {
+        "poi": "surf_club",
+        "dx": -22,
+        "dz": 34
+      }
+    },
+    "ofir": {
+      "archetype": "ofir",
+      "fallback": "mizrahi_street_guy",
+      "at": {
+        "poi": "surf_club",
+        "dx": -26,
+        "dz": 28
+      }
+    }
+  },
+  "giver": "rafi",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "guy",
+      "obj": "obj.guy",
+      "dialogue": "d.guy"
+    },
+    {
+      "type": "talk",
+      "npc": "friedman",
+      "obj": "obj.friedman",
+      "dialogue": "d.friedman"
+    },
+    {
+      "type": "minigame",
+      "game": "parking",
+      "npc": "friedman",
+      "params": {
+        "lot": {
+          "$lot": {
+            "poi": "beach_stairs",
+            "dx": -16,
+            "dz": -56
+          }
+        },
+        "center": {
+          "poi": "beach_stairs",
+          "dx": -16,
+          "dz": -56
+        },
+        "angle": 1.5708,
+        "blockers": 3,
+        "par": 5
+      },
+      "intro": "d.keys",
+      "obj": "obj.park",
+      "dialogue": "d.out",
+      "props": [
+        {
+          "hold": "keys",
+          "id": "keys",
+          "by": "player"
+        }
+      ],
+      "propsDone": [
+        {
+          "remove": "keys"
+        }
+      ]
+    },
+    {
+      "type": "talk",
+      "npc": "rafi",
+      "gather": [
+        "friedman",
+        "guy",
+        "malul",
+        "ofir"
+      ],
+      "obj": "obj.back",
+      "dialogue": "d.outro",
+      "effects": {
+        "trust": {
+          "haredi": 1,
+          "secular": 1
+        }
+      }
+    }
+  ],
+  "after": "page",
+  "scene": [
+    {
+      "show": "boards",
+      "id": "boards",
+      "at": {
+        "npc": "guy",
+        "dx": 2.5,
+        "dz": -2
+      }
+    }
+  ],
+  "leave": [
+    {
+      "show": "boards",
+      "id": "boards",
+      "at": {
+        "npc": "guy",
+        "dx": 2.5,
+        "dz": -2
+      }
+    }
+  ]
+}

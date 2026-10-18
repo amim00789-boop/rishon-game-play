@@ -1,0 +1,268 @@
+{
+  "id": "m11_choirs",
+  "act": 2,
+  "requires": [
+    "m10_generator"
+  ],
+  "npcs": {
+    "ziva": {
+      "archetype": "office_worker",
+      "at": {
+        "poi": "heichal_plaza",
+        "dx": -8,
+        "dz": 6
+      },
+      "fallback": "secular_woman"
+    },
+    "valentina": {
+      "archetype": "choir_senior",
+      "at": {
+        "poi": "heichal_plaza",
+        "dx": -24,
+        "dz": -8
+      },
+      "fallback": "older_woman",
+      "seed": 1,
+      "look": {
+        "face": {
+          "lashes": true,
+          "glasses": "#b8433a",
+          "mouth": "smile",
+          "wrinkles": true,
+          "lips": "#c2405a"
+        },
+        "hair": {
+          "style": "perm",
+          "color": "#e8e2d8"
+        },
+        "accessories": [
+          {
+            "type": "stole",
+            "color": "#e8c547"
+          },
+          {
+            "type": "earrings",
+            "color": "#ffcb3d"
+          }
+        ]
+      }
+    },
+    "yanki": {
+      "archetype": "haredi_man",
+      "at": {
+        "poi": "heichal_plaza",
+        "dx": 14,
+        "dz": -10
+      }
+    },
+    "savta": {
+      "archetype": "savta",
+      "at": {
+        "poi": "heichal_plaza",
+        "dx": 0,
+        "dz": -20
+      }
+    },
+    "senior1": {
+      "archetype": "choir_senior",
+      "seed": 0,
+      "at": {
+        "poi": "heichal_plaza",
+        "dx": -28,
+        "dz": -12
+      },
+      "fallback": "older_man"
+    },
+    "senior2": {
+      "archetype": "choir_senior",
+      "seed": 2,
+      "at": {
+        "poi": "heichal_plaza",
+        "dx": -21,
+        "dz": -13
+      },
+      "fallback": "older_man"
+    },
+    "senior3": {
+      "archetype": "choir_senior",
+      "seed": 1,
+      "at": {
+        "poi": "heichal_plaza",
+        "dx": -26,
+        "dz": -4
+      },
+      "fallback": "older_man"
+    },
+    "boy1": {
+      "archetype": "choir_boy",
+      "seed": 0,
+      "at": {
+        "poi": "heichal_plaza",
+        "dx": 11,
+        "dz": -14
+      },
+      "fallback": "kid"
+    },
+    "boy2": {
+      "archetype": "choir_boy",
+      "seed": 1,
+      "at": {
+        "poi": "heichal_plaza",
+        "dx": 17,
+        "dz": -13
+      },
+      "fallback": "kid"
+    },
+    "boy3": {
+      "archetype": "choir_boy",
+      "seed": 2,
+      "at": {
+        "poi": "heichal_plaza",
+        "dx": 14,
+        "dz": -6
+      },
+      "fallback": "kid"
+    }
+  },
+  "giver": "ziva",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "valentina",
+      "obj": "obj.valentina",
+      "dialogue": "d.valentina"
+    },
+    {
+      "type": "talk",
+      "npc": "yanki",
+      "obj": "obj.yanki",
+      "dialogue": "d.yanki"
+    },
+    {
+      "type": "choice",
+      "npc": "ziva",
+      "obj": "obj.slot",
+      "dialogue": "d.slot",
+      "options": [
+        {
+          "text": "c.russian",
+          "reply": "d.rOne",
+          "effects": {
+            "scale": -1,
+            "trust": {
+              "russian": 1,
+              "haredi": -1
+            },
+            "flag": "choir_one"
+          }
+        },
+        {
+          "text": "c.haredi",
+          "reply": "d.rOne",
+          "effects": {
+            "scale": -1,
+            "trust": {
+              "haredi": 1,
+              "russian": -1
+            },
+            "flag": "choir_one"
+          }
+        },
+        {
+          "text": "c.split",
+          "reply": "d.rSplit",
+          "effects": {
+            "scale": 2,
+            "trust": {
+              "russian": 1,
+              "haredi": 1
+            },
+            "flag": "choir_split"
+          }
+        }
+      ]
+    },
+    {
+      "type": "minigame",
+      "game": "cue",
+      "npc": "ziva",
+      "intro": "d.desk",
+      "paramsIf": {
+        "choir_split": "hard",
+        "default": "easy"
+      },
+      "paramSets": {
+        "hard": {
+          "chart": "choirs_cues",
+          "pass": 0.7
+        },
+        "easy": {
+          "chart": "choirs_cues_easy",
+          "pass": 0.7
+        }
+      },
+      "params": {
+        "chart": "choirs_cues_easy",
+        "pass": 0.7
+      },
+      "obj": "obj.cues",
+      "dialogue": "d.cues",
+      "props": [
+        {
+          "show": "mixer_desk",
+          "id": "desk",
+          "at": {
+            "npc": "ziva",
+            "dx": 0,
+            "dz": 2.2
+          }
+        }
+      ],
+      "propsDone": [
+        {
+          "remove": "desk"
+        }
+      ]
+    },
+    {
+      "type": "talk",
+      "npc": "valentina",
+      "gather": [
+        "yanki",
+        "savta"
+      ],
+      "obj": "obj.bow",
+      "dialogue": {
+        "choir_split": "d.outroSplit",
+        "default": "d.outro"
+      },
+      "effects": {
+        "trust": {
+          "elders": 1
+        }
+      }
+    }
+  ],
+  "after": "page",
+  "scene": [
+    {
+      "show": "spotlight",
+      "id": "spotA",
+      "at": {
+        "poi": "heichal_plaza",
+        "dx": -10,
+        "dz": -14
+      }
+    },
+    {
+      "show": "spotlight",
+      "id": "spotB",
+      "at": {
+        "poi": "heichal_plaza",
+        "dx": 10,
+        "dz": -14
+      }
+    }
+  ]
+}

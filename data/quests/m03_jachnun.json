@@ -1,0 +1,157 @@
+{
+  "id": "m03_jachnun",
+  "act": 1,
+  "requires": [
+    "m02_dog"
+  ],
+  "npcs": {
+    "ofir": {
+      "archetype": "ofir",
+      "fallback": "mizrahi_street_guy",
+      "at": {
+        "place": "Kiriyat Ganim",
+        "dx": 14,
+        "dz": -8
+      },
+      "look": {
+        "accessories": [
+          {
+            "type": "darbuka",
+            "color": "#c9a227",
+            "band": "#7a3a1e"
+          }
+        ]
+      }
+    },
+    "shiri": {
+      "archetype": "secular_woman",
+      "at": {
+        "place": "Neve Dekalim",
+        "dx": 30,
+        "dz": 20
+      }
+    },
+    "shimon": {
+      "archetype": "older_man",
+      "fallback": "russian_speaking_grandpa",
+      "at": {
+        "place": "Kiriyat Ganim",
+        "dx": -60,
+        "dz": -60,
+        "busStop": true,
+        "within": 400
+      }
+    }
+  },
+  "giver": "ofir",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "timed",
+      "item": "pot",
+      "pickup": {
+        "place": "Kiriyat Ganim",
+        "dx": 22,
+        "dz": -4
+      },
+      "at": {
+        "place": "Neve Dekalim",
+        "dx": 36,
+        "dz": 14
+      },
+      "timeFactor": 2.0,
+      "obj": "obj.pickup",
+      "objRun": "obj.run",
+      "timeUp": "t.cold",
+      "todo": "egg meter: hand over to the calm mini-game ({ meter: 'eggs' }) once it exists",
+      "events": [
+        {
+          "npc": "shimon",
+          "after": 25,
+          "dialogue": "d.eBag",
+          "options": [
+            {
+              "text": "c.help",
+              "reply": "d.rHelp",
+              "cost": 15,
+              "bonus": 30,
+              "effects": {
+                "scale": 2,
+                "trust": {
+                  "elders": 1
+                },
+                "flag": "helped_shimon"
+              },
+              "props": [
+                {
+                  "remove": "oranges"
+                }
+              ]
+            },
+            {
+              "text": "c.pass",
+              "reply": "d.rPass",
+              "effects": {
+                "scale": -1,
+                "flag": "passed_shimon"
+              }
+            }
+          ],
+          "props": [
+            {
+              "show": "oranges",
+              "id": "oranges",
+              "at": {
+                "npc": "shimon",
+                "dx": 0,
+                "dz": 1.5
+              }
+            }
+          ]
+        }
+      ],
+      "dialogue": "d.arrive"
+    },
+    {
+      "type": "talk",
+      "npc": "shiri",
+      "gather": [
+        "ofir"
+      ],
+      "obj": "obj.taste",
+      "dialogue": {
+        "helped_shimon": "d.outroHelped",
+        "default": "d.outro"
+      },
+      "effects": {
+        "trust": {
+          "secular": 1,
+          "street": 1
+        }
+      },
+      "props": [
+        {
+          "show": "pot",
+          "id": "pot",
+          "at": {
+            "npc": "shiri",
+            "dx": 1.6,
+            "dz": 1.4
+          }
+        }
+      ]
+    }
+  ],
+  "after": "page",
+  "leave": [
+    {
+      "show": "pot",
+      "id": "pot",
+      "at": {
+        "npc": "shiri",
+        "dx": 1.6,
+        "dz": 1.4
+      }
+    }
+  ]
+}

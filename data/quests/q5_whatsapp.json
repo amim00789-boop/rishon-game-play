@@ -1,0 +1,106 @@
+{
+  "id": "q5_whatsapp",
+  "requires": [
+    "q4_bbq"
+  ],
+  "hum": 14,
+  "npcs": {
+    "yanki": {
+      "archetype": "haredi_man",
+      "at": {
+        "poi": "golden_mall",
+        "dx": -30,
+        "dz": 40
+      }
+    },
+    "alex": {
+      "archetype": "hipster",
+      "at": {
+        "poi": "golden_mall",
+        "dx": -8,
+        "dz": 52
+      }
+    }
+  },
+  "giver": "yanki",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "alex",
+      "obj": "obj.alex",
+      "dialogue": "d.alex"
+    },
+    {
+      "type": "choice",
+      "npc": "yanki",
+      "obj": "obj.ask",
+      "objRetry": "obj.retry",
+      "dialogue": "d.ask",
+      "retry": "d.retry",
+      "options": [
+        {
+          "text": "c.o1",
+          "reply": "d.r1",
+          "good": false
+        },
+        {
+          "text": "c.o2",
+          "reply": "d.r2",
+          "good": false
+        },
+        {
+          "text": "c.o3",
+          "reply": "d.r3",
+          "good": true
+        }
+      ]
+    },
+    {
+      "type": "find",
+      "item": "antenna",
+      "at": {
+        "poi": "matkot_spot",
+        "dx": 30,
+        "dz": 0
+      },
+      "radius": 70,
+      "obj": "obj.ant1",
+      "dialogue": "d.ant1"
+    },
+    {
+      "type": "find",
+      "item": "antenna",
+      "at": {
+        "poi": "station_moshe_dayan",
+        "dx": 0,
+        "dz": 0
+      },
+      "radius": 70,
+      "obj": "obj.ant2",
+      "dialogue": "d.ant2"
+    },
+    {
+      "type": "find",
+      "item": "antenna",
+      "at": {
+        "poi": "superland",
+        "dx": 0,
+        "dz": 0
+      },
+      "radius": 80,
+      "obj": "obj.ant3",
+      "dialogue": "d.ant3"
+    },
+    {
+      "type": "talk",
+      "npc": "yanki",
+      "gather": [
+        "alex"
+      ],
+      "obj": "obj.back",
+      "dialogue": "d.outro"
+    }
+  ],
+  "clue": "clue"
+}

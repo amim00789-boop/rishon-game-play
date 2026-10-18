@@ -1,0 +1,251 @@
+{
+  "id": "m17_live",
+  "act": 3,
+  "requires": [
+    "m16_chairs"
+  ],
+  "finale": true,
+  "npcs": {
+    "malul": {
+      "archetype": "malul",
+      "at": {
+        "poi": "gan_hair",
+        "dx": -6,
+        "dz": 30
+      },
+      "fallback": "beach_guy"
+    },
+    "dekel": {
+      "archetype": "dekel",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 0,
+        "dz": 34
+      },
+      "fallback": "dati_leumi_man"
+    },
+    "ofir": {
+      "archetype": "ofir",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 6,
+        "dz": 30
+      },
+      "fallback": "mizrahi_street_guy",
+      "look": {
+        "accessories": [
+          {
+            "type": "keyboard",
+            "color": "#1d1d24",
+            "strap": "#2ec4b6"
+          }
+        ]
+      }
+    },
+    "adir": {
+      "archetype": "adir",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 12,
+        "dz": 34
+      },
+      "fallback": "beach_guy"
+    },
+    "savta": {
+      "archetype": "savta",
+      "at": {
+        "poi": "gan_hair",
+        "dx": -10,
+        "dz": 44
+      }
+    }
+  },
+  "giver": "malul",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "minigame",
+      "game": "rhythm",
+      "npc": "malul",
+      "intro": "d.song1",
+      "params": {
+        "chart": "finale_concert",
+        "pass": 0
+      },
+      "obj": "obj.song1",
+      "dialogue": "d.after1",
+      "props": [
+        {
+          "play": "malul",
+          "how": "drums"
+        },
+        {
+          "play": "adir",
+          "how": true
+        },
+        {
+          "play": "dekel",
+          "how": true
+        }
+      ]
+    },
+    {
+      "type": "minigame",
+      "game": "rhythm",
+      "npc": "adir",
+      "intro": "d.song2",
+      "params": {
+        "chart": "finale_riff",
+        "pass": 0
+      },
+      "obj": "obj.song2",
+      "dialogue": "d.after2",
+      "props": [
+        {
+          "play": "malul",
+          "how": "drums"
+        },
+        {
+          "play": "adir",
+          "how": true
+        },
+        {
+          "play": "dekel",
+          "how": true
+        }
+      ]
+    },
+    {
+      "type": "minigame",
+      "game": "rhythm",
+      "npc": "ofir",
+      "intro": "d.song3",
+      "params": {
+        "chart": "finale_jam",
+        "pass": 0
+      },
+      "obj": "obj.song3",
+      "dialogue": "d.after3",
+      "props": [
+        {
+          "play": "malul",
+          "how": "drums"
+        },
+        {
+          "play": "adir",
+          "how": true
+        },
+        {
+          "play": "dekel",
+          "how": true
+        }
+      ]
+    },
+    {
+      "type": "talk",
+      "npc": "savta",
+      "gather": [
+        "dekel",
+        "ofir",
+        "adir",
+        "alex",
+        "moshiko",
+        "yanki",
+        "shiri",
+        "avi",
+        "lena",
+        "grisha",
+        "orit",
+        "savta",
+        "hodaya",
+        "dasha",
+        "itai",
+        "valentina",
+        "ronit",
+        "rafi",
+        "friedman",
+        "guy",
+        "shimon"
+      ],
+      "obj": "obj.end",
+      "dialogue": {
+        "scale>=8": "d.endHigh",
+        "scale<=-4": "d.endLow",
+        "default": "d.endMid"
+      },
+      "effects": {
+        "flag": "story_done"
+      },
+      "props": [
+        {
+          "show": "cat",
+          "id": "mitzi",
+          "at": {
+            "npc": "malul",
+            "dx": 0.5,
+            "dz": 2.2
+          }
+        }
+      ]
+    }
+  ],
+  "after": "page",
+  "scene": [
+    {
+      "show": "speaker",
+      "id": "spkL",
+      "at": {
+        "poi": "gan_hair",
+        "dx": -9,
+        "dz": 24
+      }
+    },
+    {
+      "show": "speaker",
+      "id": "spkR",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 9,
+        "dz": 24
+      }
+    },
+    {
+      "show": "mic_stand",
+      "id": "mic",
+      "at": {
+        "npc": "ofir",
+        "dx": 0,
+        "dz": 1.6
+      }
+    }
+  ],
+  "leave": [
+    {
+      "show": "speaker",
+      "id": "spkL",
+      "at": {
+        "poi": "gan_hair",
+        "dx": -9,
+        "dz": 24
+      }
+    },
+    {
+      "show": "speaker",
+      "id": "spkR",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 9,
+        "dz": 24
+      }
+    },
+    {
+      "show": "cat",
+      "id": "mitzi",
+      "at": {
+        "npc": "malul",
+        "dx": 0.5,
+        "dz": 2.2
+      }
+    }
+  ]
+}

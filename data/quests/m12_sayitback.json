@@ -1,0 +1,221 @@
+{
+  "id": "m12_sayitback",
+  "act": 2,
+  "requires": [
+    "m11_choirs"
+  ],
+  "npcs": {
+    "ronit": {
+      "archetype": "office_worker",
+      "at": {
+        "poi": "city_hall",
+        "dx": 0,
+        "dz": -14
+      },
+      "fallback": "secular_woman"
+    },
+    "yanki": {
+      "archetype": "haredi_man",
+      "at": {
+        "poi": "city_hall",
+        "dx": -10,
+        "dz": -20
+      }
+    },
+    "shiri": {
+      "archetype": "secular_woman",
+      "at": {
+        "poi": "city_hall",
+        "dx": 10,
+        "dz": -20
+      }
+    },
+    "dekel": {
+      "archetype": "dekel",
+      "at": {
+        "poi": "city_hall",
+        "dx": -4,
+        "dz": -26
+      },
+      "fallback": "dati_leumi_man"
+    },
+    "adir": {
+      "archetype": "adir",
+      "at": {
+        "poi": "city_hall",
+        "dx": 4,
+        "dz": -28
+      },
+      "fallback": "beach_guy"
+    },
+    "ofir": {
+      "archetype": "ofir",
+      "at": {
+        "poi": "city_hall",
+        "dx": 8,
+        "dz": -30
+      },
+      "fallback": "mizrahi_street_guy",
+      "look": {
+        "accessories": [
+          {
+            "type": "shofar",
+            "color": "#d9b98a"
+          }
+        ]
+      }
+    },
+    "malul": {
+      "archetype": "malul",
+      "at": {
+        "poi": "city_hall",
+        "dx": -8,
+        "dz": -30
+      },
+      "fallback": "beach_guy"
+    }
+  },
+  "giver": "ronit",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "minigame",
+      "game": "debate",
+      "npc": "dekel",
+      "intro": "d.rules",
+      "params": {
+        "speakers": [
+          {
+            "id": "yanki",
+            "name": "quest.npc.yanki"
+          },
+          {
+            "id": "shiri",
+            "name": "quest.npc.shiri"
+          }
+        ],
+        "rounds": [
+          {
+            "speaker": 0,
+            "statement": "quest.m12_sayitback.r1.say",
+            "lead": "quest.m12_sayitback.r1.lead",
+            "phrases": [
+              {
+                "text": "quest.m12_sayitback.r1.p1",
+                "kind": "core"
+              },
+              {
+                "text": "quest.m12_sayitback.r1.p2",
+                "kind": "core"
+              },
+              {
+                "text": "quest.m12_sayitback.r1.p3",
+                "kind": "core"
+              },
+              {
+                "text": "quest.m12_sayitback.r1.p4",
+                "kind": "strawman"
+              },
+              {
+                "text": "quest.m12_sayitback.r1.p5",
+                "kind": "strawman"
+              },
+              {
+                "text": "quest.m12_sayitback.r1.p6",
+                "kind": "filler"
+              }
+            ]
+          },
+          {
+            "speaker": 1,
+            "statement": "quest.m12_sayitback.r2.say",
+            "lead": "quest.m12_sayitback.r2.lead",
+            "phrases": [
+              {
+                "text": "quest.m12_sayitback.r2.p1",
+                "kind": "core"
+              },
+              {
+                "text": "quest.m12_sayitback.r2.p2",
+                "kind": "core"
+              },
+              {
+                "text": "quest.m12_sayitback.r2.p3",
+                "kind": "core"
+              },
+              {
+                "text": "quest.m12_sayitback.r2.p4",
+                "kind": "strawman"
+              },
+              {
+                "text": "quest.m12_sayitback.r2.p5",
+                "kind": "strawman"
+              },
+              {
+                "text": "quest.m12_sayitback.r2.p6",
+                "kind": "filler"
+              }
+            ]
+          }
+        ],
+        "trustStart": 40,
+        "strawmanCost": 25,
+        "wrongCost": 10
+      },
+      "obj": "obj.debate",
+      "dialogue": "d.heard"
+    },
+    {
+      "type": "talk",
+      "npc": "ronit",
+      "gather": [
+        "yanki",
+        "shiri",
+        "dekel",
+        "adir",
+        "ofir",
+        "malul"
+      ],
+      "obj": "obj.motzash",
+      "dialogue": "d.outro",
+      "effects": {
+        "scale": 2,
+        "trust": {
+          "haredi": 1,
+          "secular": 1
+        },
+        "flag": "motzash"
+      }
+    }
+  ],
+  "after": "page",
+  "scene": [
+    {
+      "show": "table",
+      "id": "council",
+      "at": {
+        "npc": "ronit",
+        "dx": 0,
+        "dz": 2.6
+      }
+    },
+    {
+      "show": "mic_stand",
+      "id": "mic1",
+      "at": {
+        "npc": "yanki",
+        "dx": 0,
+        "dz": 1.8
+      }
+    },
+    {
+      "show": "mic_stand",
+      "id": "mic2",
+      "at": {
+        "npc": "shiri",
+        "dx": 0,
+        "dz": 1.8
+      }
+    }
+  ]
+}

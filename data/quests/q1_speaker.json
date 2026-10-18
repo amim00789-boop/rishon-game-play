@@ -1,0 +1,58 @@
+{
+  "id": "q1_speaker",
+  "requires": [
+    "m17_live"
+  ],
+  "hum": 12,
+  "npcs": {
+    "moshiko": {
+      "archetype": "mizrahi_street_guy",
+      "at": {
+        "poi": "beach_kiosk",
+        "dx": 14,
+        "dz": 10
+      }
+    },
+    "alex": {
+      "archetype": "hipster",
+      "at": {
+        "poi": "matkot_spot",
+        "dx": 18,
+        "dz": 22
+      }
+    }
+  },
+  "giver": "moshiko",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "alex",
+      "obj": "obj.alex",
+      "dialogue": "d.alex"
+    },
+    {
+      "type": "collect",
+      "item": "cable",
+      "count": 3,
+      "at": {
+        "poi": "beach_lifeguards",
+        "dx": 10,
+        "dz": 0
+      },
+      "spread": 70,
+      "obj": "obj.cables",
+      "dialogue": "d.cables"
+    },
+    {
+      "type": "talk",
+      "npc": "moshiko",
+      "gather": [
+        "alex"
+      ],
+      "obj": "obj.back",
+      "dialogue": "d.outro"
+    }
+  ],
+  "clue": "clue"
+}

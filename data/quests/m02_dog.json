@@ -1,0 +1,153 @@
+{
+  "id": "m02_dog",
+  "act": 1,
+  "requires": [
+    "m01_soundcheck"
+  ],
+  "npcs": {
+    "grisha": {
+      "archetype": "russian_speaking_grandpa",
+      "at": {
+        "place": "Neot Eshelim",
+        "dx": -20,
+        "dz": 10
+      }
+    },
+    "yanki": {
+      "archetype": "haredi_man",
+      "at": {
+        "place": "Neot Eshelim",
+        "dx": 18,
+        "dz": 16
+      }
+    },
+    "dekel": {
+      "archetype": "dekel",
+      "fallback": "dati_leumi_man",
+      "at": {
+        "place": "Neot Eshelim",
+        "dx": -6,
+        "dz": 24
+      }
+    },
+    "savta": {
+      "archetype": "savta",
+      "at": {
+        "place": "Neot Eshelim",
+        "dx": -40,
+        "dz": -14
+      }
+    }
+  },
+  "giver": "grisha",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "yanki",
+      "obj": "obj.yanki",
+      "dialogue": "d.yanki"
+    },
+    {
+      "type": "talk",
+      "npc": "dekel",
+      "obj": "obj.dekel",
+      "dialogue": "d.dekel"
+    },
+    {
+      "type": "track",
+      "item": "dog",
+      "at": {
+        "place": "Neot Eshelim",
+        "dx": -28,
+        "dz": 88
+      },
+      "radius": 45,
+      "hops": 3,
+      "home": {
+        "place": "Neot Eshelim",
+        "dx": -12,
+        "dz": 14
+      },
+      "beacon": "bark",
+      "obj": "obj.find",
+      "objFollow": "obj.home",
+      "barkText": "t.bark",
+      "ranText": "t.ran",
+      "caught": "t.caught",
+      "dialogue": "d.found",
+      "props": [
+        {
+          "play": "dekel",
+          "how": true
+        }
+      ],
+      "propsDone": [
+        {
+          "play": "dekel",
+          "how": false
+        },
+        {
+          "show": "dog",
+          "id": "dog",
+          "at": {
+            "place": "Neot Eshelim",
+            "dx": -12,
+            "dz": 16
+          }
+        }
+      ],
+      "spots": [
+        {
+          "place": "Neot Eshelim",
+          "dx": -25,
+          "dz": 85
+        },
+        {
+          "place": "Neot Eshelim",
+          "dx": -30,
+          "dz": 95
+        },
+        {
+          "place": "Neot Eshelim",
+          "dx": -20,
+          "dz": 100
+        },
+        {
+          "place": "Neot Eshelim",
+          "dx": -35,
+          "dz": 70
+        }
+      ]
+    },
+    {
+      "type": "talk",
+      "npc": "grisha",
+      "gather": [
+        "yanki",
+        "dekel",
+        "savta"
+      ],
+      "obj": "obj.back",
+      "dialogue": "d.outro",
+      "effects": {
+        "trust": {
+          "russian": 1,
+          "haredi": 1
+        }
+      }
+    }
+  ],
+  "after": "page",
+  "leave": [
+    {
+      "show": "dog",
+      "id": "dog",
+      "at": {
+        "place": "Neot Eshelim",
+        "dx": -12,
+        "dz": 16
+      }
+    }
+  ]
+}

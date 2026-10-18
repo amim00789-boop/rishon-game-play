@@ -1,0 +1,245 @@
+{
+  "id": "m14_blackout",
+  "act": 3,
+  "requires": [
+    "m13b_cliff"
+  ],
+  "npcs": {
+    "malul": {
+      "archetype": "malul",
+      "at": {
+        "poi": "gan_hair",
+        "dx": -6,
+        "dz": 30
+      },
+      "fallback": "beach_guy"
+    },
+    "dekel": {
+      "archetype": "dekel",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 0,
+        "dz": 34
+      },
+      "fallback": "dati_leumi_man"
+    },
+    "ofir": {
+      "archetype": "ofir",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 6,
+        "dz": 30
+      },
+      "fallback": "mizrahi_street_guy"
+    },
+    "adir": {
+      "archetype": "adir",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 12,
+        "dz": 34
+      },
+      "fallback": "beach_guy"
+    },
+    "ronit": {
+      "archetype": "office_worker",
+      "at": {
+        "poi": "gan_hair",
+        "dx": -14,
+        "dz": 22
+      },
+      "fallback": "secular_woman"
+    }
+  },
+  "giver": "ronit",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "adir",
+      "obj": "obj.adir",
+      "dialogue": "d.dark"
+    },
+    {
+      "type": "minigame",
+      "game": "crowd",
+      "npc": "ronit",
+      "intro": {
+        "gen_to=yeshiva": "d.helpYeshiva",
+        "gen_to=skaters": "d.helpSkaters",
+        "default": "d.alone"
+      },
+      "params": {
+        "groups": [
+          {
+            "id": "seniors",
+            "at": {
+              "poi": "gan_hair_chess",
+              "free": true
+            },
+            "size": 8,
+            "archetypes": [
+              "savta",
+              "russian_speaking_grandpa",
+              "older_woman"
+            ],
+            "speed": {
+              "$if": "helped_grisha",
+              "then": 8.5,
+              "else": 6.5
+            }
+          },
+          {
+            "id": "families",
+            "at": {
+              "poi": "gan_hair_playground",
+              "free": true
+            },
+            "size": 8,
+            "archetypes": [
+              "mom_stroller",
+              "kid",
+              "dati_leumi_woman"
+            ],
+            "speed": 7
+          },
+          {
+            "id": "yeshiva",
+            "at": {
+              "poi": "gan_hair_pond",
+              "free": true
+            },
+            "size": 8,
+            "archetypes": [
+              "haredi_man"
+            ],
+            "speed": 7.5,
+            "helperIf": "gen_to=yeshiva"
+          },
+          {
+            "id": "skaters",
+            "at": {
+              "poi": "gan_hair_palms",
+              "free": true
+            },
+            "size": 6,
+            "archetypes": [
+              "skater_kid",
+              "teen_phone"
+            ],
+            "speed": 8,
+            "helperIf": "gen_to=skaters"
+          }
+        ],
+        "exits": [
+          {
+            "at": {
+              "poi": "gan_hair",
+              "dx": 70,
+              "dz": -60,
+              "free": true
+            },
+            "radius": 12
+          },
+          {
+            "at": {
+              "poi": "city_hall_plaza",
+              "free": true
+            },
+            "radius": 12
+          },
+          {
+            "if": "waited_family",
+            "at": {
+              "poi": "gan_hair",
+              "dx": -90,
+              "dz": -40,
+              "free": true
+            },
+            "radius": 12
+          }
+        ],
+        "limit": {
+          "$if": "gen_to=band",
+          "then": 340,
+          "else": 300
+        },
+        "leash": 24,
+        "regroup": 9,
+        "dark": true
+      },
+      "obj": "obj.lead",
+      "dialogue": {
+        "waited_family": "d.outFamily",
+        "default": "d.out"
+      }
+    },
+    {
+      "type": "talk",
+      "npc": "malul",
+      "gather": [
+        "dekel",
+        "ofir",
+        "adir"
+      ],
+      "obj": "obj.bucket",
+      "dialogue": "d.bucket",
+      "effects": {
+        "flag": "!band_split",
+        "scale": 1
+      },
+      "props": [
+        {
+          "show": "bucket",
+          "id": "bucket",
+          "at": {
+            "npc": "malul",
+            "dx": 0,
+            "dz": 1.6
+          }
+        },
+        {
+          "play": "dekel",
+          "how": true
+        },
+        {
+          "play": "adir",
+          "how": true
+        }
+      ],
+      "propsDone": [
+        {
+          "play": "dekel",
+          "how": false
+        },
+        {
+          "play": "adir",
+          "how": false
+        }
+      ]
+    }
+  ],
+  "after": "page",
+  "scene": [
+    {
+      "show": "stage",
+      "id": "stage",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 0,
+        "dz": 18
+      }
+    }
+  ],
+  "leave": [
+    {
+      "show": "stage",
+      "id": "stage",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 0,
+        "dz": 18
+      }
+    }
+  ]
+}

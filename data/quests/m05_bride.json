@@ -1,0 +1,186 @@
+{
+  "id": "m05_bride",
+  "act": 1,
+  "requires": [
+    "m04_yardsale"
+  ],
+  "npcs": {
+    "avi": {
+      "archetype": "dati_leumi_man",
+      "at": {
+        "place": "Neve Dekalim",
+        "dx": 60,
+        "dz": -20
+      }
+    },
+    "hodaya": {
+      "archetype": "hodaya_bride",
+      "at": {
+        "place": "Neve Dekalim",
+        "dx": 66,
+        "dz": -12
+      },
+      "fallback": "dati_leumi_woman"
+    },
+    "moshiko": {
+      "archetype": "mizrahi_street_guy",
+      "at": {
+        "poi": "cinema_city",
+        "dx": 50,
+        "dz": 70
+      }
+    },
+    "family": {
+      "archetype": "haredi_mother_stroller",
+      "fallback": "haredi_woman",
+      "at": {
+        "poi": "cinema_city",
+        "dx": 200,
+        "dz": 300
+      }
+    }
+  },
+  "giver": "avi",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "hodaya",
+      "obj": "obj.hodaya",
+      "dialogue": "d.hodaya"
+    },
+    {
+      "type": "drive",
+      "npc": "hodaya",
+      "at": {
+        "poi": "cinema_city",
+        "dx": 44,
+        "dz": 60
+      },
+      "modes": [
+        "car"
+      ],
+      "limit": 140,
+      "calm": {
+        "start": 80,
+        "brake": -4,
+        "bump": -10,
+        "honk": -6,
+        "kerb": -5,
+        "offroad": -3,
+        "smooth": 1.2,
+        "waitCrossing": 3
+      },
+      "obj": "obj.pick",
+      "objRun": "obj.run",
+      "needVehicle": "t.needCar",
+      "timeUp": "t.late",
+      "events": [
+        {
+          "npc": "family",
+          "after": 22,
+          "dialogue": "d.eZebra",
+          "options": [
+            {
+              "text": "c.honk",
+              "reply": "d.rHonk",
+              "effects": {
+                "scale": -2,
+                "trust": {
+                  "haredi": -1
+                },
+                "flag": "honked_family"
+              }
+            },
+            {
+              "text": "c.wait",
+              "reply": "d.rWait",
+              "cost": 6,
+              "effects": {
+                "scale": 2,
+                "trust": {
+                  "haredi": 1
+                },
+                "flag": "waited_family"
+              }
+            }
+          ]
+        }
+      ],
+      "dialogue": "d.arrive"
+    },
+    {
+      "type": "talk",
+      "npc": "moshiko",
+      "gather": [
+        "avi",
+        "hodaya"
+      ],
+      "obj": "obj.music",
+      "dialogue": {
+        "waited_family": "d.outroWaved",
+        "default": "d.outro"
+      },
+      "effects": {
+        "trust": {
+          "dati": 1,
+          "street": 1
+        }
+      },
+      "propsDone": [
+        {
+          "emote": "avi",
+          "name": "wave"
+        },
+        {
+          "emote": "hodaya",
+          "name": "wave"
+        }
+      ]
+    }
+  ],
+  "after": {
+    "honked_family": "pageHonk",
+    "default": "page"
+  },
+  "scene": [
+    {
+      "show": "speaker",
+      "id": "dj",
+      "at": {
+        "npc": "moshiko",
+        "dx": -2.6,
+        "dz": 0
+      }
+    },
+    {
+      "show": "table",
+      "id": "djtable",
+      "at": {
+        "npc": "moshiko",
+        "dx": 0,
+        "dz": 2.2
+      }
+    }
+  ],
+  "leave": [
+    {
+      "show": "speaker",
+      "id": "dj",
+      "at": {
+        "npc": "moshiko",
+        "dx": -2.6,
+        "dz": 0
+      }
+    },
+    {
+      "show": "table",
+      "id": "djtable",
+      "at": {
+        "npc": "moshiko",
+        "dx": 0,
+        "dz": 2.2
+      }
+    }
+  ]
+}

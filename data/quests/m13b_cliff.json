@@ -1,0 +1,269 @@
+{
+  "id": "m13b_cliff",
+  "act": 3,
+  "requires": [
+    "m13_rothschild"
+  ],
+  "npcs": {
+    "dekel": {
+      "archetype": "dekel",
+      "fallback": "dati_leumi_man",
+      "at": {
+        "poi": "cliff_lookout",
+        "dx": 10,
+        "dz": -1
+      }
+    },
+    "malul": {
+      "archetype": "malul",
+      "fallback": "beach_guy",
+      "at": {
+        "poi": "cliff_lookout",
+        "dx": 13,
+        "dz": 27
+      }
+    },
+    "ofir": {
+      "archetype": "ofir",
+      "fallback": "mizrahi_street_guy",
+      "at": {
+        "poi": "harova",
+        "dx": 5,
+        "dz": 4
+      },
+      "look": {
+        "accessories": [
+          {
+            "type": "kazoo",
+            "color": "#ffcb3d"
+          }
+        ]
+      }
+    },
+    "adir": {
+      "archetype": "adir",
+      "fallback": "beach_guy",
+      "at": {
+        "poi": "gali_hadar_country",
+        "dx": 6,
+        "dz": 6
+      }
+    }
+  },
+  "giver": "dekel",
+  "offer": "d.offer",
+  "scene": [
+    {
+      "play": "dekel",
+      "how": true
+    }
+  ],
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "ofir",
+      "obj": "obj.ofir",
+      "dialogue": "d.ofir"
+    },
+    {
+      "type": "talk",
+      "npc": "adir",
+      "obj": "obj.adir",
+      "dialogue": "d.adir"
+    },
+    {
+      "type": "drive",
+      "npc": "adir",
+      "at": {
+        "poi": "cliff_lookout",
+        "dx": 6,
+        "dz": -8
+      },
+      "modes": [
+        "car"
+      ],
+      "limit": 900,
+      "obj": "obj.adir",
+      "objRun": "obj.bring",
+      "dialogue": "d.arrived"
+    },
+    {
+      "type": "choice",
+      "npc": "malul",
+      "obj": "obj.malul",
+      "dialogue": "d.malul",
+      "options": [
+        {
+          "text": "c.cheer",
+          "reply": "d.rCheer",
+          "effects": {
+            "scale": 1
+          }
+        },
+        {
+          "text": "c.own",
+          "reply": "d.rOwn",
+          "effects": {
+            "scale": 2,
+            "flag": "owned_clip"
+          }
+        },
+        {
+          "text": "c.song",
+          "reply": "d.rSong"
+        }
+      ]
+    },
+    {
+      "type": "minigame",
+      "game": "rhythm",
+      "npc": "dekel",
+      "intro": "d.write",
+      "gather": [
+        "ofir",
+        "adir",
+        "malul"
+      ],
+      "params": {
+        "chart": {
+          "id": "cliff_song",
+          "title": "quest.m13b_cliff.title",
+          "bpm": 96,
+          "offset": 0,
+          "countIn": 4,
+          "lengthBeats": 24,
+          "kit": "beach",
+          "lanes": 4,
+          "pass": 0,
+          "notes": [
+            [
+              0,
+              0
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              4,
+              0
+            ],
+            [
+              5,
+              2
+            ],
+            [
+              6,
+              1
+            ],
+            [
+              8,
+              0
+            ],
+            [
+              9,
+              3
+            ],
+            [
+              10,
+              1
+            ],
+            [
+              12,
+              0
+            ],
+            [
+              13,
+              2
+            ],
+            [
+              14,
+              1
+            ],
+            [
+              15,
+              3
+            ],
+            [
+              16,
+              0
+            ],
+            [
+              17,
+              1
+            ],
+            [
+              18,
+              2
+            ],
+            [
+              19,
+              3
+            ],
+            [
+              20,
+              0
+            ],
+            [
+              21,
+              2
+            ],
+            [
+              22,
+              1
+            ],
+            [
+              23,
+              3
+            ]
+          ]
+        },
+        "pass": 0
+      },
+      "props": [
+        {
+          "play": "adir",
+          "how": true
+        },
+        {
+          "play": "ofir",
+          "how": true
+        }
+      ],
+      "propsDone": [
+        {
+          "play": "adir",
+          "how": false
+        },
+        {
+          "play": "ofir",
+          "how": false
+        }
+      ],
+      "cheer": "cheer",
+      "obj": "obj.song",
+      "dialogue": "d.written"
+    },
+    {
+      "type": "talk",
+      "npc": "malul",
+      "gather": [
+        "dekel",
+        "ofir",
+        "adir"
+      ],
+      "obj": "obj.end",
+      "dialogue": "d.outro",
+      "effects": {
+        "flag": [
+          "band_reunited",
+          "!band_split"
+        ],
+        "trust": {
+          "youth": 1
+        }
+      }
+    }
+  ],
+  "after": "page"
+}

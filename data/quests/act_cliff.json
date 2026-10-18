@@ -1,0 +1,23 @@
+{
+  "id": "act_cliff",
+  "needsPoi": "cliff_lookout",
+  "crowdHosts": [
+    "dekel",
+    "ofir",
+    "adir",
+    "malul"
+  ],
+  "home": "lookout",
+  "drummer": "malul",
+  "options": [
+    {
+      "text": "c.song",
+      "play": 30,
+      "reply": "d.song"
+    },
+    {
+      "text": "c.bye",
+      "reply": "d.bye"
+    }
+  ]
+}

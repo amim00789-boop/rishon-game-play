@@ -1,0 +1,348 @@
+{
+  "id": "m10_generator",
+  "act": 2,
+  "requires": [
+    "m09_flag"
+  ],
+  "npcs": {
+    "ronit": {
+      "archetype": "office_worker",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 40,
+        "dz": -34
+      },
+      "fallback": "secular_woman"
+    },
+    "ofir": {
+      "archetype": "ofir",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 46,
+        "dz": -28
+      },
+      "fallback": "mizrahi_street_guy",
+      "look": {
+        "accessories": [
+          {
+            "type": "keyboard",
+            "color": "#1d1d24",
+            "strap": "#2ec4b6"
+          }
+        ]
+      }
+    },
+    "yanki": {
+      "archetype": "haredi_man",
+      "at": {
+        "poi": "great_synagogue",
+        "dx": 26,
+        "dz": 22
+      }
+    },
+    "itai": {
+      "archetype": "skater_kid",
+      "at": {
+        "poi": "skate_park",
+        "dx": 8,
+        "dz": 6
+      },
+      "fallback": "kid"
+    },
+    "malul": {
+      "archetype": "malul",
+      "at": {
+        "place": "Neve Dekalim",
+        "dx": 40,
+        "dz": 24
+      },
+      "fallback": "beach_guy"
+    }
+  },
+  "giver": "ronit",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "choice",
+      "npc": "ronit",
+      "obj": "obj.choose",
+      "dialogue": "d.choose",
+      "options": [
+        {
+          "text": "c.yeshiva",
+          "reply": "d.rYeshiva",
+          "effects": {
+            "flag": "gen_to=yeshiva",
+            "trust": {
+              "haredi": 2
+            }
+          }
+        },
+        {
+          "text": "c.skaters",
+          "reply": "d.rSkaters",
+          "effects": {
+            "flag": "gen_to=skaters",
+            "trust": {
+              "youth": 2
+            }
+          }
+        },
+        {
+          "text": "c.band",
+          "reply": "d.rBand",
+          "effects": {
+            "flag": "gen_to=band",
+            "scale": -1
+          }
+        }
+      ]
+    },
+    {
+      "type": "minigame",
+      "game": "tow",
+      "if": "gen_to=yeshiva",
+      "at": {
+        "poi": "great_synagogue",
+        "dx": 20,
+        "dz": 16
+      },
+      "params": {
+        "item": "generator",
+        "maxSpeed": 0.5
+      },
+      "obj": "obj.towYeshiva",
+      "dialogue": "d.towed",
+      "props": [
+        {
+          "hold": "generator_trailer",
+          "id": "gen",
+          "by": "player",
+          "how": "carry"
+        }
+      ],
+      "propsDone": [
+        {
+          "place": "gen",
+          "at": {
+            "poi": "great_synagogue",
+            "dx": 20,
+            "dz": 16
+          }
+        },
+        {
+          "show": "spotlight",
+          "id": "light",
+          "at": {
+            "poi": "great_synagogue",
+            "dx": 26,
+            "dz": 16
+          }
+        }
+      ]
+    },
+    {
+      "type": "minigame",
+      "game": "tow",
+      "if": "gen_to=skaters",
+      "at": {
+        "poi": "skate_park",
+        "dx": 14,
+        "dz": 14
+      },
+      "params": {
+        "item": "generator",
+        "maxSpeed": 0.5
+      },
+      "obj": "obj.towSkaters",
+      "dialogue": "d.towed",
+      "props": [
+        {
+          "hold": "generator_trailer",
+          "id": "gen",
+          "by": "player",
+          "how": "carry"
+        }
+      ],
+      "propsDone": [
+        {
+          "place": "gen",
+          "at": {
+            "poi": "skate_park",
+            "dx": 14,
+            "dz": 14
+          }
+        },
+        {
+          "show": "spotlight",
+          "id": "light",
+          "at": {
+            "poi": "skate_park",
+            "dx": 20,
+            "dz": 14
+          }
+        }
+      ]
+    },
+    {
+      "type": "minigame",
+      "game": "tow",
+      "if": "gen_to=band",
+      "at": {
+        "place": "Neve Dekalim",
+        "dx": 34,
+        "dz": 18
+      },
+      "params": {
+        "item": "generator",
+        "maxSpeed": 0.5
+      },
+      "obj": "obj.towBand",
+      "dialogue": "d.towed",
+      "props": [
+        {
+          "hold": "generator_trailer",
+          "id": "gen",
+          "by": "player",
+          "how": "carry"
+        }
+      ],
+      "propsDone": [
+        {
+          "place": "gen",
+          "at": {
+            "place": "Neve Dekalim",
+            "dx": 34,
+            "dz": 18
+          }
+        },
+        {
+          "show": "spotlight",
+          "id": "light",
+          "at": {
+            "place": "Neve Dekalim",
+            "dx": 40,
+            "dz": 18
+          }
+        }
+      ]
+    },
+    {
+      "type": "talk",
+      "if": "gen_to=yeshiva",
+      "npc": "yanki",
+      "gather": [
+        "ofir"
+      ],
+      "obj": "obj.yanki",
+      "dialogue": "d.yanki"
+    },
+    {
+      "type": "talk",
+      "if": "gen_to=skaters",
+      "npc": "itai",
+      "gather": [
+        "ofir"
+      ],
+      "obj": "obj.itai",
+      "dialogue": "d.itai"
+    },
+    {
+      "type": "talk",
+      "if": "gen_to=band",
+      "npc": "malul",
+      "gather": [
+        "ofir"
+      ],
+      "obj": "obj.malul",
+      "dialogue": "d.malul"
+    },
+    {
+      "type": "talk",
+      "npc": "ofir",
+      "obj": "obj.ofir",
+      "dialogue": "d.clip",
+      "props": [
+        {
+          "hold": "phone",
+          "id": "ofir_phone",
+          "by": "ofir"
+        }
+      ]
+    }
+  ],
+  "after": "page",
+  "scene": [
+    {
+      "show": "generator_trailer",
+      "id": "gen",
+      "at": {
+        "npc": "ronit",
+        "dx": 5,
+        "dz": 3
+      }
+    }
+  ],
+  "leave": [
+    {
+      "if": "gen_to=yeshiva",
+      "show": "generator_trailer",
+      "id": "gen",
+      "at": {
+        "poi": "great_synagogue",
+        "dx": 20,
+        "dz": 16
+      }
+    },
+    {
+      "if": "gen_to=yeshiva",
+      "show": "spotlight",
+      "id": "light",
+      "at": {
+        "poi": "great_synagogue",
+        "dx": 26,
+        "dz": 16
+      }
+    },
+    {
+      "if": "gen_to=skaters",
+      "show": "generator_trailer",
+      "id": "gen",
+      "at": {
+        "poi": "skate_park",
+        "dx": 14,
+        "dz": 14
+      }
+    },
+    {
+      "if": "gen_to=skaters",
+      "show": "spotlight",
+      "id": "light",
+      "at": {
+        "poi": "skate_park",
+        "dx": 20,
+        "dz": 14
+      }
+    },
+    {
+      "if": "gen_to=band",
+      "show": "generator_trailer",
+      "id": "gen",
+      "at": {
+        "place": "Neve Dekalim",
+        "dx": 34,
+        "dz": 18
+      }
+    },
+    {
+      "if": "gen_to=band",
+      "show": "spotlight",
+      "id": "light",
+      "at": {
+        "place": "Neve Dekalim",
+        "dx": 40,
+        "dz": 18
+      }
+    }
+  ]
+}

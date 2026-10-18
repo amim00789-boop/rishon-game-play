@@ -1,0 +1,135 @@
+{
+  "id": "q7_together",
+  "requires": [
+    "q6_wedding"
+  ],
+  "hum": 24,
+  "npcs": {
+    "savta": {
+      "archetype": "savta",
+      "at": {
+        "poi": "camel_cellars",
+        "dx": -24,
+        "dz": -30
+      }
+    },
+    "heckler": {
+      "archetype": "player_rishoni",
+      "at": {
+        "poi": "camel_cellars",
+        "dx": 10,
+        "dz": -8
+      },
+      "unlockOnly": true
+    }
+  },
+  "giver": "savta",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "find",
+      "item": "sticker",
+      "at": {
+        "poi": "great_synagogue",
+        "dx": 0,
+        "dz": 20
+      },
+      "radius": 60,
+      "obj": "obj.s1",
+      "dialogue": "d.s1"
+    },
+    {
+      "type": "find",
+      "item": "sticker",
+      "at": {
+        "poi": "founders_well"
+      },
+      "radius": 60,
+      "obj": "obj.s2",
+      "dialogue": "d.s2"
+    },
+    {
+      "type": "find",
+      "item": "sticker",
+      "at": {
+        "poi": "founders_square",
+        "dx": 0,
+        "dz": 30
+      },
+      "radius": 60,
+      "obj": "obj.s3",
+      "dialogue": "d.s3"
+    },
+    {
+      "type": "reach",
+      "at": {
+        "poi": "camel_cellars",
+        "dx": 4,
+        "dz": -16
+      },
+      "radius": 8,
+      "obj": "obj.door",
+      "dialogue": "d.door"
+    },
+    {
+      "type": "choice",
+      "npc": "heckler",
+      "obj": "obj.ask",
+      "objRetry": "obj.retry",
+      "dialogue": "d.ask",
+      "retry": "d.retry",
+      "options": [
+        {
+          "text": "c.o1",
+          "reply": "d.r1",
+          "good": false
+        },
+        {
+          "text": "c.o2",
+          "reply": "d.r2",
+          "good": false
+        },
+        {
+          "text": "c.o3",
+          "reply": "d.r3",
+          "good": true
+        }
+      ]
+    },
+    {
+      "type": "escort",
+      "npc": "heckler",
+      "at": {
+        "poi": "founders_square",
+        "dx": -10,
+        "dz": 20
+      },
+      "speed": 6.5,
+      "leash": 30,
+      "obj": "obj.meet",
+      "objWalk": "obj.walk",
+      "objWait": "obj.wait",
+      "start": "t.go",
+      "wait": "t.wait",
+      "dialogue": "d.square"
+    },
+    {
+      "type": "talk",
+      "npc": "grisha",
+      "gather": [
+        "savta",
+        "heckler",
+        "moshiko",
+        "alex",
+        "yanki",
+        "orit",
+        "shiri",
+        "avi",
+        "lena"
+      ],
+      "obj": "obj.final",
+      "dialogue": "d.outro"
+    }
+  ],
+  "clue": "clue"
+}

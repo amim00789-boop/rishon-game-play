@@ -1,0 +1,176 @@
+{
+  "id": "m07_race",
+  "act": 2,
+  "requires": [
+    "m06_repark"
+  ],
+  "npcs": {
+    "moshiko": {
+      "archetype": "mizrahi_street_guy",
+      "at": {
+        "poi": "beach_complex",
+        "dx": -14,
+        "dz": 8
+      }
+    },
+    "dasha": {
+      "archetype": "jogger",
+      "at": {
+        "poi": "beach_complex",
+        "dx": 6,
+        "dz": 12
+      },
+      "fallback": "russian_speaking_young_woman"
+    },
+    "adir": {
+      "archetype": "adir",
+      "at": {
+        "poi": "beach_terraces",
+        "dx": 10,
+        "dz": -6
+      },
+      "fallback": "beach_guy"
+    }
+  },
+  "giver": "moshiko",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "dasha",
+      "obj": "obj.dasha",
+      "dialogue": "d.dasha"
+    },
+    {
+      "type": "minigame",
+      "game": "race",
+      "npc": "dasha",
+      "hide": [
+        "dasha"
+      ],
+      "intro": "d.ready",
+      "params": {
+        "checkpoints": [
+          {
+            "poi": "beach_stairs",
+            "free": true
+          },
+          {
+            "poi": "beach_kiosk",
+            "free": true
+          },
+          {
+            "poi": "beach_lifeguards",
+            "free": true
+          },
+          {
+            "poi": "matkot_spot",
+            "free": true
+          },
+          {
+            "poi": "beach_kiosk",
+            "dx": 10,
+            "dz": -20,
+            "free": true
+          },
+          {
+            "poi": "beach_terraces",
+            "free": true
+          }
+        ],
+        "start": {
+          "poi": "beach_complex",
+          "dx": -4,
+          "dz": 4,
+          "free": true
+        },
+        "modes": [
+          "scooter",
+          "bike"
+        ],
+        "rivals": [
+          {
+            "id": "dasha",
+            "archetype": "jogger",
+            "mode": "walk",
+            "speed": 15
+          },
+          {
+            "id": "crew1",
+            "archetype": "mizrahi_street_guy",
+            "mode": "scooter",
+            "speed": 19
+          },
+          {
+            "id": "crew2",
+            "archetype": "beach_guy",
+            "mode": "scooter",
+            "speed": 18
+          }
+        ],
+        "place": 2,
+        "bumpPenalty": 3,
+        "radius": 9,
+        "shortcut": {
+          "at": {
+            "poi": "beach_kiosk",
+            "dx": -6,
+            "dz": 10,
+            "free": true
+          },
+          "radius": 10,
+          "effects": {
+            "scale": -1,
+            "flag": "cafe_shortcut"
+          }
+        }
+      },
+      "obj": "obj.race",
+      "dialogue": "d.finish"
+    },
+    {
+      "type": "talk",
+      "npc": "adir",
+      "gather": [
+        "dasha",
+        "moshiko"
+      ],
+      "obj": "obj.adir",
+      "dialogue": {
+        "cafe_shortcut": "d.outroCafe",
+        "default": "d.outro"
+      },
+      "effects": {
+        "trust": {
+          "russian": 1,
+          "street": 1
+        }
+      },
+      "props": [
+        {
+          "put": "adir",
+          "at": {
+            "poi": "beach_terraces",
+            "dx": -70,
+            "dz": 30
+          }
+        },
+        {
+          "walk": "adir",
+          "to": {
+            "poi": "beach_terraces",
+            "dx": 10,
+            "dz": -6
+          }
+        },
+        {
+          "hold": "drum_kit",
+          "id": "kit",
+          "by": "adir",
+          "how": "back"
+        }
+      ]
+    }
+  ],
+  "after": "page"
+}

@@ -1,0 +1,65 @@
+{
+  "id": "q2_parking",
+  "requires": [
+    "q1_speaker"
+  ],
+  "hum": 12,
+  "npcs": {
+    "yanki": {
+      "archetype": "haredi_man",
+      "at": {
+        "poi": "founders_square",
+        "dx": -18,
+        "dz": 14
+      }
+    },
+    "grisha": {
+      "archetype": "russian_speaking_grandpa",
+      "at": {
+        "poi": "founders_square",
+        "dx": 26,
+        "dz": 18
+      }
+    }
+  },
+  "giver": "yanki",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "grisha",
+      "obj": "obj.grisha",
+      "dialogue": "d.grisha"
+    },
+    {
+      "type": "reach",
+      "at": {
+        "poi": "water_tower_dropoff"
+      },
+      "radius": 9,
+      "obj": "obj.shade",
+      "dialogue": "d.shade"
+    },
+    {
+      "type": "reach",
+      "at": {
+        "poi": "great_synagogue",
+        "dx": 0,
+        "dz": 16
+      },
+      "radius": 9,
+      "obj": "obj.measure",
+      "dialogue": "d.measure"
+    },
+    {
+      "type": "talk",
+      "npc": "yanki",
+      "gather": [
+        "grisha"
+      ],
+      "obj": "obj.back",
+      "dialogue": "d.outro"
+    }
+  ],
+  "clue": "clue"
+}

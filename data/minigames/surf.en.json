@@ -1,0 +1,149 @@
+{
+  "title": "Surf session",
+  "balance": "Balance",
+  "wave": "Wave {i}/{n}",
+  "score": "{score} / {goal}",
+  "hint": {
+    "paddleOut": "Hold {k:W} to paddle out to the lineup · {k:A} {k:D} steer",
+    "wait": "Sit tight and wait for a set…",
+    "set": "Set's coming! Get ready…",
+    "go": "Now! Hold {k:W} and paddle for it",
+    "catch": "Paddle! Press {k:Space} when the wave lifts the board",
+    "ride": "{k:A} {k:D} carve · {k:W} pump · {k:Space} air",
+    "air": "{k:A} {k:D} spin · land facing down the line"
+  },
+  "pop": {
+    "carve": "Carve +{p}",
+    "air": "Air! +{p}",
+    "spin": "360 air! +{p}",
+    "inside": "All the way in! +{p}",
+    "kickout": "Clean kick-out +{p}",
+    "early": "Too early!",
+    "missed": "It rolled under you",
+    "caught": "The whitewater got you",
+    "wipe": "Wipeout! No harm done",
+    "lean": "Leaned too far!",
+    "landing": "Landed backwards!"
+  },
+  "card": {
+    "wave": "Wave {i}: {score}",
+    "passTitle": "What a session!",
+    "failTitle": "So close!",
+    "summary": "Total {score} · best wave {best}",
+    "need": "You needed {goal}.",
+    "assist": "The waves will be friendlier next time.",
+    "quitTitle": "Head back to the beach?"
+  },
+  "name": {
+    "malul": "Malul",
+    "ofir": "Ofir",
+    "dekel": "Dekel",
+    "adir": "Adir"
+  },
+  "cheer": {
+    "malul": {
+      "pop": [
+        "Up you get, up up up!",
+        "Yalla, it's yours!"
+      ],
+      "carve": [
+        "That's a turn, bro!",
+        "Smooth! Like butter!"
+      ],
+      "air": [
+        "Bro is FLYING!",
+        "Ooh, now we're talking!"
+      ],
+      "wipe": [
+        "Happens to the best. Mostly to me.",
+        "Shake it off, the next one's better!"
+      ],
+      "ride": [
+        "Respect, man. Real respect.",
+        "That one's going in the album!"
+      ],
+      "self": [
+        "Did you see that? Tell me you saw that.",
+        "Rishon beach, ten points!"
+      ]
+    },
+    "ofir": {
+      "pop": [
+        "Go go go go!",
+        "You're on it!"
+      ],
+      "carve": [
+        "Ooh, nice line!",
+        "Sweet turn!"
+      ],
+      "air": [
+        "No way! Air!",
+        "Again! Do it again!"
+      ],
+      "wipe": [
+        "Ha! The sea says hi!",
+        "You good? Back out here!"
+      ],
+      "ride": [
+        "Party wave next time!",
+        "Ahla wave, ahla!"
+      ],
+      "self": [
+        "Malul, eat your heart out!",
+        "Did I just do that?!"
+      ]
+    },
+    "dekel": {
+      "pop": [
+        "Yes! You're standing!",
+        "Stand, stand, stand!"
+      ],
+      "carve": [
+        "Beautiful! Beautiful!",
+        "Look at him go!"
+      ],
+      "air": [
+        "He's in the air! Amazing!",
+        "Wow, wow, wow!"
+      ],
+      "wipe": [
+        "Don't worry, I do that every wave!",
+        "Salt water is good for you!"
+      ],
+      "ride": [
+        "Kol hakavod, really!",
+        "What a wave, man!"
+      ],
+      "self": [
+        "Okay, the sea won that round.",
+        "That was on purpose. Sort of."
+      ]
+    },
+    "adir": {
+      "pop": [
+        "Up! Like a champ!",
+        "Ride it, ride it!"
+      ],
+      "carve": [
+        "Big turn, big respect.",
+        "Clean."
+      ],
+      "air": [
+        "Okay, show-off!",
+        "Since when do you fly?"
+      ],
+      "wipe": [
+        "Classic. Welcome to the club.",
+        "Ten for the splash!"
+      ],
+      "ride": [
+        "Not bad. Not bad at all.",
+        "Fine, you can surf."
+      ],
+      "self": [
+        "Nobody saw that. Right?",
+        "The board slipped, I swear."
+      ]
+    }
+  }
+}

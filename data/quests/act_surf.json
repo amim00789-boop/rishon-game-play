@@ -1,0 +1,38 @@
+{
+  "id": "act_surf",
+  "needsPoi": "surf_club_beach",
+  "icon": "🏄",
+  "npcs": {
+    "rental": {
+      "archetype": "beach_guy",
+      "at": {
+        "poi": "surf_club_beach",
+        "dx": 6,
+        "dz": 4
+      }
+    }
+  },
+  "host": "rental",
+  "dialogue": "d.hello",
+  "options": [
+    {
+      "text": "c.surf",
+      "game": "surf",
+      "params": {
+        "friends": true,
+        "waves": 3,
+        "goal": 1500
+      },
+      "intro": "d.go",
+      "after": "d.after",
+      "afterFail": "d.again",
+      "introFirst": "d.first",
+      "afterBest": "d.best",
+      "afterQuit": "d.quit"
+    },
+    {
+      "text": "c.later",
+      "reply": "d.later"
+    }
+  ]
+}

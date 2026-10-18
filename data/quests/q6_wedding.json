@@ -1,0 +1,121 @@
+{
+  "id": "q6_wedding",
+  "requires": [
+    "q5_whatsapp"
+  ],
+  "hum": 14,
+  "npcs": {
+    "avi": {
+      "archetype": "dati_leumi_man",
+      "at": {
+        "poi": "cinema_city",
+        "dx": -40,
+        "dz": 30
+      }
+    },
+    "moshiko": {
+      "archetype": "mizrahi_street_guy",
+      "at": {
+        "poi": "cinema_city",
+        "dx": -20,
+        "dz": 44
+      }
+    },
+    "orit": {
+      "archetype": "dati_leumi_woman",
+      "at": {
+        "poi": "station_moshe_dayan",
+        "dx": 24,
+        "dz": 18
+      }
+    },
+    "savta": {
+      "archetype": "savta",
+      "at": {
+        "busStop": true,
+        "poi": "cinema_city",
+        "dx": 60,
+        "dz": 120
+      }
+    }
+  },
+  "giver": "avi",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "choice",
+      "npc": "moshiko",
+      "obj": "obj.ask",
+      "objRetry": "obj.retry",
+      "dialogue": "d.ask",
+      "retry": "d.retry",
+      "options": [
+        {
+          "text": "c.o1",
+          "reply": "d.r1",
+          "good": false
+        },
+        {
+          "text": "c.o2",
+          "reply": "d.r2",
+          "good": false
+        },
+        {
+          "text": "c.o3",
+          "reply": "d.r3",
+          "good": true
+        }
+      ]
+    },
+    {
+      "type": "timed",
+      "item": "tray",
+      "pickup": {
+        "poi": "station_moshe_dayan",
+        "dx": 18,
+        "dz": 14
+      },
+      "at": {
+        "poi": "cinema_city",
+        "dx": -34,
+        "dz": 36
+      },
+      "modes": [
+        "scooter",
+        "bike"
+      ],
+      "timeFactor": 1.8,
+      "obj": "obj.pickup",
+      "objRun": "obj.run",
+      "dialogue": "d.delivered"
+    },
+    {
+      "type": "escort",
+      "npc": "savta",
+      "at": {
+        "poi": "cinema_city",
+        "dx": -30,
+        "dz": 40
+      },
+      "speed": 7,
+      "leash": 28,
+      "obj": "obj.meet",
+      "objWalk": "obj.walk",
+      "objWait": "obj.wait",
+      "start": "t.go",
+      "wait": "t.wait",
+      "dialogue": "d.arrived"
+    },
+    {
+      "type": "talk",
+      "npc": "avi",
+      "gather": [
+        "moshiko",
+        "savta"
+      ],
+      "obj": "obj.back",
+      "dialogue": "d.outro"
+    }
+  ],
+  "clue": "clue"
+}

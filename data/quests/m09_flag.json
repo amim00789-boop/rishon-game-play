@@ -1,0 +1,387 @@
+{
+  "id": "m09_flag",
+  "act": 2,
+  "requires": [
+    "m08_skate"
+  ],
+  "npcs": {
+    "ronit": {
+      "archetype": "office_worker",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": 6,
+        "dz": -8
+      },
+      "fallback": "secular_woman"
+    },
+    "alex": {
+      "archetype": "hipster",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 22,
+        "dz": 10
+      }
+    },
+    "avi": {
+      "archetype": "dati_leumi_man",
+      "at": {
+        "poi": "gan_hair",
+        "dx": -22,
+        "dz": 10
+      }
+    },
+    "shiri": {
+      "archetype": "secular_woman",
+      "at": {
+        "poi": "gan_hair_palms",
+        "dx": 4,
+        "dz": 0
+      }
+    },
+    "orit": {
+      "archetype": "dati_leumi_woman",
+      "at": {
+        "poi": "gan_hair_palms",
+        "dx": 7,
+        "dz": 1
+      }
+    }
+  },
+  "giver": "ronit",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "alex",
+      "obj": "obj.alex",
+      "dialogue": "d.alex"
+    },
+    {
+      "type": "talk",
+      "npc": "avi",
+      "obj": "obj.avi",
+      "dialogue": "d.avi"
+    },
+    {
+      "type": "minigame",
+      "game": "photo",
+      "intro": "d.list",
+      "npc": "ronit",
+      "params": {
+        "need": 6,
+        "targets": [
+          {
+            "id": "tower",
+            "at": {
+              "poi": "water_tower"
+            },
+            "y": 24,
+            "radius": 120,
+            "label": "quest.m09_flag.shot.tower",
+            "captions": [
+              {
+                "text": "quest.m09_flag.cap.tower.kind",
+                "tone": "kind",
+                "effects": {
+                  "scale": 1
+                }
+              },
+              {
+                "text": "quest.m09_flag.cap.tower.funny",
+                "tone": "funny"
+              },
+              {
+                "text": "quest.m09_flag.cap.tower.snark",
+                "tone": "snark",
+                "effects": {
+                  "scale": -1,
+                  "flag": "snark"
+                }
+              }
+            ]
+          },
+          {
+            "id": "synagogue",
+            "at": {
+              "poi": "great_synagogue"
+            },
+            "y": 12,
+            "radius": 120,
+            "label": "quest.m09_flag.shot.synagogue",
+            "captions": [
+              {
+                "text": "quest.m09_flag.cap.synagogue.kind",
+                "tone": "kind",
+                "effects": {
+                  "scale": 1
+                }
+              },
+              {
+                "text": "quest.m09_flag.cap.synagogue.funny",
+                "tone": "funny"
+              },
+              {
+                "text": "quest.m09_flag.cap.synagogue.snark",
+                "tone": "snark",
+                "effects": {
+                  "scale": -1,
+                  "flag": "snark"
+                }
+              }
+            ]
+          },
+          {
+            "id": "well",
+            "at": {
+              "poi": "founders_well"
+            },
+            "y": 3,
+            "radius": 120,
+            "label": "quest.m09_flag.shot.well",
+            "captions": [
+              {
+                "text": "quest.m09_flag.cap.well.kind",
+                "tone": "kind",
+                "effects": {
+                  "scale": 1
+                }
+              },
+              {
+                "text": "quest.m09_flag.cap.well.funny",
+                "tone": "funny"
+              },
+              {
+                "text": "quest.m09_flag.cap.well.snark",
+                "tone": "snark",
+                "effects": {
+                  "scale": -1,
+                  "flag": "snark"
+                }
+              }
+            ]
+          },
+          {
+            "id": "pond",
+            "at": {
+              "poi": "gan_hair_pond"
+            },
+            "y": 1,
+            "radius": 120,
+            "label": "quest.m09_flag.shot.pond",
+            "captions": [
+              {
+                "text": "quest.m09_flag.cap.pond.kind",
+                "tone": "kind",
+                "effects": {
+                  "scale": 1
+                }
+              },
+              {
+                "text": "quest.m09_flag.cap.pond.funny",
+                "tone": "funny"
+              },
+              {
+                "text": "quest.m09_flag.cap.pond.snark",
+                "tone": "snark",
+                "effects": {
+                  "scale": -1,
+                  "flag": "snark"
+                }
+              }
+            ]
+          },
+          {
+            "id": "chess",
+            "at": {
+              "poi": "gan_hair_chess"
+            },
+            "y": 2,
+            "radius": 120,
+            "label": "quest.m09_flag.shot.chess",
+            "captions": [
+              {
+                "text": "quest.m09_flag.cap.chess.kind",
+                "tone": "kind",
+                "effects": {
+                  "scale": 1
+                }
+              },
+              {
+                "text": "quest.m09_flag.cap.chess.funny",
+                "tone": "funny"
+              },
+              {
+                "text": "quest.m09_flag.cap.chess.snark",
+                "tone": "snark",
+                "effects": {
+                  "scale": -1,
+                  "flag": "snark"
+                }
+              }
+            ]
+          },
+          {
+            "id": "hall",
+            "at": {
+              "poi": "city_hall_plaza",
+              "dx": 18,
+              "dz": 8
+            },
+            "y": 8,
+            "radius": 120,
+            "label": "quest.m09_flag.shot.hall",
+            "captions": [
+              {
+                "text": "quest.m09_flag.cap.hall.kind",
+                "tone": "kind",
+                "effects": {
+                  "scale": 1
+                }
+              },
+              {
+                "text": "quest.m09_flag.cap.hall.funny",
+                "tone": "funny"
+              },
+              {
+                "text": "quest.m09_flag.cap.hall.snark",
+                "tone": "snark",
+                "effects": {
+                  "scale": -1,
+                  "flag": "snark"
+                }
+              }
+            ]
+          },
+          {
+            "id": "flags",
+            "at": {
+              "poi": "city_hall_plaza",
+              "dx": -12,
+              "dz": -4
+            },
+            "y": 7,
+            "radius": 120,
+            "label": "quest.m09_flag.shot.flags",
+            "captions": [
+              {
+                "text": "quest.m09_flag.cap.flags.kind",
+                "tone": "kind",
+                "effects": {
+                  "scale": 1
+                }
+              },
+              {
+                "text": "quest.m09_flag.cap.flags.funny",
+                "tone": "funny"
+              },
+              {
+                "text": "quest.m09_flag.cap.flags.snark",
+                "tone": "snark",
+                "effects": {
+                  "scale": -1,
+                  "flag": "snark"
+                }
+              }
+            ]
+          },
+          {
+            "id": "bench",
+            "at": {
+              "npc": "shiri",
+              "dx": 1.5
+            },
+            "y": 3,
+            "radius": 120,
+            "label": "quest.m09_flag.shot.bench",
+            "captions": [
+              {
+                "text": "quest.m09_flag.cap.bench.kind",
+                "tone": "kind",
+                "effects": {
+                  "scale": 1
+                }
+              },
+              {
+                "text": "quest.m09_flag.cap.bench.funny",
+                "tone": "funny"
+              },
+              {
+                "text": "quest.m09_flag.cap.bench.snark",
+                "tone": "snark",
+                "effects": {
+                  "scale": -1,
+                  "flag": "snark"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "obj": "obj.photos",
+      "dialogue": "d.photos"
+    },
+    {
+      "type": "talk",
+      "npc": "ronit",
+      "gather": [
+        "alex",
+        "avi"
+      ],
+      "obj": "obj.judge",
+      "dialogue": {
+        "snark": "d.outroSnark",
+        "default": "d.outro"
+      },
+      "effects": {
+        "trust": {
+          "secular": 1,
+          "dati": 1
+        }
+      }
+    }
+  ],
+  "after": {
+    "snark": "pageSnark",
+    "default": "page"
+  },
+  "scene": [
+    {
+      "show": "flag_table",
+      "id": "alex_table",
+      "at": {
+        "npc": "alex",
+        "dx": 0,
+        "dz": 2.4
+      }
+    },
+    {
+      "show": "flag_table",
+      "id": "avi_table",
+      "at": {
+        "npc": "avi",
+        "dx": 0,
+        "dz": 2.4
+      }
+    }
+  ],
+  "leave": [
+    {
+      "show": "flag_table",
+      "id": "alex_table",
+      "at": {
+        "npc": "alex",
+        "dx": 0,
+        "dz": 2.4
+      }
+    },
+    {
+      "show": "flag_table",
+      "id": "avi_table",
+      "at": {
+        "npc": "avi",
+        "dx": 0,
+        "dz": 2.4
+      }
+    }
+  ]
+}

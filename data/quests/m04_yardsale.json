@@ -1,0 +1,224 @@
+{
+  "id": "m04_yardsale",
+  "act": 1,
+  "requires": [
+    "m03_jachnun"
+  ],
+  "npcs": {
+    "malul": {
+      "archetype": "malul",
+      "fallback": "beach_guy",
+      "at": {
+        "place": "Neve Dekalim",
+        "dx": 40,
+        "dz": 24
+      }
+    },
+    "avi": {
+      "archetype": "dati_leumi_man",
+      "at": {
+        "place": "Neve Dekalim",
+        "dx": -40,
+        "dz": -30
+      }
+    },
+    "lena": {
+      "archetype": "russian_speaking_young_woman",
+      "at": {
+        "place": "Neve Dekalim",
+        "dx": -10,
+        "dz": -52
+      }
+    },
+    "merav": {
+      "archetype": "mom_stroller",
+      "fallback": "secular_woman",
+      "at": {
+        "place": "Neve Dekalim",
+        "dx": -70,
+        "dz": 10
+      }
+    },
+    "nehorai": {
+      "archetype": "kid",
+      "at": {
+        "place": "Neve Dekalim",
+        "dx": 10,
+        "dz": -90
+      }
+    },
+    "shlomo": {
+      "archetype": "older_man",
+      "fallback": "russian_speaking_grandpa",
+      "at": {
+        "place": "Neve Dekalim",
+        "dx": -80,
+        "dz": -70
+      }
+    }
+  },
+  "giver": "malul",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "avi",
+      "obj": "obj.avi",
+      "dialogue": "d.avi"
+    },
+    {
+      "type": "talk",
+      "npc": "lena",
+      "obj": "obj.lena",
+      "dialogue": "d.lena"
+    },
+    {
+      "type": "barter",
+      "start": [
+        "umbrella"
+      ],
+      "goal": "drum",
+      "obj": "obj.trade",
+      "no": "d.no",
+      "chain": [
+        {
+          "npc": "merav",
+          "wants": "umbrella",
+          "gives": "wheel",
+          "ask": "d.merav",
+          "yes": "d.meravYes",
+          "props": [
+            {
+              "show": "umbrella",
+              "id": "umbrella",
+              "at": {
+                "npc": "merav",
+                "dx": 0.6,
+                "dz": 1.6
+              }
+            }
+          ]
+        },
+        {
+          "npc": "nehorai",
+          "wants": "wheel",
+          "gives": "shofar",
+          "ask": "d.nehorai",
+          "yes": "d.nehoraiYes",
+          "props": [
+            {
+              "show": "wheel",
+              "id": "wheel",
+              "at": {
+                "npc": "nehorai",
+                "dx": 0.9,
+                "dz": 0.9
+              }
+            }
+          ]
+        },
+        {
+          "npc": "shlomo",
+          "wants": "shofar",
+          "gives": "cups",
+          "ask": "d.shlomo",
+          "yes": "d.shlomoYes",
+          "props": [
+            {
+              "hold": "shofar",
+              "id": "shofar",
+              "by": "shlomo"
+            }
+          ]
+        },
+        {
+          "npc": "lena",
+          "wants": "cups",
+          "gives": "drum",
+          "ask": "d.lenaAsk",
+          "yes": "d.lenaYes",
+          "props": [
+            {
+              "show": "cups",
+              "id": "cups",
+              "at": {
+                "npc": "lena",
+                "dx": 0.4,
+                "dz": 2.2
+              }
+            }
+          ]
+        }
+      ],
+      "dialogue": "d.gotDrum"
+    },
+    {
+      "type": "talk",
+      "npc": "malul",
+      "gather": [
+        "avi",
+        "lena"
+      ],
+      "obj": "obj.back",
+      "dialogue": "d.outro",
+      "effects": {
+        "trust": {
+          "dati": 1,
+          "russian": 1
+        }
+      },
+      "propsDone": [
+        {
+          "show": "bass_drum",
+          "id": "drum",
+          "at": {
+            "npc": "malul",
+            "dx": 1.8,
+            "dz": 1
+          }
+        }
+      ]
+    }
+  ],
+  "after": "page",
+  "scene": [
+    {
+      "show": "yard_sale",
+      "id": "avi_sale",
+      "at": {
+        "npc": "avi",
+        "dx": 0,
+        "dz": 3
+      }
+    },
+    {
+      "show": "yard_sale",
+      "id": "lena_sale",
+      "at": {
+        "npc": "lena",
+        "dx": 0,
+        "dz": 3
+      }
+    }
+  ],
+  "leave": [
+    {
+      "show": "yard_sale",
+      "id": "avi_sale",
+      "at": {
+        "npc": "avi",
+        "dx": 0,
+        "dz": 3
+      }
+    },
+    {
+      "show": "bass_drum",
+      "id": "drum",
+      "at": {
+        "npc": "malul",
+        "dx": 1.8,
+        "dz": 1
+      }
+    }
+  ]
+}

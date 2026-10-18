@@ -1,0 +1,187 @@
+{
+  "id": "m13_rothschild",
+  "act": 2,
+  "requires": [
+    "m12_sayitback"
+  ],
+  "npcs": {
+    "orit": {
+      "archetype": "dati_leumi_woman",
+      "at": {
+        "poi": "water_tower_dropoff",
+        "dx": -30,
+        "dz": 8
+      }
+    },
+    "moshiko": {
+      "archetype": "mizrahi_street_guy",
+      "at": {
+        "poi": "water_tower_dropoff",
+        "dx": -60,
+        "dz": -6
+      }
+    },
+    "grisha": {
+      "archetype": "russian_speaking_grandpa",
+      "at": {
+        "poi": "water_tower_dropoff",
+        "dx": -36,
+        "dz": 14
+      }
+    },
+    "alex": {
+      "archetype": "hipster",
+      "at": {
+        "poi": "water_tower_dropoff",
+        "dx": -80,
+        "dz": -10
+      }
+    },
+    "malul": {
+      "archetype": "malul",
+      "at": {
+        "poi": "water_tower_dropoff",
+        "dx": 10,
+        "dz": -20
+      },
+      "fallback": "beach_guy"
+    },
+    "dekel": {
+      "archetype": "dekel",
+      "at": {
+        "poi": "water_tower_dropoff",
+        "dx": 16,
+        "dz": -16
+      },
+      "fallback": "dati_leumi_man"
+    },
+    "ofir": {
+      "archetype": "ofir",
+      "at": {
+        "poi": "water_tower_dropoff",
+        "dx": 14,
+        "dz": -26
+      },
+      "fallback": "mizrahi_street_guy"
+    },
+    "adir": {
+      "archetype": "adir",
+      "at": {
+        "poi": "water_tower_dropoff",
+        "dx": 20,
+        "dz": -22
+      },
+      "fallback": "beach_guy"
+    }
+  },
+  "giver": "orit",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "grisha",
+      "obj": "obj.grisha",
+      "dialogue": "d.grisha"
+    },
+    {
+      "type": "talk",
+      "npc": "moshiko",
+      "obj": "obj.moshiko",
+      "dialogue": "d.moshiko"
+    },
+    {
+      "type": "minigame",
+      "game": "mixer",
+      "npc": "moshiko",
+      "intro": "d.desk",
+      "params": {
+        "channels": 4,
+        "songs": 3,
+        "seconds": 90,
+        "windowMax": 0.7,
+        "floorMin": 0.4
+      },
+      "obj": "obj.mix",
+      "dialogue": "d.mixed",
+      "props": [
+        {
+          "show": "mixer_desk",
+          "id": "desk",
+          "at": {
+            "npc": "moshiko",
+            "dx": 0,
+            "dz": 2.2
+          }
+        }
+      ],
+      "propsDone": [
+        {
+          "remove": "desk"
+        }
+      ]
+    },
+    {
+      "type": "talk",
+      "npc": "orit",
+      "gather": [
+        "moshiko",
+        "grisha",
+        "alex"
+      ],
+      "obj": "obj.rota",
+      "dialogue": "d.rota",
+      "effects": {
+        "trust": {
+          "dati": 1,
+          "street": 1,
+          "secular": 1
+        }
+      }
+    },
+    {
+      "type": "talk",
+      "npc": "malul",
+      "gather": [
+        "dekel",
+        "ofir",
+        "adir"
+      ],
+      "obj": "obj.band",
+      "dialogue": "d.fight",
+      "effects": {
+        "flag": "band_split"
+      },
+      "propsDone": [
+        {
+          "hold": "drum_kit",
+          "id": "kit",
+          "by": "adir",
+          "how": "back"
+        }
+      ]
+    }
+  ],
+  "after": "page",
+  "scene": [
+    {
+      "show": "speaker",
+      "id": "barspk",
+      "at": {
+        "npc": "moshiko",
+        "dx": -3,
+        "dz": 0
+      }
+    }
+  ],
+  "leave": [
+    {
+      "show": "speaker",
+      "id": "barspk",
+      "at": {
+        "npc": "moshiko",
+        "dx": -3,
+        "dz": 0
+      }
+    }
+  ]
+}

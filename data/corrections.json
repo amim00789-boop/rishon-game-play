@@ -1,0 +1,1426 @@
+{
+ "meta": {
+  "checked": "2026-10-15",
+  "bbox": [
+   31.945,
+   34.725,
+   32.005,
+   34.81
+  ],
+  "osm_base": "2026-10-15T00:51:27Z (same as data/rishon.raw.json)",
+  "applies_to": "tools/fetch_osm.py bake step (terrain agent). Coordinates are WGS84 lat,lon.",
+  "sources": [
+   "OpenStreetMap API 0.6 way history + changesets (api.openstreetmap.org), read 2026-10-15",
+   "Overpass API (overpass-api.de), queried 2026-10-15",
+   "OSM notes API, bbox, 2023-2026",
+   "Esri World Imagery Wayback release 2026-09-24 (id 63116); capture date for the whole bbox 2025-02-26 (Vantor, metadata layer World_Imagery_Metadata_2026_r09)",
+   "Mapillary graph API via the Mapillary web app (www.mapillary.com/app), 2026-10-15",
+   "Sentinel-2 L2A via Microsoft Planetary Computer, 2024-06..2026-09-21 (10 m, inconclusive for junction layout)",
+   "he.wikipedia articles on the Gush Dan Metronit Brown Line (rev 2026-07-05) and the Dankal Green Line",
+   "be106.net/231/148590 (2026-06, Brown Line works on Levi Eshkol / Sderot Yitzhak Rabin / HaHistadrut; search snippet only, page is behind a bot check)",
+   "be106.net/231/161586 (2026-10, Levi Eshkol one lane each way for ~7 months, Moshe Dayan..HaYayin; search snippet only)",
+   "mekomonrishon.co.il 2026-10-15, new traffic layout at the Avraham Bar / Yeladei Tehran junction (Green Line works from 2026-10-18)",
+   "rishonet.com 2025-11-10 and bizzness.net 2025-12-23 (Brown Line works start, project runs to 2028)",
+   "Founder eyewitness report via the lead agent, 2026-10-15 (Kikar Rabin is now signalised)"
+  ]
+ },
+ "remove": [],
+ "add_ways": [
+  {
+   "kind": "secondary",
+   "name": "רוטשילד",
+   "name_en": "Rothschild",
+   "osm_type": "way",
+   "osm_id": 546422160,
+   "points_latlon": [
+    [
+     31.9645061,
+     34.7931292
+    ],
+    [
+     31.964515,
+     34.79316
+    ],
+    [
+     31.964528,
+     34.7931889
+    ],
+    [
+     31.9645358,
+     34.7932091
+    ],
+    [
+     31.9645409,
+     34.7932263
+    ]
+   ],
+   "evidence": {
+    "why": "Rothschild main street: 9 m piece retagged for Brown Line BRT works (changeset comment 'eastbound lane closed for works'); fetch_osm.py drops highway=construction so the game shows a hole in a main road that is still physically there.",
+    "osm": "https://www.openstreetmap.org/way/546422160 (now highway=construction, v8 2026-09-28 by Sanniu, changeset 189661212; previous highway=secondary as of 2026-05-27)",
+    "confidence": "high"
+   }
+  },
+  {
+   "kind": "tertiary",
+   "name": "רוטשילד",
+   "name_en": "Rothschild",
+   "osm_type": "way",
+   "osm_id": 542828139,
+   "points_latlon": [
+    [
+     31.9640611,
+     34.8029271
+    ],
+    [
+     31.9640594,
+     34.8029171
+    ],
+    [
+     31.9640302,
+     34.8027456
+    ]
+   ],
+   "evidence": {
+    "why": "Rothschild: 17 m piece retagged 'closed for roadworks' (Brown Line). Road still exists; game shows a gap.",
+    "osm": "https://www.openstreetmap.org/way/542828139 (now highway=construction, v8 2026-09-28 by Sanniu, changeset 189658924; previous highway=tertiary as of 2026-05-27)",
+    "confidence": "high"
+   }
+  },
+  {
+   "kind": "tertiary",
+   "name": "ישראל גלילי",
+   "name_en": "Israel Galili",
+   "osm_type": "way",
+   "osm_id": 479049990,
+   "points_latlon": [
+    [
+     31.9723311,
+     34.7751716
+    ],
+    [
+     31.9723578,
+     34.7750087
+    ]
+   ],
+   "evidence": {
+    "why": "Israel Galili at Levi Eshkol, 100 m from Kikar Rabin: retagged 2026-09-28 'closed for roadworks'. Road and junction mouth exist (Esri imagery 2025-02-26); game shows the street disconnected from Levi Eshkol.",
+    "osm": "https://www.openstreetmap.org/way/479049990 (now highway=construction, v4 2026-09-28 by Sanniu, changeset 189658826; previous highway=tertiary as of 2023-10-14)",
+    "confidence": "high"
+   }
+  },
+  {
+   "kind": "tertiary",
+   "name": "ישראל גלילי",
+   "name_en": "Israel Galili",
+   "osm_type": "way",
+   "osm_id": 1563009309,
+   "points_latlon": [
+    [
+     31.972093,
+     34.7756211
+    ],
+    [
+     31.9722713,
+     34.7752885
+    ],
+    [
+     31.9723311,
+     34.7751716
+    ]
+   ],
+   "evidence": {
+    "why": "Israel Galili split piece (same works, 2026-09-28).",
+    "osm": "https://www.openstreetmap.org/way/1563009309 (highway=construction since 2026-09-28, last edit 2026-09-28)",
+    "confidence": "high"
+   }
+  },
+  {
+   "kind": "tertiary",
+   "name": "ישראל גלילי",
+   "name_en": "Israel Galili",
+   "osm_type": "way",
+   "osm_id": 1563009310,
+   "points_latlon": [
+    [
+     31.9723578,
+     34.7750087
+    ],
+    [
+     31.9722635,
+     34.775106
+    ],
+    [
+     31.9721966,
+     34.7752363
+    ],
+    [
+     31.9719401,
+     34.7757126
+    ]
+   ],
+   "evidence": {
+    "why": "Israel Galili split piece (same works, 2026-09-28).",
+    "osm": "https://www.openstreetmap.org/way/1563009310 (highway=construction since 2026-09-28, last edit 2026-09-28)",
+    "confidence": "high"
+   }
+  },
+  {
+   "kind": "tertiary",
+   "name": "חסידי אומות העולם",
+   "name_en": "Hasidei Umot HaOlam",
+   "osm_type": "way",
+   "osm_id": 1563774670,
+   "points_latlon": [
+    [
+     31.9778596,
+     34.778252
+    ],
+    [
+     31.9777758,
+     34.7783795
+    ],
+    [
+     31.9777337,
+     34.7784651
+    ],
+    [
+     31.9776491,
+     34.7787416
+    ]
+   ],
+   "evidence": {
+    "why": "Hasidei Umot HaOlam split piece retagged 'closed for works' 2026-09-30; existing street.",
+    "osm": "https://www.openstreetmap.org/way/1563774670 (highway=construction since 2026-09-30, last edit 2026-09-30)",
+    "confidence": "high"
+   }
+  },
+  {
+   "kind": "tertiary",
+   "name": "חסידי אומות העולם",
+   "name_en": "Hasidei Umot HaOlam",
+   "osm_type": "way",
+   "osm_id": 1563774671,
+   "points_latlon": [
+    [
+     31.977729,
+     34.7788019
+    ],
+    [
+     31.9778175,
+     34.7785048
+    ],
+    [
+     31.9778409,
+     34.7784183
+    ],
+    [
+     31.9778596,
+     34.778252
+    ]
+   ],
+   "evidence": {
+    "why": "Hasidei Umot HaOlam split piece, same works.",
+    "osm": "https://www.openstreetmap.org/way/1563774671 (highway=construction since 2026-09-30, last edit 2026-09-30)",
+    "confidence": "high"
+   }
+  },
+  {
+   "kind": "tertiary",
+   "name": "נדב בסקינד",
+   "name_en": "Nadav Beskind",
+   "osm_type": "way",
+   "osm_id": 221458834,
+   "points_latlon": [
+    [
+     31.9846783,
+     34.7668029
+    ],
+    [
+     31.9847777,
+     34.7668671
+    ],
+    [
+     31.9848399,
+     34.7669045
+    ],
+    [
+     31.9850782,
+     34.7670477
+    ],
+    [
+     31.9850998,
+     34.7670634
+    ],
+    [
+     31.9852397,
+     34.7671654
+    ]
+   ],
+   "evidence": {
+    "why": "Nadav Beskind retagged 'closed for construction' 2026-10-08; existing tertiary street (OSM since 2013).",
+    "osm": "https://www.openstreetmap.org/way/221458834 (now highway=construction, v13 2026-10-08 by Sanniu, changeset 190178894; previous highway=tertiary as of 2023-12-16)",
+    "confidence": "high"
+   }
+  },
+  {
+   "kind": "tertiary",
+   "name": "נדב בסקינד",
+   "name_en": "Nadav Beskind",
+   "osm_type": "way",
+   "osm_id": 1136932247,
+   "points_latlon": [
+    [
+     31.9845428,
+     34.7666782
+    ],
+    [
+     31.9846731,
+     34.7667942
+    ],
+    [
+     31.9846783,
+     34.7668029
+    ]
+   ],
+   "evidence": {
+    "why": "Nadav Beskind piece, same works 2026-10-08.",
+    "osm": "https://www.openstreetmap.org/way/1136932247 (now highway=construction, v4 2026-10-08 by Sanniu, changeset 190178894; previous highway=tertiary as of 2023-10-14)",
+    "confidence": "high"
+   }
+  },
+  {
+   "kind": "tertiary_link",
+   "name": "",
+   "name_en": "",
+   "osm_type": "way",
+   "osm_id": 1226120946,
+   "points_latlon": [
+    [
+     31.9850998,
+     34.7670634
+    ],
+    [
+     31.9851741,
+     34.7671535
+    ],
+    [
+     31.9851994,
+     34.7672569
+    ],
+    [
+     31.9852033,
+     34.7673327
+    ],
+    [
+     31.9851829,
+     34.7674142
+    ],
+    [
+     31.9851691,
+     34.7674534
+    ]
+   ],
+   "evidence": {
+    "why": "Nadav Beskind link, same works 2026-10-08.",
+    "osm": "https://www.openstreetmap.org/way/1226120946 (now highway=construction, v2 2026-10-08 by Sanniu, changeset 190178894; previous highway=tertiary_link as of 2023-11-23)",
+    "confidence": "high"
+   }
+  },
+  {
+   "kind": "service",
+   "name": "",
+   "name_en": "",
+   "osm_type": "way",
+   "osm_id": 698856348,
+   "points_latlon": [
+    [
+     31.9847097,
+     34.7675713
+    ],
+    [
+     31.9846851,
+     34.7675062
+    ],
+    [
+     31.9846869,
+     34.7674221
+    ]
+   ],
+   "evidence": {
+    "why": "Service road at Nadav Beskind works site, existing since 2019.",
+    "osm": "https://www.openstreetmap.org/way/698856348 (now highway=construction, v4 2026-10-08 by Sanniu, changeset 190178894; previous highway=service as of 2023-10-10)",
+    "confidence": "high"
+   }
+  },
+  {
+   "kind": "service",
+   "name": "",
+   "name_en": "",
+   "osm_type": "way",
+   "osm_id": 698856349,
+   "points_latlon": [
+    [
+     31.9846869,
+     34.7674221
+    ],
+    [
+     31.9846436,
+     34.7675117
+    ],
+    [
+     31.9846395,
+     34.7675202
+    ],
+    [
+     31.984633,
+     34.7675913
+    ]
+   ],
+   "evidence": {
+    "why": "Service road at Nadav Beskind works site, existing since 2019.",
+    "osm": "https://www.openstreetmap.org/way/698856349 (now highway=construction, v5 2026-10-08 by Sanniu, changeset 190178894; previous highway=service as of 2026-01-07)",
+    "confidence": "high"
+   }
+  },
+  {
+   "kind": "service",
+   "name": "",
+   "name_en": "",
+   "osm_type": "way",
+   "osm_id": 698856350,
+   "points_latlon": [
+    [
+     31.9846869,
+     34.7674221
+    ],
+    [
+     31.9847179,
+     34.7673277
+    ],
+    [
+     31.9848426,
+     34.7673863
+    ],
+    [
+     31.9849392,
+     34.7673818
+    ],
+    [
+     31.9850031,
+     34.7673448
+    ],
+    [
+     31.9850299,
+     34.7673029
+    ],
+    [
+     31.9850268,
+     34.7672424
+    ],
+    [
+     31.9849901,
+     34.7671724
+    ],
+    [
+     31.9849469,
+     34.7671205
+    ],
+    [
+     31.9848892,
+     34.7671099
+    ],
+    [
+     31.9848221,
+     34.7671246
+    ],
+    [
+     31.9847179,
+     34.7673277
+    ]
+   ],
+   "evidence": {
+    "why": "Service road at Nadav Beskind works site, existing since 2019.",
+    "osm": "https://www.openstreetmap.org/way/698856350 (now highway=construction, v3 2026-10-08 by Sanniu, changeset 190178894; previous highway=service as of 2023-10-10)",
+    "confidence": "high"
+   }
+  },
+  {
+   "kind": "service",
+   "name": "",
+   "name_en": "",
+   "osm_type": "way",
+   "osm_id": 422960291,
+   "points_latlon": [
+    [
+     31.9605674,
+     34.8029146
+    ],
+    [
+     31.9606019,
+     34.8028596
+    ],
+    [
+     31.9606451,
+     34.8028355
+    ],
+    [
+     31.9607634,
+     34.8028435
+    ],
+    [
+     31.9609155,
+     34.8028914
+    ],
+    [
+     31.9611981,
+     34.8029803
+    ],
+    [
+     31.961311,
+     34.8029429
+    ],
+    [
+     31.9613684,
+     34.8029238
+    ]
+   ],
+   "evidence": {
+    "why": "Service road off Rothschild, retagged 2026-09-28 with the Brown Line works; existing since 2016.",
+    "osm": "https://www.openstreetmap.org/way/422960291 (now highway=construction, v6 2026-09-28 by Sanniu, changeset 189681106; previous highway=service as of 2026-03-28)",
+    "confidence": "high"
+   }
+  },
+  {
+   "kind": "residential",
+   "name": "השבטים",
+   "name_en": "HaShvatim",
+   "osm_type": "way",
+   "osm_id": 59265419,
+   "points_latlon": [
+    [
+     32.0041734,
+     34.7495365
+    ],
+    [
+     32.0051042,
+     34.7497962
+    ]
+   ],
+   "evidence": {
+    "why": "HaShvatim (west, near Bat Yam border): existing residential street since 2010, retagged construction 2026-05-27 (street works). Physically present.",
+    "osm": "https://www.openstreetmap.org/way/59265419 (now highway=construction, v9 2026-05-27 by TaggingReviewer, changeset 183263595; previous highway=residential as of 2013-01-18)",
+    "confidence": "high"
+   }
+  },
+  {
+   "kind": "unclassified",
+   "name": "פאוול פרנקל",
+   "name_en": "Paweł Frenkel",
+   "osm_type": "way",
+   "osm_id": 315899818,
+   "points_latlon": [
+    [
+     31.989521,
+     34.7587078
+    ],
+    [
+     31.9895406,
+     34.7588388
+    ],
+    [
+     31.9897679,
+     34.7592701
+    ]
+   ],
+   "evidence": {
+    "why": "Pawel Frenkel: existing street since 2014, retagged construction 2026-05-27. Physically present.",
+    "osm": "https://www.openstreetmap.org/way/315899818 (now highway=construction, v9 2026-05-27 by TaggingReviewer, changeset 183263595; previous highway=unclassified as of 2023-10-14)",
+    "confidence": "high"
+   }
+  },
+  {
+   "kind": "tertiary_link",
+   "name": "",
+   "name_en": "",
+   "osm_type": "way",
+   "osm_id": 907012739,
+   "points_latlon": [
+    [
+     31.9812008,
+     34.750056
+    ],
+    [
+     31.9811038,
+     34.7500062
+    ],
+    [
+     31.9810309,
+     34.7499068
+    ],
+    [
+     31.9809967,
+     34.7498025
+    ],
+    [
+     31.9809865,
+     34.7496629
+    ]
+   ],
+   "evidence": {
+    "why": "Tertiary link in the Matcham HaElef tech park, was open 2021-2025, retagged construction 2025-09-23.",
+    "osm": "https://www.openstreetmap.org/way/907012739 (now highway=construction, v9 2025-09-23 by Sanniu, changeset 172351790; previous highway=tertiary_link as of 2025-09-17)",
+    "confidence": "high"
+   }
+  },
+  {
+   "kind": "tertiary_link",
+   "name": "",
+   "name_en": "",
+   "osm_type": "way",
+   "osm_id": 907012740,
+   "points_latlon": [
+    [
+     31.9808535,
+     34.75025
+    ],
+    [
+     31.9809321,
+     34.7501592
+    ],
+    [
+     31.9810047,
+     34.7500968
+    ],
+    [
+     31.9810967,
+     34.7500658
+    ],
+    [
+     31.9812008,
+     34.750056
+    ]
+   ],
+   "evidence": {
+    "why": "Tertiary link, same as 907012739.",
+    "osm": "https://www.openstreetmap.org/way/907012740 (now highway=construction, v9 2025-09-23 by Sanniu, changeset 172351790; previous highway=tertiary_link as of 2025-09-17)",
+    "confidence": "high"
+   }
+  },
+  {
+   "kind": "residential",
+   "name": "החדשנות",
+   "name_en": "HaHadshanut",
+   "osm_type": "way",
+   "osm_id": 1299797572,
+   "points_latlon": [
+    [
+     31.9812008,
+     34.750056
+    ],
+    [
+     31.9818065,
+     34.750256
+    ]
+   ],
+   "evidence": {
+    "why": "HaHadshanut (tech park), residential street mapped open 2024-07..2025-09 then retagged construction 2026-02-05.",
+    "osm": "https://www.openstreetmap.org/way/1299797572 (now highway=construction, v4 2026-02-05 by Sanniu, changeset 178122226; previous highway=residential as of 2025-09-17)",
+    "confidence": "high"
+   }
+  },
+  {
+   "kind": "residential",
+   "name": "ההגשמה",
+   "name_en": "HaHagshama",
+   "osm_type": "way",
+   "osm_id": 1175530626,
+   "points_latlon": [
+    [
+     31.9833742,
+     34.7459095
+    ],
+    [
+     31.9840273,
+     34.7460812
+    ],
+    [
+     31.9849268,
+     34.7463176
+    ]
+   ],
+   "evidence": {
+    "why": "New street of the Matcham HaElef (1000 compound) tech park, west Rishon. Mapped in OSM only as highway=construction (2023-2026), so the game omits it, but it is already paved with kerbs and roundabouts on Esri World Imagery captured 2025-02-26 (Vantor Vivid Advanced, Wayback release 2026-09-24). Opening to traffic not confirmed.",
+    "osm": "https://www.openstreetmap.org/way/1175530626 (highway=construction since 2023-05-24, last edit 2025-05-12)",
+    "confidence": "medium"
+   }
+  },
+  {
+   "kind": "residential",
+   "name": "ההזנק",
+   "name_en": "HaHeznek",
+   "osm_type": "way",
+   "osm_id": 1175530622,
+   "points_latlon": [
+    [
+     31.9833609,
+     34.7485903
+    ],
+    [
+     31.9833658,
+     34.7486299
+    ],
+    [
+     31.9833622,
+     34.748708
+    ],
+    [
+     31.9831153,
+     34.7497558
+    ]
+   ],
+   "evidence": {
+    "why": "New street of the Matcham HaElef (1000 compound) tech park, west Rishon. Mapped in OSM only as highway=construction (2023-2026), so the game omits it, but it is already paved with kerbs and roundabouts on Esri World Imagery captured 2025-02-26 (Vantor Vivid Advanced, Wayback release 2026-09-24). Opening to traffic not confirmed.",
+    "osm": "https://www.openstreetmap.org/way/1175530622 (highway=construction since 2023-05-24, last edit 2025-07-18)",
+    "confidence": "medium"
+   }
+  },
+  {
+   "kind": "residential",
+   "name": "המיזם",
+   "name_en": "",
+   "osm_type": "way",
+   "osm_id": 1175530625,
+   "points_latlon": [
+    [
+     31.9822762,
+     34.7481345
+    ],
+    [
+     31.9832998,
+     34.7484535
+    ]
+   ],
+   "evidence": {
+    "why": "New street of the Matcham HaElef (1000 compound) tech park, west Rishon. Mapped in OSM only as highway=construction (2023-2026), so the game omits it, but it is already paved with kerbs and roundabouts on Esri World Imagery captured 2025-02-26 (Vantor Vivid Advanced, Wayback release 2026-09-24). Opening to traffic not confirmed.",
+    "osm": "https://www.openstreetmap.org/way/1175530625 (highway=construction since 2023-05-24, last edit 2025-07-18)",
+    "confidence": "medium"
+   }
+  },
+  {
+   "kind": "residential",
+   "name": "ההזנק",
+   "name_en": "HaHeznek",
+   "osm_type": "way",
+   "osm_id": 1415734646,
+   "points_latlon": [
+    [
+     31.9832064,
+     34.7497567
+    ],
+    [
+     31.9834204,
+     34.7487295
+    ],
+    [
+     31.9834367,
+     34.7486492
+    ],
+    [
+     31.983457,
+     34.7485987
+    ]
+   ],
+   "evidence": {
+    "why": "New street of the Matcham HaElef (1000 compound) tech park, west Rishon. Mapped in OSM only as highway=construction (2023-2026), so the game omits it, but it is already paved with kerbs and roundabouts on Esri World Imagery captured 2025-02-26 (Vantor Vivid Advanced, Wayback release 2026-09-24). Opening to traffic not confirmed.",
+    "osm": "https://www.openstreetmap.org/way/1415734646 (highway=construction since 2025-07-18, last edit 2025-07-18)",
+    "confidence": "medium"
+   }
+  },
+  {
+   "kind": "residential",
+   "name": "ההזנק",
+   "name_en": "HaHeznek",
+   "osm_type": "way",
+   "osm_id": 1415734647,
+   "points_latlon": [
+    [
+     31.9838211,
+     34.7468034
+    ],
+    [
+     31.9837423,
+     34.7470545
+    ],
+    [
+     31.9834963,
+     34.7481404
+    ],
+    [
+     31.9834638,
+     34.7482384
+    ],
+    [
+     31.9834422,
+     34.7482914
+    ],
+    [
+     31.983413,
+     34.7483289
+    ]
+   ],
+   "evidence": {
+    "why": "New street of the Matcham HaElef (1000 compound) tech park, west Rishon. Mapped in OSM only as highway=construction (2023-2026), so the game omits it, but it is already paved with kerbs and roundabouts on Esri World Imagery captured 2025-02-26 (Vantor Vivid Advanced, Wayback release 2026-09-24). Opening to traffic not confirmed.",
+    "osm": "https://www.openstreetmap.org/way/1415734647 (highway=construction since 2025-07-18, last edit 2025-07-18)",
+    "confidence": "medium"
+   }
+  },
+  {
+   "kind": "unclassified",
+   "name": "מרשתת",
+   "name_en": "HaMerashetet",
+   "osm_type": "way",
+   "osm_id": 1415734648,
+   "points_latlon": [
+    [
+     31.9841033,
+     34.7509182
+    ],
+    [
+     31.9840893,
+     34.751008
+    ]
+   ],
+   "evidence": {
+    "why": "New street of the Matcham HaElef (1000 compound) tech park, west Rishon. Mapped in OSM only as highway=construction (2023-2026), so the game omits it, but it is already paved with kerbs and roundabouts on Esri World Imagery captured 2025-02-26 (Vantor Vivid Advanced, Wayback release 2026-09-24). Opening to traffic not confirmed.",
+    "osm": "https://www.openstreetmap.org/way/1415734648 (highway=construction since 2025-07-18, last edit 2025-07-18)",
+    "confidence": "medium"
+   }
+  },
+  {
+   "kind": "residential",
+   "name": "",
+   "name_en": "",
+   "osm_type": "way",
+   "osm_id": 1415734652,
+   "points_latlon": [
+    [
+     31.9833083,
+     34.7484126
+    ],
+    [
+     31.9832998,
+     34.7484535
+    ],
+    [
+     31.9833017,
+     34.7484977
+    ],
+    [
+     31.9833113,
+     34.7485299
+    ],
+    [
+     31.9833286,
+     34.7485575
+    ],
+    [
+     31.9833609,
+     34.7485903
+    ],
+    [
+     31.9833937,
+     34.7486044
+    ],
+    [
+     31.9834212,
+     34.7486069
+    ],
+    [
+     31.983457,
+     34.7485987
+    ],
+    [
+     31.9834907,
+     34.748576
+    ],
+    [
+     31.9835153,
+     34.7485426
+    ],
+    [
+     31.9835309,
+     34.7485017
+    ],
+    [
+     31.9835351,
+     34.7484612
+    ],
+    [
+     31.9835308,
+     34.7484262
+    ],
+    [
+     31.983515,
+     34.7483886
+    ],
+    [
+     31.9834858,
+     34.7483559
+    ],
+    [
+     31.9834518,
+     34.7483356
+    ],
+    [
+     31.983413,
+     34.7483289
+    ],
+    [
+     31.9833786,
+     34.7483354
+    ],
+    [
+     31.9833477,
+     34.7483543
+    ],
+    [
+     31.9833226,
+     34.7483838
+    ],
+    [
+     31.9833083,
+     34.7484126
+    ]
+   ],
+   "evidence": {
+    "why": "New street of the Matcham HaElef (1000 compound) tech park, west Rishon. Mapped in OSM only as highway=construction (2023-2026), so the game omits it, but it is already paved with kerbs and roundabouts on Esri World Imagery captured 2025-02-26 (Vantor Vivid Advanced, Wayback release 2026-09-24). Opening to traffic not confirmed.",
+    "osm": "https://www.openstreetmap.org/way/1415734652 (highway=construction since 2025-07-18, last edit 2025-07-18)",
+    "confidence": "medium"
+   }
+  },
+  {
+   "kind": "residential",
+   "name": "ההזנק",
+   "name_en": "HaHeznek",
+   "osm_type": "way",
+   "osm_id": 1415734654,
+   "points_latlon": [
+    [
+     31.9830939,
+     34.7504747
+    ],
+    [
+     31.9830989,
+     34.7503298
+    ],
+    [
+     31.9831062,
+     34.750266
+    ]
+   ],
+   "evidence": {
+    "why": "New street of the Matcham HaElef (1000 compound) tech park, west Rishon. Mapped in OSM only as highway=construction (2023-2026), so the game omits it, but it is already paved with kerbs and roundabouts on Esri World Imagery captured 2025-02-26 (Vantor Vivid Advanced, Wayback release 2026-09-24). Opening to traffic not confirmed.",
+    "osm": "https://www.openstreetmap.org/way/1415734654 (highway=construction since 2025-07-18, last edit 2025-07-18)",
+    "confidence": "medium"
+   }
+  },
+  {
+   "kind": "residential",
+   "name": "ההזנק",
+   "name_en": "HaHeznek",
+   "osm_type": "way",
+   "osm_id": 1415734655,
+   "points_latlon": [
+    [
+     31.9829931,
+     34.7502562
+    ],
+    [
+     31.9829775,
+     34.7503084
+    ],
+    [
+     31.9829337,
+     34.7504118
+    ]
+   ],
+   "evidence": {
+    "why": "New street of the Matcham HaElef (1000 compound) tech park, west Rishon. Mapped in OSM only as highway=construction (2023-2026), so the game omits it, but it is already paved with kerbs and roundabouts on Esri World Imagery captured 2025-02-26 (Vantor Vivid Advanced, Wayback release 2026-09-24). Opening to traffic not confirmed.",
+    "osm": "https://www.openstreetmap.org/way/1415734655 (highway=construction since 2025-07-18, last edit 2025-07-18)",
+    "confidence": "medium"
+   }
+  },
+  {
+   "kind": "residential",
+   "name": "ההזנק",
+   "name_en": "HaHeznek",
+   "osm_type": "way",
+   "osm_id": 1415734656,
+   "points_latlon": [
+    [
+     31.9831153,
+     34.7497558
+    ],
+    [
+     31.9830131,
+     34.750189
+    ],
+    [
+     31.9829931,
+     34.7502562
+    ]
+   ],
+   "evidence": {
+    "why": "New street of the Matcham HaElef (1000 compound) tech park, west Rishon. Mapped in OSM only as highway=construction (2023-2026), so the game omits it, but it is already paved with kerbs and roundabouts on Esri World Imagery captured 2025-02-26 (Vantor Vivid Advanced, Wayback release 2026-09-24). Opening to traffic not confirmed.",
+    "osm": "https://www.openstreetmap.org/way/1415734656 (highway=construction since 2025-07-18, last edit 2025-07-18)",
+    "confidence": "medium"
+   }
+  },
+  {
+   "kind": "residential",
+   "name": "ההזנק",
+   "name_en": "HaHeznek",
+   "osm_type": "way",
+   "osm_id": 1415734657,
+   "points_latlon": [
+    [
+     31.9831062,
+     34.750266
+    ],
+    [
+     31.9831136,
+     34.7502021
+    ],
+    [
+     31.9832064,
+     34.7497567
+    ]
+   ],
+   "evidence": {
+    "why": "New street of the Matcham HaElef (1000 compound) tech park, west Rishon. Mapped in OSM only as highway=construction (2023-2026), so the game omits it, but it is already paved with kerbs and roundabouts on Esri World Imagery captured 2025-02-26 (Vantor Vivid Advanced, Wayback release 2026-09-24). Opening to traffic not confirmed.",
+    "osm": "https://www.openstreetmap.org/way/1415734657 (highway=construction since 2025-07-18, last edit 2025-07-18)",
+    "confidence": "medium"
+   }
+  },
+  {
+   "kind": "residential",
+   "name": "ההזנק",
+   "name_en": "HaHeznek",
+   "osm_type": "way",
+   "osm_id": 1175530621,
+   "points_latlon": [
+    [
+     31.983515,
+     34.7483886
+    ],
+    [
+     31.9835348,
+     34.7482593
+    ],
+    [
+     31.9835537,
+     34.7481656
+    ],
+    [
+     31.9838341,
+     34.7470802
+    ],
+    [
+     31.9839059,
+     34.7468293
+    ]
+   ],
+   "evidence": {
+    "why": "New street of the Matcham HaElef (1000 compound) tech park, west Rishon. Mapped in OSM only as highway=construction (2023-2026), so the game omits it, but it is already paved with kerbs and roundabouts on Esri World Imagery captured 2025-02-26 (Vantor Vivid Advanced, Wayback release 2026-09-24). Opening to traffic not confirmed.",
+    "osm": "https://www.openstreetmap.org/way/1175530621 (highway=construction since 2023-05-24, last edit 2025-12-23)",
+    "confidence": "medium"
+   }
+  },
+  {
+   "kind": "residential",
+   "name": "ההגשמה",
+   "name_en": "HaHagshama",
+   "osm_type": "way",
+   "osm_id": 1175530627,
+   "points_latlon": [
+    [
+     31.9840273,
+     34.7460812
+    ],
+    [
+     31.983962,
+     34.7461875
+    ],
+    [
+     31.9838211,
+     34.7468034
+    ]
+   ],
+   "evidence": {
+    "why": "New street of the Matcham HaElef (1000 compound) tech park, west Rishon. Mapped in OSM only as highway=construction (2023-2026), so the game omits it, but it is already paved with kerbs and roundabouts on Esri World Imagery captured 2025-02-26 (Vantor Vivid Advanced, Wayback release 2026-09-24). Opening to traffic not confirmed.",
+    "osm": "https://www.openstreetmap.org/way/1175530627 (highway=construction since 2023-05-24, last edit 2025-12-23)",
+    "confidence": "medium"
+   }
+  },
+  {
+   "kind": "residential",
+   "name": "ההגשמה",
+   "name_en": "HaHagshama",
+   "osm_type": "way",
+   "osm_id": 1460697663,
+   "points_latlon": [
+    [
+     31.9839059,
+     34.7468293
+    ],
+    [
+     31.9840401,
+     34.7462104
+    ],
+    [
+     31.9840273,
+     34.7460812
+    ]
+   ],
+   "evidence": {
+    "why": "New street of the Matcham HaElef (1000 compound) tech park, west Rishon. Mapped in OSM only as highway=construction (2023-2026), so the game omits it, but it is already paved with kerbs and roundabouts on Esri World Imagery captured 2025-02-26 (Vantor Vivid Advanced, Wayback release 2026-09-24). Opening to traffic not confirmed.",
+    "osm": "https://www.openstreetmap.org/way/1460697663 (highway=construction since 2025-12-23, last edit 2025-12-23)",
+    "confidence": "medium"
+   }
+  },
+  {
+   "kind": "unclassified",
+   "name": "החדשנות",
+   "name_en": "HaHadshanut",
+   "osm_type": "way",
+   "osm_id": 688243360,
+   "points_latlon": [
+    [
+     31.983116,
+     34.7506428
+    ],
+    [
+     31.9832017,
+     34.7506721
+    ],
+    [
+     31.9834743,
+     34.7507653
+    ],
+    [
+     31.9838002,
+     34.750867
+    ],
+    [
+     31.9840106,
+     34.7509088
+    ],
+    [
+     31.9841033,
+     34.7509182
+    ],
+    [
+     31.9849069,
+     34.7510296
+    ]
+   ],
+   "evidence": {
+    "why": "New street of the Matcham HaElef (1000 compound) tech park, west Rishon. Mapped in OSM only as highway=construction (2023-2026), so the game omits it, but it is already paved with kerbs and roundabouts on Esri World Imagery captured 2025-02-26 (Vantor Vivid Advanced, Wayback release 2026-09-24). Opening to traffic not confirmed.",
+    "osm": "https://www.openstreetmap.org/way/688243360 (highway=construction since 2019-05-06, last edit 2025-10-08)",
+    "confidence": "medium"
+   }
+  },
+  {
+   "kind": "unclassified",
+   "name": "החדשנות",
+   "name_en": "HaHadshanut",
+   "osm_type": "way",
+   "osm_id": 1436359183,
+   "points_latlon": [
+    [
+     31.9850845,
+     34.7510064
+    ],
+    [
+     31.9850461,
+     34.7510092
+    ],
+    [
+     31.9849069,
+     34.7510296
+    ]
+   ],
+   "evidence": {
+    "why": "New street of the Matcham HaElef (1000 compound) tech park, west Rishon. Mapped in OSM only as highway=construction (2023-2026), so the game omits it, but it is already paved with kerbs and roundabouts on Esri World Imagery captured 2025-02-26 (Vantor Vivid Advanced, Wayback release 2026-09-24). Opening to traffic not confirmed.",
+    "osm": "https://www.openstreetmap.org/way/1436359183 (highway=construction since 2025-10-08, last edit 2025-10-08)",
+    "confidence": "medium"
+   }
+  },
+  {
+   "kind": "unclassified",
+   "name": "החדשנות",
+   "name_en": "HaHadshanut",
+   "osm_type": "way",
+   "osm_id": 1436359184,
+   "points_latlon": [
+    [
+     31.9849069,
+     34.7510296
+    ],
+    [
+     31.9850393,
+     34.7510587
+    ],
+    [
+     31.9850774,
+     34.7510693
+    ]
+   ],
+   "evidence": {
+    "why": "New street of the Matcham HaElef (1000 compound) tech park, west Rishon. Mapped in OSM only as highway=construction (2023-2026), so the game omits it, but it is already paved with kerbs and roundabouts on Esri World Imagery captured 2025-02-26 (Vantor Vivid Advanced, Wayback release 2026-09-24). Opening to traffic not confirmed.",
+    "osm": "https://www.openstreetmap.org/way/1436359184 (highway=construction since 2025-10-08, last edit 2025-10-08)",
+    "confidence": "medium"
+   }
+  },
+  {
+   "kind": "residential",
+   "name": "המו\"פ",
+   "name_en": "",
+   "osm_type": "way",
+   "osm_id": 1175530623,
+   "points_latlon": [
+    [
+     31.9861912,
+     34.7444962
+    ],
+    [
+     31.9856033,
+     34.7473466
+    ]
+   ],
+   "evidence": {
+    "why": "New street of the Matcham HaElef (1000 compound) tech park, west Rishon. Mapped in OSM only as highway=construction (2023-2026), so the game omits it, but it is already paved with kerbs and roundabouts on Esri World Imagery captured 2025-02-26 (Vantor Vivid Advanced, Wayback release 2026-09-24). Opening to traffic not confirmed.",
+    "osm": "https://www.openstreetmap.org/way/1175530623 (highway=construction since 2023-05-24, last edit 2026-09-05)",
+    "confidence": "medium"
+   }
+  },
+  {
+   "kind": "unclassified",
+   "name": "",
+   "name_en": "",
+   "osm_type": "way",
+   "osm_id": 688243358,
+   "points_latlon": [
+    [
+     31.9888248,
+     34.7469883
+    ],
+    [
+     31.9888203,
+     34.7469434
+    ],
+    [
+     31.9888041,
+     34.7469024
+    ],
+    [
+     31.9887777,
+     34.7468695
+    ],
+    [
+     31.9887438,
+     34.7468482
+    ],
+    [
+     31.988706,
+     34.7468406
+    ],
+    [
+     31.9886681,
+     34.7468474
+    ],
+    [
+     31.9886339,
+     34.746868
+    ],
+    [
+     31.988607,
+     34.7469003
+    ],
+    [
+     31.9885901,
+     34.7469409
+    ],
+    [
+     31.9885851,
+     34.7469886
+    ],
+    [
+     31.9885939,
+     34.7470355
+    ],
+    [
+     31.9886155,
+     34.7470762
+    ],
+    [
+     31.9886473,
+     34.7471061
+    ],
+    [
+     31.9886859,
+     34.7471217
+    ],
+    [
+     31.9887266,
+     34.7471211
+    ],
+    [
+     31.9887648,
+     34.7471046
+    ],
+    [
+     31.9887962,
+     34.7470739
+    ],
+    [
+     31.988817,
+     34.7470326
+    ],
+    [
+     31.9888248,
+     34.7469883
+    ]
+   ],
+   "evidence": {
+    "why": "New street of the Matcham HaElef (1000 compound) tech park, west Rishon. Mapped in OSM only as highway=construction (2023-2026), so the game omits it, but it is already paved with kerbs and roundabouts on Esri World Imagery captured 2025-02-26 (Vantor Vivid Advanced, Wayback release 2026-09-24). Opening to traffic not confirmed.",
+    "osm": "https://www.openstreetmap.org/way/688243358 (highway=construction since 2019-05-06, last edit 2025-07-18)",
+    "confidence": "medium"
+   }
+  },
+  {
+   "kind": "unclassified",
+   "name": "ההישג",
+   "name_en": "",
+   "osm_type": "way",
+   "osm_id": 688243362,
+   "points_latlon": [
+    [
+     31.9877184,
+     34.7465176
+    ],
+    [
+     31.9879523,
+     34.7466504
+    ],
+    [
+     31.988258,
+     34.7468117
+    ],
+    [
+     31.9885901,
+     34.7469409
+    ]
+   ],
+   "evidence": {
+    "why": "New street of the Matcham HaElef (1000 compound) tech park, west Rishon. Mapped in OSM only as highway=construction (2023-2026), so the game omits it, but it is already paved with kerbs and roundabouts on Esri World Imagery captured 2025-02-26 (Vantor Vivid Advanced, Wayback release 2026-09-24). Opening to traffic not confirmed.",
+    "osm": "https://www.openstreetmap.org/way/688243362 (highway=construction since 2019-05-06, last edit 2023-10-21)",
+    "confidence": "medium"
+   }
+  },
+  {
+   "kind": "unclassified",
+   "name": "שד' הטכנולוגיה",
+   "name_en": "",
+   "osm_type": "way",
+   "osm_id": 1346968254,
+   "points_latlon": [
+    [
+     31.9897767,
+     34.7492463
+    ],
+    [
+     31.9903033,
+     34.7495813
+    ],
+    [
+     31.9903882,
+     34.7494495
+    ],
+    [
+     31.9898885,
+     34.7490659
+    ]
+   ],
+   "evidence": {
+    "why": "New street of the Matcham HaElef (1000 compound) tech park, west Rishon. Mapped in OSM only as highway=construction (2023-2026), so the game omits it, but it is already paved with kerbs and roundabouts on Esri World Imagery captured 2025-02-26 (Vantor Vivid Advanced, Wayback release 2026-09-24). Opening to traffic not confirmed.",
+    "osm": "https://www.openstreetmap.org/way/1346968254 (highway=construction since 2024-12-28, last edit 2024-12-28)",
+    "confidence": "medium"
+   }
+  }
+ ],
+ "add_buildings": [],
+ "notes": [
+  "fetch_osm.py includes only built highway classes, so every OSM way retagged highway=construction disappears from the game. OSM editors in Rishon retag live roads as 'construction' during Brown Line / Green Line works (Sept-Oct 2026). The add_ways 'restore' items (confidence high) put those existing roads back; a generic fix is to map highway=construction + construction=<class> to that class at bake time when the way had that class in a previous version.",
+  "Green Line light rail (dark green branch) works in the bbox: Moshe Dayan / Lishansky / Avnei Hoshen / Sakharov; Avraham Bar x Yeladei Tehran junction gets a ~10-week works layout from 2026-10-22 (left turns banned). Opening is 2028+ (he.wikipedia), so no running LRT should be drawn.",
+  "Brown Line Metronit BRT works: Rothschild (from 2025-11-11), Sderot Yitzhak Rabin / Levi Eshkol / HaHistadrut (from 2026-06-28), Levi Eshkol Moshe Dayan..HaYayin (from 2026-10-13, ~7 months), Derech Haim Herzog (from 2026-01-07, ~10 months). Project runs to 2028.",
+  "Building footprints in the whole bbox match Esri imagery of 2025-02-26 (16 overlay tiles checked); no unmapped towers found inside the bbox. Anything built after Feb 2025 cannot be verified with free imagery.",
+  "Roundabouts in OSM bbox: 151 ways, 99 of them edited 2023-2026; no other roundabout has evidence of conversion.",
+  "Neve Hadarim (31.959, 34.817) is outside the game bbox (east edge 34.81).",
+  "2026-10-17 (round 6): the replace_junction for Kikar Yitzhak Rabin (way 164818922, by the College of Management) is reverted: the founder says Rabin Square is still a roundabout, and OSM agrees. The roundabout he remembered being replaced is HaTkuma's in Kiryat HaLeom (way 267041409, 31.9696, 34.7792): OSM deleted it on 2021-11-27, changeset 114290755 by Sanniu, comment 'replacing roundabout with a controlled interchange' (Maxar imagery). OSM already maps it as a junction, so no correction is needed; the bake now reads traffic_signals nodes (data/rishon.signals.raw.json)."
+ ],
+ "reverted_replace_junction": [
+  {
+   "name": "Kikar Yitzhak Rabin - Sderot Yitzhak Rabin / Motta Gur / Levi Eshkol, by the College of Management (Michlala LeMinhal) and Neot Ashlim",
+   "lat": 31.9705962,
+   "lon": 34.7738864,
+   "radius_m": 55,
+   "kind": "signals",
+   "osm_ids": [
+    {
+     "osm_type": "way",
+     "osm_id": 164818922,
+     "role": "roundabout ring (junction=roundabout, highway=secondary, lanes=2, r=44 m)"
+    }
+   ],
+   "approach_way_ids": [
+    164818914,
+    388696977,
+    166030405,
+    214334240,
+    28557681,
+    1033431113,
+    28557707,
+    28557709
+   ],
+   "approach_names": [
+    "Motta Gur (SW)",
+    "Sderot Yitzhak Rabin (W and E)",
+    "Levi Eshkol (NE)"
+   ],
+   "basis": "founder_eyewitness",
+   "confidence": "medium - founder reports signals today; not independently confirmed",
+   "evidence": {
+    "for": [
+     "Founder eyewitness report 2026-10 (relayed by lead).",
+     "Brown Line BRT (Metronit) route runs Sderot Yitzhak Rabin -> Levi Eshkol, i.e. turns exactly through this roundabout (he.wikipedia rev 2026-07-05).",
+     "Brown Line works on Levi Eshkol / Sderot Yitzhak Rabin started 2026-06-28 (be106.net/231/148590 snippet); works on Levi Eshkol continue from 2026-10-13 for ~7 months (be106.net/231/161586 snippet). BRT corridors in Israel are normally signal-controlled, so a 2026 conversion (temporary or final) is plausible."
+    ],
+    "against_or_unknown": [
+     "OSM still junction=roundabout; ring geometry last changed 2023-05-04 (HopOn, cs 135692757), last edit 2023-10-14; an active local mapper (Sanniu) edited the adjacent Israel Galili mouth on 2026-09-28 and did not touch the ring.",
+     "Esri imagery captured 2025-02-26 shows the roundabout intact (~90 m across, landscaped island).",
+     "Newest Mapillary images at the junction are from 2021-02-14 / 2021-02-24; no 2024-2026 street imagery here.",
+     "No municipal or news item found that names a roundabout-to-signals conversion at Kikar Rabin; be106 / mynet pages are behind a bot check and were not read."
+    ],
+    "urls": [
+     "https://www.openstreetmap.org/way/164818922/history",
+     "https://www.be106.net/231/148590",
+     "https://www.be106.net/231/161586"
+    ]
+   },
+   "suggested_geometry": "Replace the ring with a 4-arm signalised crossroads: Sderot Yitzhak Rabin straight W-E, Motta Gur from SW meeting Levi Eshkol to NE, signals node at the centre point. Keep lanes=2+ per direction (secondary).",
+   "name_local": "כיכר יצחק רבין"
+  }
+ ],
+ "replace_junction": []
+}
