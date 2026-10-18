@@ -9,6 +9,12 @@ import { faceTexture, FACE_PLANE } from './faces.js';
 
 // 0.85 of the round-2 size (0.82): the founder found the characters too big for the map.
 export const BODY_SCALE = 0.697;
+// Bevel radii (before rbox's x1.3): the head and limbs read rounder and less like crates.
+const HEAD_R = 0.55;
+const LIMB_R = 0.36;
+// Height of the top of each hair style in head space (head box top = 0.8), for things worn on
+// top of the hair such as the kippah.
+const HAIR_TOP = { none: 0.8, bald: 0.8, buzz: 0.87, spiky: 0.94, bob: 0.86, short: 1.0, quiff: 1.0, messy: 1.0, long: 1.0, ponytail: 1.0, bun: 1.0, curly: 1.2, perm: 1.24 };
 
 // Rig dimensions in concept units. Left = +x (the avatar faces +z).
 export const DIMS = {
@@ -147,10 +153,11 @@ export function buildRig(cfg) {
 
   // ---- skeleton
   const pelvis = (J.pelvis = group(body, 'pelvis', 0, d.hipY, 0));
-  addMesh(pelvis, rbox(2.1 * bw, 0.72, 1.1 + belly * 0.5, 0.26), lowerMats, 0, 0.25, belly * 0.15);
+  addMesh(pelvis, rbox(1.95 * bw, 0.72, 1.1 + belly * 0.5, 0.34), lowerMats, 0, 0.25, belly * 0.15);
   const waist = (J.waist = group(pelvis, 'waist', 0, d.waistY, 0));
   const torsoW = 2.2 * bw;
-  addMesh(waist, rbox(torsoW, 1.72, 1.15 + belly * 0.3, 0.28), torsoMats, 0, 0.8, belly * 0.1);
+  // narrower at the waist than the chest: a body, not a crate
+  addMesh(waist, tbox(torsoW, 1.72, 1.15 + belly * 0.3, 0.4, belly > 0 ? 0.95 : 0.86), torsoMats, 0, 0.8, belly * 0.1);
   if (belly > 0) {
     addMesh(waist, rbox(torsoW * 0.84, 1.0, 0.6, 0.28), coat ? mat(coat) : torsoMats[0], 0, 0.4, 0.42 + belly * 0.35);
   }
@@ -166,9 +173,9 @@ export function buildRig(cfg) {
   const upperLegM = skirt && skirt.length === 'coat' ? mat(pants.color) : pantsM;
   for (const [side, s] of [['L', 1], ['R', -1]]) {
     const hip = (J['hip' + side] = group(pelvis, 'hip' + side, s * d.legX, 0, 0, 'XZY'));
-    addMesh(hip, tbox(1.0 * Math.min(bw, 1.08), d.ul + 0.1, 1.05, 0.2, 0.9), upperLegM, 0, -d.ul * 0.476, 0);
+    addMesh(hip, tbox(1.0 * Math.min(bw, 1.08), d.ul + 0.1, 1.05, LIMB_R, 0.86), upperLegM, 0, -d.ul * 0.476, 0);
     const knee = (J['kn' + side] = group(hip, 'kn' + side, 0, -d.ul, 0));
-    addMesh(knee, tbox(0.96 * Math.min(bw, 1.08), d.ll + 0.13, 1.0, 0.2, 0.82), lowerLegM, 0, -d.ll * 0.47, 0);
+    addMesh(knee, tbox(0.92 * Math.min(bw, 1.08), d.ll + 0.13, 0.96, LIMB_R, 0.78), lowerLegM, 0, -d.ll * 0.47, 0);
     if (pants.cuff) addMesh(knee, rbox(1.02, 0.2, 1.06, 0.08), mat(pants.cuff), 0, -(d.ll - 0.09), 0);
     const ankle = (J['an' + side] = group(knee, 'an' + side, 0, -d.ll, 0));
     buildShoe(ankle, cfg.shoes || { kind: 'sneakers', color: '#ffffff' }, skinM, Math.min(bw, 1.08));
@@ -180,22 +187,22 @@ export function buildRig(cfg) {
     const sh = (J['sh' + side] = group(waist, 'sh' + side, s * d.shX, d.shY, 0, 'XZY'));
     if (sleeves === 'none') {
       // tank top (deliberate, e.g. the matkot vest): bare arm
-      addMesh(sh, tbox(0.88, 1.12, 0.95, 0.2, 0.88), skinM, 0, -0.4, 0);
+      addMesh(sh, tbox(0.84, 1.12, 0.9, LIMB_R, 0.84), skinM, 0, -0.4, 0);
     } else if (sleeves === 'short') {
       // The sleeve is the outermost shell and reaches above the top of the arm, so no skin can
       // poke through at the shoulder in any pose; the bare part of the arm starts under the hem.
-      addMesh(sh, tbox(0.86, 0.62, 0.93, 0.18, 0.92), skinM, 0, -0.65, 0);
-      addMesh(sh, rbox(0.98, 0.82, 1.04, 0.22), sleeveM, 0, -0.15, 0);
-      addMesh(sh, rbox(1.0, 0.1, 1.06, 0.04), mat(shade(shirt.coat || shirt.color, -0.12)), 0, -0.53, 0);
+      addMesh(sh, tbox(0.82, 0.62, 0.88, LIMB_R, 0.9), skinM, 0, -0.65, 0);
+      addMesh(sh, tbox(0.96, 0.82, 1.0, LIMB_R, 0.94), sleeveM, 0, -0.15, 0);
+      addMesh(sh, rbox(0.92, 0.1, 0.96, 0.05), mat(shade(shirt.coat || shirt.color, -0.12)), 0, -0.53, 0);
     } else {
-      addMesh(sh, tbox(0.9, 1.2, 0.97, 0.22, 0.88), sleeveM, 0, -0.38, 0);
+      addMesh(sh, tbox(0.88, 1.2, 0.94, LIMB_R, 0.86), sleeveM, 0, -0.38, 0);
     }
     const el = (J['el' + side] = group(sh, 'el' + side, 0, -d.ua, 0));
-    addMesh(el, tbox(0.84, 1.0, 0.9, 0.2, 0.8), sleeves === 'long' ? sleeveM : skinM, 0, -0.42, 0);
+    addMesh(el, tbox(0.78, 1.0, 0.84, LIMB_R, 0.76), sleeves === 'long' ? sleeveM : skinM, 0, -0.42, 0);
     if (sleeves === 'mid') addMesh(el, rbox(0.92, 0.42, 0.98, 0.16), sleeveM, 0, -0.1, 0);
     if (shirt.cuff && sleeves === 'long') addMesh(el, rbox(0.88, 0.16, 0.94, 0.06), mat(shirt.cuff), 0, -0.86, 0);
     const wr = (J['wr' + side] = group(el, 'wr' + side, 0, -d.la, 0));
-    J['hand' + side] = addMesh(wr, rbox(0.72, 0.62, 0.8, 0.26), skinM, 0, -0.24, 0);
+    J['hand' + side] = addMesh(wr, rbox(0.66, 0.6, 0.74, 0.32), skinM, 0, -0.24, 0);
     // thumb on the inside front of the hand (hidden on far LODs)
     const thumb = addMesh(wr, tbox(0.26, 0.44, 0.3, 0.12, 0.8), skinM, -s * 0.36, -0.2, 0.26);
     thumb.rotation.z = s * 0.35;
@@ -207,7 +214,7 @@ export function buildRig(cfg) {
   addMesh(neck, cyl(0.42, 0.48, 0.4, 14), skinM, 0, 0.1, 0);
   const head = (J.head = group(neck, 'head', 0, d.headY, 0));
   head.scale.setScalar(cfg.body?.head ?? 1);
-  addMesh(head, rbox(1.7, 1.6, 1.5, 0.4), skinM);
+  addMesh(head, rbox(1.7, 1.6, 1.5, HEAD_R), skinM);
   const faceMat = new THREE.MeshToonMaterial({
     map: faceTexture(cfg.face, skin, 'neutral'),
     gradientMap: getGradientMap(), transparent: true, alphaTest: 0.05,
@@ -216,7 +223,7 @@ export function buildRig(cfg) {
   // the decal bends round the head's bevels so its edges never float off the rounded corners
   const facePlane = addMesh(head, cachedGeo('facePlaneCurved', () => {
     const g = new THREE.PlaneGeometry(FACE_PLANE, FACE_PLANE, 12, 12);
-    const r = Math.min(0.4 * 1.3, 1.5 * 0.48), hx = 0.85 - r, hy = 0.8 - r;
+    const r = Math.min(HEAD_R * 1.3, 1.5 * 0.48), hx = 0.85 - r, hy = 0.8 - r;
     const pos = g.attributes.position;
     for (let i = 0; i < pos.count; i++) {
       const ex = Math.max(0, Math.abs(pos.getX(i)) - hx), ey = Math.max(0, Math.abs(pos.getY(i) - 0.05) - hy);
@@ -302,8 +309,15 @@ function buildHair(rig, head, hair) {
   const hc = hair.color || '#3b2416';
   const m = mat(hc);
   // a little fuller than the head so hair reads as hair, not a painted cap
-  const cap = (h = 0.5, y = 0.66) => addMesh(head, rbox(1.86, h + 0.08, 1.66, 0.3), m, 0, y + 0.04, -0.03);
-  const back = (len = 1.1) => addMesh(head, rbox(1.8, len, 0.35, 0.15), m, 0, 0.75 - len / 2, -0.66);
+  // An ellipsoid dome over the same span the old box cap had (bottom to top), so it reads round
+  // from above too; a box's bevel is capped by its thin height and stayed square in plan.
+  const cap = (h = 0.5, y = 0.66) => {
+    const bot = y + 0.04 - (h + 0.08) / 2, tall = h + 0.08;
+    const c = addMesh(head, cachedGeo('hairDome', () => new THREE.SphereGeometry(1, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2)), m, 0, bot, -0.03);
+    c.scale.set(0.95, tall, 0.85);
+    return c;
+  };
+  const back = (len = 1.1) => addMesh(head, rbox(1.8, len, 0.35, 0.17), m, 0, 0.75 - len / 2, -0.66);
   switch (hair.style) {
     case 'none':
       break;
@@ -471,8 +485,13 @@ function buildAccessory(rig, acc) {
     }
     case 'kippah': {
       const tex = patternTexture({ color: c || '#ffffff', pattern: 'knit', alt: acc.ring || '#2f7fb3', alt2: acc.ring2 || acc.ring || '#2f7fb3', band: 9 }, 128, 64);
-      const k = addMesh(head, cachedGeo('kippah', () => new THREE.SphereGeometry(1.0, 24, 8, 0, Math.PI * 2, 0, 0.62)), mat('#ffffff', { map: tex }), 0, -0.02, -0.18);
-      k.rotation.x = -0.3;
+      // It sits on the hair, not on the scalp: under a full hair cap the old dome was swallowed.
+      // A shallow cap (r 0.8, 0.7 rad) is 0.52 wide and 0.19 tall; its rim rests just below the
+      // hair top, toward the crown.
+      const top = HAIR_TOP[rig.cfg.hair?.style || 'short'] ?? HAIR_TOP.short;
+      const g = group(head, 'kippah', 0, top - 0.03, -0.22);
+      g.rotation.x = -0.32;
+      addMesh(g, cachedGeo('kippah', () => new THREE.SphereGeometry(0.8, 24, 8, 0, Math.PI * 2, 0, 0.7).translate(0, -0.8 * Math.cos(0.7), 0)), mat('#ffffff', { map: tex }), 0, 0, 0);
       break;
     }
     case 'tichel': {
