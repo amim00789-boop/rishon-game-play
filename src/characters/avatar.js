@@ -584,6 +584,22 @@ export function createAvatar(archetypeIdOrConfig = 'player_rishoni') {
       R(p, h + 1, 1.4, 0, 0);
       R(p, h + 2, 0.05, 0, 0);
     }
+    if (st.passenger) {
+      // riding shotgun: leaning back, hands on the thighs, and every few seconds a turn of the
+      // head toward the driver (on the passenger's left, +x) as if chatting, so the ride reads
+      // as two friends in a car rather than a mannequin
+      const chat = Math.max(0, Math.sin(t * 0.55 + st.seedPhase));
+      R(p, WAI, -0.14, 0.12 * chat, 0);
+      R(p, NEC, 0.04 + 0.04 * Math.sin(t * 2.1) * chat, 0.55 * chat, 0);
+      const py = p[PY], ft = st.passenger.feet;
+      for (let i = 0; i < 2; i++) {
+        const s = i === 0 ? 1 : -1;
+        if (ft) legIK(p, s, ft[i][0], ft[i][1] + d.ankleH, ft[i][2], d, 0.15);
+        // hands on the thighs, elbows in: the driver sits close on the other side
+        armIK(p, s, s * d.legX, py + 0.4, 1.0, d, -0.2);
+      }
+      return;
+    }
     const steer = 0.12 * Math.sin(t * 0.9);
     R(p, SHL, -1.05 + steer, 0, 0.12);
     R(p, ELL, -0.55, 0, 0);
@@ -1296,6 +1312,15 @@ export function createAvatar(archetypeIdOrConfig = 'player_rishoni') {
     st.drive = { grips: t.grips.map(cv), pedals: t.pedals.map(cv) };
   }
 
+  // Front-passenger pose for mode 'car' (no wheel to hold); false goes back to the driver pose.
+  // { feet: [[x, y, z] left, right] } puts the soles on the car floor, in world units relative to
+  // the avatar's origin like setDrive.
+  function setPassenger(o) {
+    if (!o) { st.passenger = null; return; }
+    const k = 1 / worldScale;
+    st.passenger = { feet: o.feet ? o.feet.map((q) => [q[0] * k, q[1] * k, q[2] * k]) : null };
+  }
+
   function setSeat(h, o = {}) {
     if (Number.isFinite(h) && h > 0) st.seatH = h;
     st.table = !!o.table;
@@ -1355,6 +1380,7 @@ export function createAvatar(archetypeIdOrConfig = 'player_rishoni') {
     emote,
     setSeat,
     setDrive,
+    setPassenger,
     setHold,
     setPlaying,
     setHeld,

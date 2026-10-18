@@ -1266,6 +1266,7 @@ export class QuestSystem {
 
   // ---------------- per frame ----------------
   update(dt, player, input) {
+    this.player = player;
     this.time += dt;
     this.playerAv = player.avatar || null;
     if (this.props) this.props.update(dt, player);
@@ -1304,6 +1305,12 @@ export class QuestSystem {
     for (const n of Object.values(this.npcs)) {
       if (!shown.has(n)) { if (n.av) n.av.group.visible = false; continue; }
       if (!this.ensureAv(n)) continue;
+      if (n.seated) {
+        // riding shotgun: the player's car carries and places the avatar (Player.seatPassenger)
+        if (n.marker) n.marker.visible = false;
+        try { n.av.update(dt, 0); } catch (_) { /* optional */ }
+        continue;
+      }
       const dx = px - n.x, dz = pz - n.z, d = Math.hypot(dx, dz);
       n.av.group.visible = d < NPC_VISIBLE_R && !n.riding;
       let speed = 0;
@@ -1617,6 +1624,7 @@ export class QuestSystem {
       a.deadline = this.time + a.limit;
       a.runStart = this.time;
       n.riding = true; n.target = null;
+      this.seat(n, player);
       this.clearStepObjs();
       this.addBeam(a.drop, 0x2ec4b6);
       // With the passenger mini-game, it runs the ride (calm meter, clock, retries from the
@@ -1624,7 +1632,7 @@ export class QuestSystem {
       if (s.calm && this.hasGame('calm')) {
         a.managed = this.startMinigame('calm', {
           at: a.drop, radius: s.radius || 10, start: { x: n.home.x, z: n.home.z }, limit: a.limit, guide: false,
-          passenger: { archetype: n.def.archetype }, name: `quest.npc.${n.id}`, calm: s.calm, waitSpots: s.waitSpots,
+          passenger: n.seated ? null : { archetype: n.def.archetype }, name: `quest.npc.${n.id}`, calm: s.calm, waitSpots: s.waitSpots,
         }, (res) => {
           a.managed = false;
           if (res && res.effects) this.applyEffects(res.effects);
@@ -1643,8 +1651,22 @@ export class QuestSystem {
     if (Math.hypot(px - a.drop.x, pz - a.drop.z) < (s.radius || 10)) this.arrive(q, s, a, n);
   }
 
+  // In the car, the rider sits in the front passenger seat where the player can see them; on
+  // two wheels (or without the avatar) they just ride along unseen, as before.
+  seat(n, player) {
+    if (player && player.mode === 'car' && player.seatPassenger && this.ensureAv(n)) n.seated = player.seatPassenger(n.av);
+  }
+
+  unseat(n) {
+    if (!n.seated) return;
+    n.seated = false;
+    if (this.player && this.player.passenger === n.av) this.player.releasePassenger();
+    if (n.av) n.av.group.rotation.set(0, n.yaw || 0, 0);
+  }
+
   arrive(q, s, a, n) {
     this.endMinigame();
+    this.unseat(n);
     n.riding = false;
     const p = this.collision.findFree(a.drop.x + 3, a.drop.z + 3, 1.6);
     n.x = p.x; n.z = p.z; n.y = this.groundY(n.x, n.z);
@@ -1656,6 +1678,7 @@ export class QuestSystem {
     this.endMinigame();
     a.managed = false;
     if (this.hud) this.hud.toastMsg(this.t(msg));
+    this.unseat(n);
     n.riding = false;
     n.x = n.home.x; n.z = n.home.z; n.y = this.groundY(n.x, n.z);
     this.clearStepObjs();
@@ -2016,7 +2039,7 @@ export class QuestSystem {
     if (!a) { const q = this.available()[0]; if (q) this.accept(q); return; }
     this.endMinigame();
     for (const n of Object.values(this.npcs)) {
-      if (n.riding) { n.riding = false; if (a.drop) { n.x = a.drop.x + 3; n.z = a.drop.z + 3; } }
+      if (n.riding) { this.unseat(n); n.riding = false; if (a.drop) { n.x = a.drop.x + 3; n.z = a.drop.z + 3; } }
       if (n.target) { n.x = n.target.x; n.z = n.target.z; n.target = null; }
       if (n.path) { const end = n.path[n.path.length - 1]; if (end) { n.x = end.x; n.z = end.z; } n.path = null; n.escortSpeed = 0; }
     }

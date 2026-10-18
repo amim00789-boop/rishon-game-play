@@ -62,13 +62,11 @@ export function createPassenger(deps = {}) {
     let av = null;
     try { av = make(s.cfg.passenger.archetype ? { archetype: s.cfg.passenger.archetype, seed: s.cfg.passenger.seed || 1 } : s.cfg.passenger); } catch (e) { console.warn('[passenger] avatar failed', e); }
     if (!av || !av.group) return;
-    try { av.setMode && av.setMode('car'); } catch (_) { /* optional */ }
     s.av = av;
-    // The buggy is open-topped: the passenger rides on the rear deck, facing forward, where the
-    // camera sees them (the driver's seat is taken by the player avatar).
-    av.group.position.set(0, 2.55 - (av.seatHeight || 1.2) + 0.4, -3.1);
-    deps.player.root.add(av.group);
-    av.group.visible = deps.player.mode === 'car';
+    // Beside the driver in the front passenger seat (the quests module seats its own NPC there
+    // and passes no `passenger`, so this is the standalone path).
+    deps.scene.add(av.group);
+    if (!(deps.player.seatPassenger && deps.player.seatPassenger(av))) { s.av = null; deps.scene.remove(av.group); }
   }
 
   function reset() {
@@ -130,7 +128,7 @@ export function createPassenger(deps = {}) {
   function update(dt) {
     const s = S;
     if (!s) return;
-    if (s.av) s.av.group.visible = deps.player.mode === 'car';
+    if (s.av) { s.av.group.visible = deps.player.mode === 'car'; try { s.av.update(dt, 0); } catch (_) { /* optional */ } }
     if (s.drop.userData.ring) s.drop.userData.ring.scale.setScalar(1 + Math.sin(performance.now() / 220) * 0.12);
     if (s.phase !== 'drive' || dt <= 0) return;
     s.gps.update(dt, deps.player, 'passenger');
@@ -257,6 +255,7 @@ export function createPassenger(deps = {}) {
     if (s.closeCard) s.closeCard();
     s.offKeys();
     s.gps.clear();
+    if (s.av && deps.player.passenger === s.av) deps.player.releasePassenger();
     if (s.av && s.av.group.parent) s.av.group.parent.remove(s.av.group);
     deps.scene.remove(s.root);
     s.ov.remove();

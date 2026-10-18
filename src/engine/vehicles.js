@@ -28,12 +28,16 @@ export const MODE_PARAMS = {
 // inside). Toon avatars have short legs and a big head, so a seated driver is relatively taller
 // than a real one: the seat sits low (cushion near the wheel tops, legs forward to the pedals) and
 // the roof clears the driver's cap, which makes the car about as tall as a standing avatar. It is
-// a little wider than the traffic cars (src/vehicles/models.js) so the driver's shoulders fit.
+// wider than the traffic cars (src/vehicles/models.js): session C (2026-10-18) seats a quest
+// rider (Adir, the bride) beside the driver, and two chunky avatars measure about 2.9 units across
+// each with their arms in, so the cabin grew from 3.5 to 4.8 with the seats 2.5 apart.
 // Israel drives on the right, so the driver sits on the left (+x).
 export const CAR = {
-  width: 3.5, length: 7.4, wheelR: 0.78, axleZ: 2.45, trackX: 1.5,
+  width: 4.8, length: 7.6, wheelR: 0.8, axleZ: 2.5, trackX: 2.05,
   // where the driver's seat surface is (the avatar's pelvis sits right above it)
-  seat: { x: 0.42, y: 0.72, z: -0.6 },
+  seat: { x: 1.2, y: 0.72, z: -0.6 },
+  // the front passenger's seat, on the kerb side
+  passenger: { x: -1.2, y: 0.72, z: -0.6 },
 };
 
 const M = {
@@ -139,7 +143,7 @@ function sideGlass(points, x, mat) {
 }
 
 function makeCar() {
-  const { width: W, length: L, wheelR: R, axleZ, trackX, seat } = CAR;
+  const { width: W, length: L, wheelR: R, axleZ, trackX, seat, passenger } = CAR;
   const g = new THREE.Group();
   const body = new THREE.Group();
   const paint = toonMat(0xff6f59);
@@ -199,7 +203,7 @@ function makeCar() {
   const dash = rbox(W - 0.4, 0.55, 0.75, dark, 0.15); dash.position.set(0, belt - 0.05, 1.15);
   const floor = rbox(W - 0.3, 0.1, L - 1.4, dark, 0.04); floor.position.set(0, 0.62, -0.3);
   body.add(dash, floor);
-  for (const x of [seat.x, -0.95]) {
+  for (const x of [seat.x, passenger.x]) {
     const cushion = rbox(1.3, 0.3, 1.25, cream, 0.12); cushion.position.set(x, seat.y - 0.15, seat.z - 0.15);
     const base = rbox(1.0, seat.y - 0.75, 0.9, dark, 0.05); base.position.set(x, (seat.y - 0.3 + 0.62) / 2, seat.z - 0.15);
     const back = rbox(1.3, 1.75, 0.3, cream, 0.12); back.position.set(x, seat.y + 0.8, seat.z - 0.9); back.rotation.x = -0.18;

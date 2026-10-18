@@ -24,6 +24,11 @@ export class Player {
     this.rider = new THREE.Group();
     this.rider.add(avatar.group);
     this.root.add(this.rider);
+    // the car's front passenger seat (seatPassenger); empty unless a quest rider is aboard
+    this.shotgun = new THREE.Group();
+    this.shotgun.name = 'passenger-seat';
+    this.root.add(this.shotgun);
+    this.passenger = null;
     this.vehicles = createVehicles();
     for (const v of Object.values(this.vehicles)) { v.group.visible = false; this.root.add(v.group); }
     this.collision = collision;
@@ -84,11 +89,45 @@ export class Player {
       this.rider.position.set(CAR.seat.x, CAR.seat.y - sh, CAR.seat.z);
     }
     else this.rider.position.set(0, p.riderY, p.riderZ);
+    // a passenger only exists inside the car; on two wheels or on foot they wait out of sight
+    this.shotgun.visible = mode === 'car';
     this.setAvatarMode(mode);
     // A bigger vehicle could spawn inside a wall; nudge it out right away.
     this.collision.resolve(this.pos, p.radius);
     if (prev !== mode) this.speed *= 0.4;
     for (const fn of this.listeners) fn(mode);
+  }
+
+  // Seat another avatar (a quest NPC) in the car's front passenger seat, beside the driver. The
+  // avatar's group moves into the player's frame until releasePassenger hands it back to the
+  // parent it came from; the caller keeps animating it (av.update).
+  seatPassenger(av) {
+    if (!av || !av.group) return false;
+    if (this.passenger && this.passenger !== av) this.releasePassenger();
+    const P = CAR.passenger;
+    const sh = typeof av.seatHeight === 'number' ? av.seatHeight : 0;
+    this.passenger = av;
+    this.passengerHome = av.group.parent;
+    this.shotgun.add(av.group);
+    av.group.position.set(P.x, P.y - sh, P.z);
+    av.group.rotation.set(0, 0, 0);
+    av.group.visible = true;
+    // soles on the floor ahead of the seat, where the driver's pedals are on the other side
+    const feet = [1, -1].map((s) => [s * 0.4, 0.68 - (P.y - sh), 1.15]);
+    try { av.setMode && av.setMode('car'); av.setPassenger && av.setPassenger({ feet }); } catch (_) { /* optional */ }
+    return true;
+  }
+
+  // Give the seated avatar back (to the scene, or wherever it was) standing; returns it.
+  releasePassenger() {
+    const av = this.passenger;
+    if (!av) return null;
+    this.passenger = null;
+    this.shotgun.remove(av.group);
+    if (this.passengerHome) this.passengerHome.add(av.group);
+    this.passengerHome = null;
+    try { av.setPassenger && av.setPassenger(false); av.setMode && av.setMode('idle'); } catch (_) { /* optional */ }
+    return av;
   }
 
   setAvatarMode(m) {
