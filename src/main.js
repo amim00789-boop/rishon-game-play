@@ -221,6 +221,9 @@ async function boot() {
   // LLRS airfield and its circuit plane (round 7): adds its colliders, POI and hangar exclusion, runs itself.
   try { (await tryImport('./world/airfield.js', 'airfield'))?.buildAirfield?.(scene, { landmarks, exclude }); } catch (e) { console.warn('[main] buildAirfield failed', e); }
 
+  // Beit Albert clock at Rothschild x Jabotinsky (founder's photos, 2026-10-19).
+  try { (await tryImport('./world/clock.js', 'clock'))?.buildClock?.(scene); } catch (e) { console.warn('[main] buildClock failed', e); }
+
   await progress(35, t('load.city'));
   let city = null;
   const cm = await tryImport('./world/city.js', 'city');

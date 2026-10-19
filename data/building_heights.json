@@ -5234,6 +5234,14 @@
    "label": "Tzvi HaYarshafeld 10 (Remez)",
    "source": "mapillary 1089845375564946 (2024-03-16): ochre 4-storey walk-up with box balconies on the right; bearing 39 deg / 48 m",
    "wall": "#dcb67c"
+  },
+  {
+   "lat": 31.963606,
+   "lon": 34.800246,
+   "storeys": 10,
+   "confidence": "medium",
+   "label": "Beit Albert (Rothschild x Ze'ev Jabotinsky, south-east corner)",
+   "source": "founder's street-level photo (2026-10-19): ~3-storey podium with a shop colonnade and the clock over the corner, ~7-storey tower above"
   }
  ]
 }
