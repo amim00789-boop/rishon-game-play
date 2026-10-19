@@ -89,6 +89,17 @@ export function propMesh(kind) {
     case 'chair_rows': // 5 rows of 8: the first row at the origin, the rest further back (+z), all facing -z (the stage)
       for (let r = 0; r < 5; r++) for (let c = 0; c < 8; c++) { const ch = propMesh('chair'); ch.position.set((c - 3.5) * 2.4, 0, r * 2.8); ch.rotation.y = Math.PI; g.add(ch); }
       break;
+    case 'certificate': // the mayor's certificate of appreciation: a gold frame, cream paper, a ribbon seal
+      part(g, G.box(1.3, 1.0, 0.08), 0xd8b24a);
+      part(g, G.box(1.12, 0.82, 0.02), 0xf7f0dc, 0, 0, 0.045);
+      for (let i = 0; i < 3; i++) part(g, G.box(0.8 - i * 0.2, 0.05, 0.01), 0x8a7a5a, 0, 0.22 - i * 0.16, 0.06);
+      part(g, G.cyl(0.11, 0.11, 0.03, 12), 0x2e86de, 0.36, -0.26, 0.06, Math.PI / 2);
+      break;
+    case 'podium': // a plain wooden lectern for the ceremony
+      part(g, G.box(1.6, 2.6, 1.0), 0x8a5a34, 0, 1.3);
+      part(g, G.box(1.9, 0.14, 1.3), 0x6b4226, 0, 2.66, 0.08, -0.25);
+      part(g, G.box(1.64, 0.3, 1.04), 0x2e86de, 0, 1.9);
+      break;
     case 'table':
       part(g, G.box(3.2, 0.15, 1.5), 0xe9e1cf, 0, 1.6);
       for (const [x, z] of [[-1.4, -0.6], [1.4, -0.6], [-1.4, 0.6], [1.4, 0.6]]) part(g, G.cyl(0.07, 0.07, 1.6, 6), 0x8a8f99, x, 0.8, z);
@@ -185,7 +196,7 @@ function carryPose(it) {
 
 // Offsets for the ways something is carried, in the joint's or body's local space.
 const HAND = { phone: [0, -0.55, 0.3], keys: [0, -0.5, 0.2], flowers: [0, -0.6, 0.35], shofar: [0, -0.55, 0.4], cups: [0, -0.5, 0.45],
-  umbrella: [0, -0.4, 0.2], wheel: [0, -0.6, 0.3], torch: [0, -0.4, 0.2], skateboard: [0, -0.7, 0.3], tray: [0, -0.4, 0.6], pot: [0, -0.9, 0.5], bucket: [0, -1.0, 0.3] };
+  umbrella: [0, -0.4, 0.2], certificate: [0, -0.5, 0.45], wheel: [0, -0.6, 0.3], torch: [0, -0.4, 0.2], skateboard: [0, -0.7, 0.3], tray: [0, -0.4, 0.6], pot: [0, -0.9, 0.5], bucket: [0, -1.0, 0.3] };
 
 export class PropStage {
   constructor({ scene, groundY, resolve, npcAt, avatarOf, playerAvatar }) {

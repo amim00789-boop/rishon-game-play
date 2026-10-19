@@ -34,7 +34,7 @@
       "surf": "Surf"
     },
     "deduceNo": "Not there. Read the clues again and mark another spot on the map.",
-    "markMap": "{k:M} map \u00b7 mark where it is ({n} options)",
+    "markMap": "{k:M} map · mark where it is ({n} options)",
     "freePlay": "That's everything. Rishon is yours, wander freely.",
     "allDone": "That's it for now. More soon.",
     "scaleIntro": "City Scale: every choice nudges the city towards \"me first\" or \"together\". It changes the ending.",
@@ -45,6 +45,7 @@
     "howBarter": "{k:F} next to a neighbour to offer something"
   },
   "npc": {
+    "gal": "Gal",
     "malul": "Malul",
     "dekel": "Dekel",
     "ofir": "Ofir",
@@ -60,7 +61,16 @@
     "rafi": "Rafi the lifeguard",
     "friedman": "Friedman",
     "guy": "Guy",
-    "rental": "Gilad from the board rental"
+    "shahar": "Shahar from the skate park",
+    "rental": "Gilad from the board rental",
+    "mayor": "Raz Kinstlich",
+    "pnina": "Pnina from the neighbourhood",
+    "itai": "Itai",
+    "grisha": "Grisha",
+    "ziva": "Ziva, the Heichal's manager",
+    "yanki": "Yanki",
+    "avi": "Avi",
+    "savta": "Savta Rachel"
   },
   "items": {
     "pot": "jachnun pot",
@@ -70,5 +80,666 @@
     "shofar": "shofar",
     "cups": "12 matching teacups",
     "drum": "bass drum"
+  },
+  "act_skate": {
+    "title": "Skate the bowl",
+    "c": {
+      "skate": "Let's ride the bowl",
+      "later": "Later"
+    },
+    "d": {
+      "hello": [
+        [
+          "shahar",
+          "Hey! The bowl's empty right now, which never happens. I've got a spare board if you want it."
+        ]
+      ],
+      "first": [
+        [
+          "shahar",
+          "First time in a bowl? Easy: you drop in off the coping, and {k:W} on the way down gives you speed. That's pumping."
+        ],
+        [
+          "shahar",
+          "Hit the wall fast and you fly. In the air: {k:J} kickflip, {k:K} grab, {k:A} {k:D} spin a 180. Just land with the board along the wall."
+        ],
+        [
+          "shahar",
+          "Next to the coping, or over the bar, {k:L} is a grind. A few tricks in a row without falling is a combo, and it multiplies. You've got one minute."
+        ]
+      ],
+      "go": [
+        [
+          "shahar",
+          "Take the red board. It's kind to people who respect it."
+        ]
+      ],
+      "after": [
+        [
+          "shahar",
+          "{score}! Not bad at all. Your best: {best}. Another one?"
+        ]
+      ],
+      "again": [
+        [
+          "shahar",
+          "{score}. The bowl beats everyone at first. Your best is still {best}."
+        ]
+      ],
+      "best": [
+        [
+          "shahar",
+          "{score}?! New best! I'm sending this to the skate park group."
+        ]
+      ],
+      "quit": [
+        [
+          "shahar",
+          "The bowl isn't going anywhere. I'm here till they turn the lights off."
+        ]
+      ],
+      "later": [
+        [
+          "shahar",
+          "Cool. I'm here till they turn the lights off."
+        ]
+      ]
+    }
+  },
+  "act_gal": {
+    "title": "Gal the flight attendant",
+    "c": {
+      "where": "Where are we flying?",
+      "drink": "Can I get a drink?",
+      "safety": "Safety briefing?",
+      "bye": "Bye Gal!"
+    },
+    "d": {
+      "hello": [
+        [
+          "gal",
+          "Hi, welcome aboard Arkia-ish! I'm Gal, your flight attendant today. Sit anywhere you like, we're running a little late."
+        ]
+      ],
+      "where": [
+        [
+          "gal",
+          "To Eilat! That was the plan, anyway. The captain said he knew a shortcut through Rishon's dunes, and here we are."
+        ],
+        [
+          "gal",
+          "Honestly? Sea view, quiet, nobody kicking your seat. I'm in no hurry."
+        ]
+      ],
+      "drink": [
+        [
+          "gal",
+          "Sure! Water, orange juice, or tea I made three hours ago. I'd go with the water."
+        ],
+        [
+          "gal",
+          "And since you're a special passenger, have a pretzel too. Don't tell the others, there are none left."
+        ]
+      ],
+      "safety": [
+        [
+          "gal",
+          "The exits are here, here, and... actually just here. One door is open, and the stairs are waiting outside."
+        ],
+        [
+          "gal",
+          "In case of a landing on sand? We already landed on sand. So you're covered."
+        ]
+      ],
+      "bye": [
+        [
+          "gal",
+          "Thanks for flying with us! Don't forget your things in the overhead bin, and come back any time."
+        ]
+      ]
+    }
+  },
+  "m18_mayor": {
+    "title": "The mayor arrives after the encore",
+    "chart": "Raz's first lesson",
+    "cheer": "The mayor on drums. Left, right, and left again.",
+    "obj": {
+      "huddle": "Hear out the mayor with the band",
+      "name": "Pick a name for the event with Dekel",
+      "lesson": "Drum with Malul so Raz can find the beat",
+      "plan": "Hear what Raz has planned for tomorrow"
+    },
+    "c": {
+      "chair": "\"Bring a chair, bring someone\"",
+      "spirits": "\"Four Spirits, every month\"",
+      "saturday": "\"Saturday night in Gan HaIr\""
+    },
+    "d": {
+      "offer": [
+        [
+          "narrator",
+          "The stage is almost empty. A man in a navy jacket runs across the grass, phone to his ear, and stops right in front of Malul's drums."
+        ],
+        [
+          "mayor",
+          "Wait, wait, don't pack up! ...Yes, I'm on the line. Tell them I'm already there. ...No, not there. Here."
+        ],
+        [
+          "mayor",
+          "Raz, the mayor. Nice to meet you. Tonight I did a bar mitzvah, a community garden opening and the seniors' backgammon tournament. I lost. And now I'm here, and I missed the show of the year."
+        ],
+        [
+          "player",
+          "It ended ten minutes ago."
+        ],
+        [
+          "mayor",
+          "I know. I saw the page. Half the city posted a photo of whoever sat next to them. First time that page has posted anything that isn't about parking."
+        ],
+        [
+          "mayor",
+          "So I have an idea. Or a request. Or an idea that is really a request. Call the guys over?"
+        ]
+      ],
+      "huddle": [
+        [
+          "malul",
+          "Bro, the mayor? Really? I thought he was from the generator's insurance."
+        ],
+        [
+          "mayor",
+          "I know them too. Listen: what happened here tonight, religious, secular, grandmothers, skaters, all on the same lawn... I want it every month. A city event. A stage, chairs, real power. Not one generator and a prayer."
+        ],
+        [
+          "adir",
+          "Every month? Like a steady workout. It hurts at first, then you can't do without it."
+        ],
+        [
+          "ofir",
+          "Bro, I'm filming this! ...No. I'm not filming. I swore. Just listening."
+        ],
+        [
+          "mayor",
+          "One thing. An event needs a name. All I've got are names like \"Intergenerational Community Gathering, courtesy of the Culture Department\". Save me."
+        ]
+      ],
+      "name": [
+        [
+          "dekel",
+          "A name matters. It's what people say when they invite someone else to come."
+        ],
+        [
+          "dekel",
+          "So what do you say?"
+        ]
+      ],
+      "rChair": [
+        [
+          "mayor",
+          "\"Bring a chair, bring someone.\" ...I feel like we stole that from a grandmother."
+        ],
+        [
+          "dekel",
+          "It's Savta Rachel's. She'll be happy. She'll say she isn't, but she will."
+        ]
+      ],
+      "rSpirits": [
+        [
+          "malul",
+          "Four Spirits every month! Bro, I need a new drum skin."
+        ],
+        [
+          "mayor",
+          "The Culture Department will buy it. Write that down. ...Nobody's writing? Fine, I'll write it."
+        ]
+      ],
+      "rSaturday": [
+        [
+          "mayor",
+          "Saturday night. We start after Havdalah, so everyone can come. Those waiting for three stars, and those waiting for a parking spot."
+        ],
+        [
+          "dekel",
+          "Wow. That's exactly what my dad would say. Just with more verses."
+        ]
+      ],
+      "lesson": [
+        [
+          "mayor",
+          "And now a personal request. I always wanted to drum. When I was twelve my mother said: \"Just not in the house.\" So here I am. Not in the house."
+        ],
+        [
+          "malul",
+          "Okay, Mr Mayor. I play, you watch my hands, and our friend here holds the beat so we don't get lost. One, two, three, four."
+        ]
+      ],
+      "lessonDone": [
+        [
+          "narrator",
+          "Raz drums on a plastic chair. Not well, but with the joy of a man who waited forty years for it. His phone rings in the middle, and he doesn't answer. First time tonight."
+        ],
+        [
+          "malul",
+          "Wallah, you've got a hand. The left one. The right one is still deciding."
+        ],
+        [
+          "mayor",
+          "Nobody tells me that in meetings."
+        ]
+      ],
+      "plan": [
+        [
+          "mayor",
+          "Right. Tomorrow morning I do a round: the Heichal, the Teder and the Great Synagogue. A stage, the youth and chairs. If everyone says yes, we have an event."
+        ],
+        [
+          "mayor",
+          "One small problem. My driver is at his grandson's bris. And I don't drive. Really don't. The city asked nicely."
+        ],
+        [
+          "player",
+          "So who's driving?"
+        ],
+        [
+          "mayor",
+          "You. We meet at the City Hall square. I'll bring coffee. ...I'll bring two, one always spills."
+        ],
+        [
+          "dekel",
+          "Drive slowly. He sounds like a man who spills coffee from a cup with a lid."
+        ]
+      ]
+    },
+    "page": "📱 Rishon Unfiltered: did anyone see the mayor drumming on a chair in Gan HaIr at midnight? (1,204 likes. Three comments about parking, out of habit.)"
+  },
+  "m19_tour": {
+    "title": "A ride with the mayor",
+    "obj": {
+      "leg1": "Pick up Raz at the City Hall square, by car",
+      "run1": "Drive Raz to the Heichal HaTarbut. Gently, he has coffee",
+      "ziva": "Talk to Ziva, the Heichal's manager",
+      "leg2": "Pick Raz up at the Heichal",
+      "run2": "Drive Raz to the Teder",
+      "teder": "Talk to Grisha and Itai at the Teder",
+      "youth": "Help Itai decide what the youth do at the event",
+      "leg3": "Pick Raz up at the Teder",
+      "run3": "Drive Raz to the Great Synagogue",
+      "shul": "Talk to Yanki and Avi by the Great Synagogue",
+      "bye": "Hear what Raz says at the end of the round"
+    },
+    "t": {
+      "needCar": "Raz doesn't ride scooters. He tried once, and there's a photo. You need a car: {k:4}",
+      "late": "Raz is late for a meeting. He's already calling to say he's late. Let's try again, from the same spot."
+    },
+    "c": {
+      "stop": "Stop. Let him talk to her",
+      "wave": "Wave to her and keep going",
+      "open": "\"An open stage. Whoever wants, goes up\"",
+      "skate": "\"A skate demo, with a ramp in Gan HaIr\"",
+      "duet": "\"Grisha and Itai, one song together\""
+    },
+    "d": {
+      "offer": [
+        [
+          "mayor",
+          "Good morning! I brought coffee. One for you, one for me, and one for the car seats. Just in case."
+        ],
+        [
+          "mayor",
+          "Three stops: the Heichal, the Teder, the Great Synagogue. I sit next to you, I talk on the phone, and you drive like there's a full cup of coffee on your lap. Because on mine there is."
+        ]
+      ],
+      "ePnina": [
+        [
+          "narrator",
+          "A woman with a shopping trolley stands on the pavement waving both arms, as if landing a plane."
+        ],
+        [
+          "pnina",
+          "Raz! Raz! The street lamp on my street has been flickering for a month! It's like living in a disco!"
+        ],
+        [
+          "mayor",
+          "Pnina! ...Shall we stop for a moment? Or we're in a hurry. You're the driver."
+        ]
+      ],
+      "rStop": [
+        [
+          "mayor",
+          "Pnina, the lamp by the playground, right? Noted. ...I really am noting it, look."
+        ],
+        [
+          "pnina",
+          "Last time you said you noted it, and the lamp started flickering faster."
+        ],
+        [
+          "mayor",
+          "Then this time I'm also calling. ...Hello? Yes, it's Raz. We have a disco by the playground. Send someone with a bulb."
+        ]
+      ],
+      "rWave": [
+        [
+          "mayor",
+          "Pnina, I'll get back to you! ...I really will. She knows where I live. Everyone knows where I live."
+        ]
+      ],
+      "arrive1": [
+        [
+          "narrator",
+          "Raz gets out of the car. The coffee is still in the cup. Most of it."
+        ],
+        [
+          "mayor",
+          "Excellent ride. Only once did I feel last night's dinner."
+        ]
+      ],
+      "ziva": [
+        [
+          "ziva",
+          "Raz. If you come with coffee, you want something."
+        ],
+        [
+          "mayor",
+          "Ziva, I want the mobile stage. Once a month. For Gan HaIr."
+        ],
+        [
+          "ziva",
+          "The mobile stage left the Heichal once, at Hanukkah, and came back with glitter I'm still finding."
+        ],
+        [
+          "player",
+          "Both choirs sang on one stage here. It worked."
+        ],
+        [
+          "ziva",
+          "...It really did. Fine. The stage is yours. But if I find one more speck of glitter, I know where the mayor lives."
+        ],
+        [
+          "mayor",
+          "Everyone does."
+        ]
+      ],
+      "arrive2": [
+        [
+          "narrator",
+          "The Teder. A smell of skate wheels and burekas from the kiosk. Raz straightens his jacket as if walking into a budget debate."
+        ]
+      ],
+      "teder": [
+        [
+          "grisha",
+          "Ah, the mayor! Look, I don't fall anymore. Almost."
+        ],
+        [
+          "itai",
+          "He fell twice yesterday. But elegantly."
+        ],
+        [
+          "mayor",
+          "Grisha, Itai, I need the youth at the event. Not in the back row on their phones. On the stage."
+        ],
+        [
+          "itai",
+          "On the stage? And do what there, besides stand?"
+        ]
+      ],
+      "youth": [
+        [
+          "itai",
+          "Okay, you tell him. He won't listen to me, I'm only sixteen."
+        ]
+      ],
+      "rOpen": [
+        [
+          "itai",
+          "An open stage... I've got a friend who beatboxes. He'll beatbox even if you don't let him. Better if you let him."
+        ],
+        [
+          "mayor",
+          "Noted: beatbox. ...How do you spell beatbox?"
+        ]
+      ],
+      "rSkate": [
+        [
+          "mayor",
+          "A ramp in Gan HaIr? ...I'll talk to the insurance. I'm always talking to the insurance."
+        ],
+        [
+          "grisha",
+          "And I am first in line. With a helmet. With two helmets."
+        ]
+      ],
+      "rDuet": [
+        [
+          "grisha",
+          "A song together? I sing only in Russian, and only at weddings."
+        ],
+        [
+          "itai",
+          "Then I'll make you a beat. \"Grisha falls, Grisha gets up.\" It's a hit."
+        ],
+        [
+          "grisha",
+          "...It really is a hit."
+        ]
+      ],
+      "arrive3": [
+        [
+          "narrator",
+          "The Great Synagogue, by Founders' Square. Old stone, old trees, and two men who have been waiting for ten minutes and pretend they haven't."
+        ]
+      ],
+      "shul": [
+        [
+          "yanki",
+          "The mayor! What do you need? Just don't say chairs. Everyone who came here this month wanted chairs."
+        ],
+        [
+          "mayor",
+          "Chairs. And a good hour. I want you to come, and to bring whoever doesn't usually come."
+        ],
+        [
+          "avi",
+          "If it's Saturday night, then after Havdalah. A quarter of an hour after Shabbat ends, not a minute before. Otherwise half my neighbourhood arrives just for dessert."
+        ],
+        [
+          "yanki",
+          "And we need a corner to sit a little to the side. Not at the back. To the side. With respect."
+        ],
+        [
+          "mayor",
+          "A quarter of an hour after Shabbat ends, and a corner on the side with the good chairs. Write that down."
+        ],
+        [
+          "player",
+          "Writing."
+        ],
+        [
+          "yanki",
+          "And our chairs come back before Shacharit. I heard what happened to Ziva's stage."
+        ]
+      ],
+      "bye": [
+        [
+          "mayor",
+          "A stage, the youth, chairs and an hour. In one morning. At City Hall that takes half a year and three committees."
+        ],
+        [
+          "mayor",
+          "Tomorrow at six, at the City Hall square. I have something for you. Tell the guys to come in an ironed shirt. ...At least in a shirt."
+        ]
+      ]
+    },
+    "page": "📱 Rishon Unfiltered: I saw the mayor in the passenger seat of a small car, with a coffee, smiling all the way from the Heichal to the Teder. Anyone know what's going on? (640 likes)"
+  },
+  "m20_certificate": {
+    "title": "A certificate of appreciation",
+    "obj": {
+      "gather": "Hear Raz's speech at the City Hall square",
+      "who": "Decide who Raz gives the certificate to",
+      "photo": "Stand with everyone for the photo"
+    },
+    "c": {
+      "malul": "\"To Malul. He always counts to four first\"",
+      "savta": "\"To Savta Rachel. She started the page\"",
+      "all": "\"To everyone. Including the back row\""
+    },
+    "d": {
+      "offer": [
+        [
+          "narrator",
+          "The City Hall square, six in the evening. Someone rolled out a red carpet that is too short and ends halfway up the steps."
+        ],
+        [
+          "mayor",
+          "You came! And in shirts! ...Adir, that's a tank top."
+        ],
+        [
+          "adir",
+          "It's an ironed tank top."
+        ],
+        [
+          "mayor",
+          "Approved. Come, I don't start without everyone. And without Savta Rachel I don't start at all."
+        ]
+      ],
+      "speechChair": [
+        [
+          "mayor",
+          "Friends, neighbours, Savta Rachel. I'll be brief. ...I'm never brief, but I'll try."
+        ],
+        [
+          "mayor",
+          "Not long ago the city's page was a place where everyone shouted. Then four guys with a drum, a ukulele, keys and... Adir, what do you play?"
+        ],
+        [
+          "adir",
+          "Guitar. Weights too, but not at shows."
+        ],
+        [
+          "mayor",
+          "Four guys, and everyone who helped them, sat the whole city down on one lawn. So from next month it's official: \"Bring a chair, bring someone\", once a month, in Gan HaIr."
+        ],
+        [
+          "savta",
+          "That's mine, you know. The name."
+        ],
+        [
+          "mayor",
+          "I know, Savta Rachel. That's why it's good. And now, a certificate of appreciation. Only one, because the city printer ran out of gold."
+        ]
+      ],
+      "speechSpirits": [
+        [
+          "mayor",
+          "Friends, neighbours, Savta Rachel. I'll be brief. ...I'm never brief, but I'll try."
+        ],
+        [
+          "mayor",
+          "Not long ago the city's page was a place where everyone shouted. Then four guys with a drum, a ukulele, keys and... Adir, what do you play?"
+        ],
+        [
+          "adir",
+          "Guitar. Weights too, but not at shows."
+        ],
+        [
+          "mayor",
+          "Four guys, and everyone who helped them, sat the whole city down on one lawn. So from next month it's official: \"Four Spirits, every month\", in Gan HaIr. With a new drum skin."
+        ],
+        [
+          "malul",
+          "A budget for the drum! Bro, this is the most moving moment of my life."
+        ],
+        [
+          "mayor",
+          "And now, a certificate of appreciation. Only one, because the city printer ran out of gold."
+        ]
+      ],
+      "speechSaturday": [
+        [
+          "mayor",
+          "Friends, neighbours, Savta Rachel. I'll be brief. ...I'm never brief, but I'll try."
+        ],
+        [
+          "mayor",
+          "Not long ago the city's page was a place where everyone shouted. Then four guys with a drum, a ukulele, keys and... Adir, what do you play?"
+        ],
+        [
+          "adir",
+          "Guitar. Weights too, but not at shows."
+        ],
+        [
+          "mayor",
+          "Four guys, and everyone who helped them, sat the whole city down on one lawn. So from next month it's official: \"Saturday night in Gan HaIr\". A quarter of an hour after Shabbat ends, not a minute before."
+        ],
+        [
+          "yanki",
+          "He remembered. You see, Avi? He remembered."
+        ],
+        [
+          "mayor",
+          "And now, a certificate of appreciation. Only one, because the city printer ran out of gold."
+        ]
+      ],
+      "who": [
+        [
+          "mayor",
+          "So who do I give it to? I'd give it to everyone, but it's one frame."
+        ]
+      ],
+      "rMalul": [
+        [
+          "malul",
+          "Me? Bro... one, two, three... I've got no four. First time I've got no four."
+        ],
+        [
+          "ofir",
+          "Film this! ...No. Don't film. Just watch."
+        ]
+      ],
+      "rSavta": [
+        [
+          "savta",
+          "I opened a page for a cat. Not for certificates."
+        ],
+        [
+          "savta",
+          "...But I'll hang it on the fridge. Next to the magnet with the password."
+        ]
+      ],
+      "rAll": [
+        [
+          "mayor",
+          "To everyone? ...Fine. Then I write here: \"To everyone who brought a chair, and someone\". Does that include me? I brought coffee."
+        ],
+        [
+          "dekel",
+          "It includes you."
+        ]
+      ],
+      "outro": [
+        [
+          "narrator",
+          "Applause. Shimon raises an orange over his head like a trophy. Raz's phone rings, and he switches it off. Everyone sees."
+        ],
+        [
+          "mayor",
+          "This is for you. Not for a photo. ...Fine, also for a photo. Squeeze in."
+        ],
+        [
+          "ofir",
+          "I'm filming! This time from start to finish. Nothing cut."
+        ],
+        [
+          "malul",
+          "One, two, three, four... Rishon!"
+        ],
+        [
+          "narrator",
+          "On the page, the week's favourite photo: the whole crew at the City Hall square, the mayor in the middle with his eyes closed. Nobody writes about parking."
+        ]
+      ]
+    },
+    "page": "📱 Rishon Unfiltered: a certificate of appreciation at the City Hall square, and the whole neighbourhood in the photo. (2,018 likes. One comment about parking. Its author deleted it himself.)"
   }
 }

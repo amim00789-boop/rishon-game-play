@@ -25,18 +25,20 @@
     "moshiko": {
       "archetype": "mizrahi_street_guy",
       "at": {
-        "poi": "cinema_city",
-        "dx": 50,
-        "dz": 70
+        "lat": 31.979198,
+        "lon": 34.74847,
+        "dx": 10,
+        "dz": 30
       }
     },
     "family": {
       "archetype": "haredi_mother_stroller",
       "fallback": "haredi_woman",
       "at": {
-        "poi": "cinema_city",
-        "dx": 200,
-        "dz": 300
+        "lat": 31.979198,
+        "lon": 34.74847,
+        "dx": 800,
+        "dz": -170
       }
     }
   },
@@ -53,14 +55,15 @@
       "type": "drive",
       "npc": "hodaya",
       "at": {
-        "poi": "cinema_city",
-        "dx": 44,
-        "dz": 60
+        "lat": 31.979198,
+        "lon": 34.74847,
+        "dx": 16,
+        "dz": 40
       },
       "modes": [
         "car"
       ],
-      "limit": 140,
+      "limit": 200,
       "calm": {
         "start": 80,
         "brake": -4,
@@ -121,12 +124,6 @@
         "waited_family": "d.outroWaved",
         "default": "d.outro"
       },
-      "effects": {
-        "trust": {
-          "dati": 1,
-          "street": 1
-        }
-      },
       "propsDone": [
         {
           "emote": "avi",
@@ -136,7 +133,13 @@
           "emote": "hodaya",
           "name": "wave"
         }
-      ]
+      ],
+      "effects": {
+        "trust": {
+          "dati": 1,
+          "street": 1
+        }
+      }
     }
   ],
   "after": {

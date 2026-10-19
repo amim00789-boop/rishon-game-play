@@ -20,6 +20,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { project, SCALE } from '../geo.js';
+import { bowlSpec, bowlGeometry, bowlColor, bowlOutline } from './skatebowl.js';
 
 // Optional modules owned by other agents. Both are guarded: without them the landmarks
 // still build, with English sign text and flat ground.
@@ -3085,16 +3086,26 @@ function buildSkatePark(flags) {
   // the narrow east strip is the entrance. Local x east, z south.
   const xe = P([31.954574, 34.802136])[0] - f.x;
   const mx = (X0 + xe) / 2, w = xe - X0, h = Z1 - Z0;
-  // Oval bowl: lathe profile from the coping deck down the transition to the flat bottom.
-  const R0 = 3.0, R1 = 8.5, HB = 2.6, R2 = 10, F = 0.31;
-  const prof = [new THREE.Vector2(0.01, F)];
-  for (let k = 0; k <= 8; k++) { const t = k / 8; prof.push(new THREE.Vector2(R0 + (R1 - R0) * t, F + (HB - F) * (1 - Math.cos((t * Math.PI) / 2)))); }
-  prof.push(new THREE.Vector2(R2, HB), new THREE.Vector2(R2, F));
-  const bx = mx, bz = Z0 + h * 0.3, sxB = Math.min(1.25, (w * 0.46) / R2), szB = Math.min(1.0, (h * 0.28) / R2);
-  b.add(bothSides(new THREE.LatheGeometry(prof, 28)), conc, M(bx, 0, bz, 0, 0, 0, sxB, 1, szB), (x, y) => (y > HB - 0.1 ? 0xd3d5d5 : y > F + 0.05 ? 0x9fa4a6 : 0xb7babb));
-  b.add(G.torus(R1, 0.12, 4, 28), steel, M(bx, HB + 0.05, bz, Math.PI / 2, 0, 0, sxB, szB, 1));
-  spot('bowl', [bx - R1 * sxB, HB, bz], [bx + R1 * sxB, HB, bz]);
-  spot('bowl', [bx, HB, bz - R1 * szB], [bx, HB, bz + R1 * szB]);
+  // Pool in the north half (src/world/skatebowl.js; the skate minigame rides the same shape):
+  // a rounded-rectangle floor, a 5-unit transition up to the coping, a deck and an outer wall.
+  // The west and north fences slant inward by ~3 units toward the north-west corner, hence the
+  // larger margins there.
+  const F = 0.31;
+  const bX0 = X0 + 3.2, bX1 = xe - 1.2, bZ0 = Z0 + 2.6, bZ1 = Z0 + h * 0.5;
+  const bowl = bowlSpec({ cx: (bX0 + bX1) / 2, cy: F, cz: (bZ0 + bZ1) / 2, ox: (bX1 - bX0) / 2, oz: (bZ1 - bZ0) / 2 });
+  {
+    const bb = new Batch();
+    bb.add(bowlGeometry(bowl), conc, M(bowl.cx, F, bowl.cz), bowlColor(bowl));
+    const bm = bb.mesh('skate-bowl');
+    // Its own shadow on the near-vertical walls showed as saw teeth (acne) under the low sun.
+    bm.castShadow = false;
+    bm.userData.skateBowl = bowl;
+    g.add(bm);
+  }
+  const bowlLip = bowl.fx + bowl.Ec * 0.97, bowlLipZ = bowl.fz + bowl.Ec * 0.97;
+  spot('bowl', [bowl.cx - bowlLip, F + bowl.H, bowl.cz], [bowl.cx + bowlLip, F + bowl.H, bowl.cz]);
+  spot('bowl', [bowl.cx, F + bowl.H, bowl.cz - bowlLipZ], [bowl.cx, F + bowl.H, bowl.cz + bowlLipZ]);
+  const bowlW = bowlOutline(bowl, 0.1).map(([x, z]) => f.w(bowl.cx + x, bowl.cz + z));
   // Quarter pipe against the west fence in the south half (concave face toward +x).
   { const R = 2.4, width = Math.min(14, h * 0.4), x = X0 + 1.4, z = Z0 + h * 0.72;
     const pts = [new THREE.Vector2(0, 0)];
@@ -3172,10 +3183,12 @@ function buildSkatePark(flags) {
   const W = ([x, y, z]) => { const [wx, wz] = f.w(x, z); return [wx, y, wz]; };
   return {
     group: g,
-    colliders: [tederW],
+    colliders: [tederW, bowlW],
     pois: [
       { id: 'skate_park', name: 'Skate Park', x: scx, z: scz },
       { id: 'teder', name: 'HaTeder Youth Centre', x: tcx, z: tcz },
+      // In front of the pool's south wall: where the skate session starts and ends.
+      (() => { const [x, z] = f.w(bowl.cx, bowl.cz + bowl.fz + bowl.Ec + bowl.deck + 3); return { id: 'skate_bowl', name: 'Skate Bowl', x, z }; })(),
     ],
     spots: { skate_park: spots.map((s) => ({ kind: s.kind, a: W(s.a), b: W(s.b) })) },
     spotsLocalY: true,
@@ -3359,17 +3372,26 @@ const PLATFORM_TOP = 1.0; // city.js draws platform floors 1.0 u above the groun
 
 // A glass stair enclosure: side screens and a roof following the stair from (0, 0, 0) up to
 // (0, rise, len) in local space (+z up the stair). No collider: the stair is a walk path.
+// Round 7 (founder): the roof sat 6.4 u over the treads and the chase camera (about 9 u over
+// the player) saw only its top, so it now clears STAIR_ROOF, and the roof is its own mesh
+// (userData.mdRoof) that the station hides while the player is on or beside the stair.
+const STAIR_ROOF = 10.5;
 function stairEnclosure(len, rise, w) {
-  const b = new Batch();
+  const b = new Batch(), r = new Batch();
   const pitch = -Math.atan2(rise, len), hyp = Math.hypot(len, rise);
   for (const s of [-1, 1]) {
-    b.add(G.cube(0.12, 2.3, hyp), 0x9fd3e6, M(s * (w / 2 + 0.15), rise / 2 + 1.2, len / 2, pitch, 0));
-    b.add(G.cube(0.2, 0.2, hyp), 0x5d6670, M(s * (w / 2 + 0.15), rise / 2 + 2.4, len / 2, pitch, 0));
-    for (const t of [0, 0.5, 1]) b.add(G.cube(0.25, HEADROOM + 0.2, 0.25), 0x5d6670, M(s * (w / 2 + 0.2), rise * t + (HEADROOM + 0.2) / 2, len * t));
+    b.add(G.cube(0.12, 1.2, hyp), 0x9fd3e6, M(s * (w / 2 + 0.15), rise / 2 + 0.6, len / 2, pitch, 0));
+    b.add(G.cube(0.2, 0.2, hyp), 0x5d6670, M(s * (w / 2 + 0.15), rise / 2 + 1.25, len / 2, pitch, 0));
+    for (const t of [0, 0.5, 1]) b.add(G.cube(0.25, STAIR_ROOF + 0.2, 0.25), 0x5d6670, M(s * (w / 2 + 0.2), rise * t + (STAIR_ROOF + 0.2) / 2, len * t));
   }
-  b.add(G.cube(w + 0.8, 0.2, hyp + 1.2), 0xd9dde1, M(0, rise / 2 + HEADROOM + 0.3, len / 2, pitch, 0));
-  b.add(G.cube(w + 0.9, 0.5, 0.3), 0x27407a, M(0, rise + HEADROOM, len + 0.6));
-  return b.mesh('md-stair');
+  r.add(G.cube(w + 0.8, 0.2, hyp + 1.2), 0xd9dde1, M(0, rise / 2 + STAIR_ROOF + 0.3, len / 2, pitch, 0));
+  r.add(G.cube(w + 0.9, 0.5, 0.3), 0x27407a, M(0, rise + STAIR_ROOF, len + 0.6));
+  const grp = new THREE.Group();
+  grp.add(b.mesh('md-stair'));
+  const roof = r.mesh('md-stair-roof');
+  roof.userData.mdRoof = true;
+  grp.add(roof);
+  return grp;
 }
 
 // Ticket gate line: cabinets with glass flaps, the wide gate at one end (accessible).
@@ -3438,7 +3460,7 @@ function dressMosheDayan(g, plats) {
     for (const t of [0.2, 0.7]) {
       const x = ax + (bx - ax) * t, z = az + (bz - az) * t;
       const s = signMesh([nums], 2.4, 1.1, { bg: '#27407a', fg: '#ffffff', outline: '#27407a' });
-      s.position.set(x, gAt(x, z) + PLATFORM_TOP + 4.6, z); s.rotation.y = ryAx; s.userData.seated = true; g.add(s);
+      s.position.set(x, gAt(x, z) + ROOF - 1.4, z); s.rotation.y = ryAx; s.userData.seated = true; g.add(s);
       const s2 = s.clone(); s2.rotation.y = ryAx + Math.PI; s2.userData.seated = true; g.add(s2);
     }
     return { m, x: cx, z: cz };
@@ -3455,8 +3477,31 @@ function dressMosheDayan(g, plats) {
         const m = stairEnclosure(len, y1 - y0, s.width || 3.4);
         m.position.set(x0, y0, z0); m.rotation.y = Math.atan2(x1 - x0, z1 - z0); m.userData.seated = true;
         g.add(m);
+        p.m = m;
+        p.run = { x0, z0, y0, x1, z1, y1, len, w: s.width || 3.4 };
       } else p.m.position.y = platY(p.x, p.z);
     });
+  });
+  // While the player is on a stair or at either end of it, or the camera is over it, its roof is
+  // hidden: the chase camera then sits at roof height and would show only the roof.
+  anim(() => {
+    const game = typeof window !== 'undefined' && window.__game;
+    const pl = game && game.player;
+    if (!pl) return;
+    const cam = game.camera && game.camera.position;
+    for (const p of parts) {
+      const roof = p.m.children.find((c) => c.userData.mdRoof);
+      if (!roof) continue;
+      const r = p.run;
+      const over = (x, z, y, margin, above) => {
+        if (!r) return Math.hypot(x - p.x, z - p.z) < 16;
+        const ux = (r.x1 - r.x0) / r.len, uz = (r.z1 - r.z0) / r.len;
+        const t = (x - r.x0) * ux + (z - r.z0) * uz, off = Math.abs((x - r.x0) * -uz + (z - r.z0) * ux);
+        return t > -margin && t < r.len + margin && off < r.w / 2 + margin && y > r.y0 - 3 && y < r.y1 + above;
+      };
+      const near = over(pl.pos.x, pl.pos.z, pl.y, 8, 4) || (cam && over(cam.x, cam.z, cam.y, 3, STAIR_ROOF + 3));
+      roof.visible = !near;
+    }
   });
 }
 
@@ -3699,7 +3744,10 @@ function buildWinery(flags) {
 // (round 4, dressMosheDayan) stair enclosures, ticket gates and platform furniture. Tracks,
 // platform floors, stairs and walkways come from city.js.
 const MOSHE_DAYAN_BRIDGE = [[31.987379, 34.75666], [31.987143, 34.757803], [31.987307, 34.757832], [31.987538, 34.756704]];
-const ROOF = 6.0; // canopy underside: clears avatars on the 0.6 platform, stays under an 8-unit deck
+// Canopy underside over the ground. Round 7 (founder): at 6.0 it was 5 u over the 1.0 platform,
+// an avatar's height, and the chase camera (about 9 u over the player) saw only canopy roofs.
+// 10.5 keeps the camera under it on the platform; canopies stay out of the bridge band.
+const ROOF = 10.5;
 function buildMosheDayan(flags) {
   const { f, world } = L.mosheDayan;
   const g = new THREE.Group();
@@ -3707,6 +3755,7 @@ function buildMosheDayan(flags) {
   const loc = toLocal(f, world);
   const band = scalePoly(projPoly(MOSHE_DAYAN_BRIDGE), 1.15);
   const plats = MOSHE_DAYAN_PLATFORMS.map((line) => projPoly(line));
+  const canopies = [];
   // Platform canopies and the hall: columns stand on the platform centre lines only, so no
   // column lands on a track.
   for (const [[ax, az], [bx, bz]] of plats) {
@@ -3717,7 +3766,14 @@ function buildMosheDayan(flags) {
       if (MD_STEPS.some((st) => { const [sx, sz] = P(st.top); return Math.hypot(x - sx, z - sz) < 16; })) continue; // stair enclosure there
       const inHall = pointInPoly(x, z, world);
       b.add(G.cyl(0.3, 0.3, ROOF, 8), C.white, M(x, ROOF / 2 + 0.3, z));
-      if (!inHall) b.add(G.box(7.2, 0.45, 14.2, 0.2), k % 2 ? C.teal : C.white, M(x, ROOF + 0.25, z, 0, ry));
+      if (!inHall) {
+        const cb = new Batch();
+        cb.add(G.box(7.2, 0.45, 14.2, 0.2), k % 2 ? C.teal : C.white, M(0, 0, 0, 0, ry));
+        const cm = cb.mesh('md-canopy');
+        cm.position.set(x, ROOF + 0.25, z);
+        g.add(cm);
+        canopies.push(cm);
+      }
       if (k % 3 === 1) bench(b, x + Math.cos(ry) * 1.6, z - Math.sin(ry) * 1.6 + 0, ry + Math.PI / 2);
     }
   }
@@ -3773,6 +3829,21 @@ function buildMosheDayan(flags) {
   for (let i = 0; i < 4; i++) train.add(G.box(3.4, 4.0, 24, 0.9), C.white, M(0, 2.9, -i * 25), (x, y) => (y > 0.7 && y < 1.6 ? C.navy : (y < -1.3 ? C.red : C.white)));
   train.add(G.box(3.45, 1.3, 98, 0.4), C.glass, M(0, 3.5, -37.5));
   dressMosheDayan(g, plats);
+  // Round 7: with the canopies up at ROOF, a player on the stairs or at a platform end has the
+  // chase camera above them, so a panel between the lens and the player is hidden until the
+  // view is clear again. Positions are relative to the group, which seats on the ground.
+  anim(() => {
+    const game = typeof window !== 'undefined' && window.__game;
+    if (!game || !game.player || !game.camera) return;
+    const c = game.camera.position, pl = game.player, oy = g.position.y;
+    const ax = c.x, az = c.z, bx = pl.pos.x, bz = pl.pos.z, dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1;
+    for (const m of canopies) {
+      const y = m.position.y + oy;
+      if (c.y < y - 0.5 || pl.y > y) { m.visible = true; continue; }
+      const t = Math.max(0, Math.min(1, ((m.position.x - ax) * dx + (m.position.z - az) * dz) / L2));
+      m.visible = Math.hypot(m.position.x - (ax + dx * t), m.position.z - (az + dz * t)) > 9;
+    }
+  });
   const tm = train.mesh('train');
   tm.rotation.y = Math.atan2(ux, uz);
   tm.userData.seated = true; // positioned on the ground every frame below

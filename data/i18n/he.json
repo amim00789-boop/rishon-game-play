@@ -83,7 +83,9 @@
     "gali_hadar_country": "קאנטרי גלי הדר",
     "neve_hadarim_country": "קאנטרי נווה הדרים",
     "harova": "הרובע",
-    "surf_club_beach": "החוף של מועדון הגלישה"
+    "surf_club_beach": "החוף של מועדון הגלישה",
+    "arkia_plane": "המטוס של ארקיע־כאילו",
+    "llrs_airfield": "מנחת ראשון לציון"
   },
   "map": {
     "title": "ראשון לציון",
@@ -212,7 +214,8 @@
     "neve_hadarim_country": "קאנטרי נווה הדרים",
     "neve_hadarim_country_sub": "בריכה • חדר כושר • מגרשים",
     "harova": "הרובע",
-    "harova_sub": "לאכול • לשתות • לרקוד"
+    "harova_sub": "לאכול • לשתות • לרקוד",
+    "arkia_livery": "ארקיע־כאילו"
   },
   "profile": {
     "firstName": "השחקן שלי",

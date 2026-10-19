@@ -2,7 +2,8 @@
   "version": 2,
   "strings": [
     "strings.{lang}.json",
-    "story.{lang}.json"
+    "story.{lang}.json",
+    "cinema.{lang}.json"
   ],
   "quests": [
     "m01_soundcheck",
@@ -10,6 +11,7 @@
     "m03_jachnun",
     "m04_yardsale",
     "m05_bride",
+    "m05b_wedding",
     "m06_repark",
     "m07_race",
     "m08_skate",
@@ -22,7 +24,10 @@
     "m14_blackout",
     "m15_mitzi",
     "m16_chairs",
-    "m17_live"
+    "m17_live",
+    "m18_mayor",
+    "m19_tour",
+    "m20_certificate"
   ],
   "side": [
     "q1_speaker",
@@ -30,13 +35,16 @@
     "q3_tomatoes",
     "q4_bbq",
     "q5_whatsapp",
-    "q6_wedding",
     "q7_together"
   ],
   "minigames": "./engine/minigames/index.js",
   "intro": "intro.d",
   "activities": [
     "act_cliff",
-    "act_surf"
+    "act_surf",
+    "act_gal",
+    "act_skate",
+    "act_cinema_city",
+    "act_yes_planet"
   ]
 }

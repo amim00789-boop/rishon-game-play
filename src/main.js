@@ -208,6 +208,18 @@ async function boot() {
     } catch (e) { console.warn('[main] buildLandmarks failed', e); }
   }
   tp = measure('landmarks', tp);
+  // Gal's airliner on the dunes (Adir, 2026-10-18): a walkable cabin with its own colliders and POI.
+  let plane = null;
+  const ap = await tryImport('./world/airplane.js', 'airplane');
+  if (ap?.buildAirplane) {
+    try {
+      plane = ap.buildAirplane(scene);
+      landmarks.colliders.push(...plane.colliders);
+      landmarks.pois.push(...plane.pois);
+    } catch (e) { console.warn('[main] buildAirplane failed', e); plane = null; }
+  }
+  // LLRS airfield and its circuit plane (round 7): adds its colliders, POI and hangar exclusion, runs itself.
+  try { (await tryImport('./world/airfield.js', 'airfield'))?.buildAirfield?.(scene, { landmarks, exclude }); } catch (e) { console.warn('[main] buildAirfield failed', e); }
 
   await progress(35, t('load.city'));
   let city = null;
@@ -259,7 +271,9 @@ async function boot() {
     : tm?.groundAt ? (x, z) => tm.groundAt(x, z) : null;
   // Raised landmark plazas (dino lawn, squares) sit above the terrain; walk on them, not through them.
   const plaza = lm?.landmarkSurfaceAt;
-  const surface = base && plaza ? (x, z, y) => { const p = plaza(x, z); const b = base(x, z, y); return p != null && p > b ? p : b; } : base;
+  const walkGround = base && plaza ? (x, z, y) => { const p = plaza(x, z); const b = base(x, z, y); return p != null && p > b ? p : b; } : base;
+  // The airliner's cabin floor and airstairs.
+  const surface = walkGround && plane ? (x, z, y) => { const p = plane.surfaceAt(x, z); const b = walkGround(x, z, y); return p != null && p > b ? p : b; } : walkGround;
   if (surface) { player.setSurface?.(surface); chase.setSurface?.(surface); }
   tp = measure('avatars+player', tp);
 
@@ -466,6 +480,7 @@ async function boot() {
     sky.update(dt, player.root.position, camera);
     water.update(time);
     crowd.update(dt, player.pos.x, player.pos.z);
+    if (plane) plane.update(player.pos);
     if (updateLandmarks) { try { updateLandmarks(dt); } catch (e) { console.warn('[main] updateLandmarks failed', e); updateLandmarks = null; } }
     hud.update(dt, player, chase.yaw);
     if (bigmap) bigmap.update(dt);

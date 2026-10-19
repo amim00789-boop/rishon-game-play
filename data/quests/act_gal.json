@@ -1,0 +1,33 @@
+{
+  "id": "act_gal",
+  "needsPoi": "arkia_plane",
+  "icon": "✈",
+  "npcs": {
+    "gal": {
+      "archetype": "gal",
+      "at": {
+        "poi": "arkia_plane"
+      }
+    }
+  },
+  "host": "gal",
+  "dialogue": "d.hello",
+  "options": [
+    {
+      "text": "c.where",
+      "reply": "d.where"
+    },
+    {
+      "text": "c.drink",
+      "reply": "d.drink"
+    },
+    {
+      "text": "c.safety",
+      "reply": "d.safety"
+    },
+    {
+      "text": "c.bye",
+      "reply": "d.bye"
+    }
+  ]
+}

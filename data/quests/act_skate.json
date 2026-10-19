@@ -1,0 +1,36 @@
+{
+  "id": "act_skate",
+  "needsPoi": "skate_bowl",
+  "icon": "🛹",
+  "npcs": {
+    "shahar": {
+      "archetype": "skater_kid",
+      "at": {
+        "poi": "skate_bowl",
+        "dx": 4,
+        "dz": 1
+      }
+    }
+  },
+  "host": "shahar",
+  "dialogue": "d.hello",
+  "options": [
+    {
+      "text": "c.skate",
+      "game": "skate",
+      "params": {
+        "seconds": 60
+      },
+      "intro": "d.go",
+      "after": "d.after",
+      "afterFail": "d.again",
+      "introFirst": "d.first",
+      "afterBest": "d.best",
+      "afterQuit": "d.quit"
+    },
+    {
+      "text": "c.later",
+      "reply": "d.later"
+    }
+  ]
+}

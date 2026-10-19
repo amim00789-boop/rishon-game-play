@@ -1,0 +1,53 @@
+{
+  "title": "Bowl session",
+  "balance": "Balance",
+  "go": "Drop in!",
+  "time": "⏱ {s}",
+  "best": "Best: {best}",
+  "lost": "Bailed, combo lost",
+  "list": "Land {n} tricks:",
+  "hint": {
+    "drop": "Get ready… you drop in on go",
+    "ride": "{k:W} pump down the walls · {k:A} {k:D} carve · {k:Space} ollie · near the coping {k:L} grind",
+    "air": "{k:J} kickflip · {k:K} grab (hold) · {k:A} {k:D} spin · {k:L} grind",
+    "grind": "{k:A} {k:D} balance · {k:Space} hop back in",
+    "bail": "Getting up… no harm done"
+  },
+  "trick": {
+    "ollie": "Ollie",
+    "air": "Air",
+    "kickflip": "Kickflip",
+    "grab": "Grab",
+    "spin180": "180",
+    "spin360": "360",
+    "grind": "Coping grind",
+    "grindRail": "Rail grind"
+  },
+  "pop": {
+    "time": "Time!",
+    "clean": "Clean landing!",
+    "pop": "Pop!",
+    "bonk": "Bonk!",
+    "combo": "Combo ×{n}! +{p}",
+    "listDone": "All tricks landed!",
+    "bail": {
+      "landing": "Landed sideways!",
+      "flip": "The board was still flipping!",
+      "balance": "Lost your balance!"
+    }
+  },
+  "card": {
+    "passTitle": "What a session!",
+    "bestTitle": "New best!",
+    "failTitle": "So close!",
+    "summary": "Score {score} · biggest combo {combo}",
+    "best": "Your best: {best}",
+    "newBest": "You beat your best!",
+    "need": "You needed {goal}.",
+    "needList": "Land {n} tricks from the list.",
+    "assist": "You'll get more time next run.",
+    "again": "Another run {k:Enter}",
+    "exit": "Exit {k:Esc}",
+    "quitTitle": "Leave the bowl?"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": "act_cinema_city",
+  "needsPoi": "cinema_city",
+  "icon": "🎬",
+  "npcs": {
+    "usher_dino": {
+      "archetype": "kiosk_vendor",
+      "at": {
+        "lat": 31.983224,
+        "lon": 34.771236,
+        "dx": 1.7,
+        "dz": 3.6
+      },
+      "yaw": 3.6
+    }
+  },
+  "host": "usher_dino",
+  "dialogue": "d.hello",
+  "options": [
+    {
+      "text": "c.ticket",
+      "game": "cinema",
+      "params": {
+        "venue": "cinema_city"
+      },
+      "intro": "d.go",
+      "after": "d.after",
+      "afterQuit": "d.quit"
+    },
+    {
+      "text": "c.later",
+      "reply": "d.later"
+    }
+  ]
+}

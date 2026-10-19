@@ -380,6 +380,7 @@ const HAIR = {
   bun: { front: 0.46, side: 0.05, back: -0.45, t: 0.08, vol: 0.04 },
   ponytail: { front: 0.44, side: 0.05, back: -0.45, part: 0.06, t: 0.09, vol: 0.05 },
   long: { front: 0.42, side: -0.65, back: -0.8, part: 0.1, t: 0.12, vol: 0.1 },
+  longCurly: { front: 0.42, side: -0.65, back: -0.8, t: 0.15, vol: 0.16 },
   bob: { front: 0.36, side: -0.45, back: -0.55, t: 0.17, vol: 0.1, flare: 0.08 },
 };
 // Things that cover the crown: under them the hair loses its lift and its top pieces.
@@ -387,7 +388,7 @@ const HATS = new Set(['cap', 'blackHat', 'flatCap', 'tembel', 'beanie', 'tichel'
 
 // Top of the hair (head space), for things worn on it such as the kippah.
 function hairTop(style) {
-  if (style === 'curly') return 1.2;
+  if (style === 'curly' || style === 'longCurly') return 1.2;
   if (style === 'perm') return 1.24;
   const h = HAIR[style];
   return h ? 0.8 + h.t + h.vol : 0.8;
@@ -472,6 +473,18 @@ function buildHair(rig, head, hair) {
       const l = addMesh(piv, strand(0.5, 1.5, 0.85), m, 0, 0, 0);
       l.scale.set(1.75, 1, 0.55);
       rig.jiggles.push(jiggle(piv, 0.6, 1));
+      break;
+    }
+    case 'longCurly': {
+      // long curls: a full fall down the back, curls round the crown, ringlets framing the face
+      const piv = group(head, 'hairLong', 0, 0.35, -0.65);
+      const l = addMesh(piv, strand(0.55, 1.6, 0.95), m, 0, 0, 0);
+      l.scale.set(2.0, 1, 0.7);
+      for (const [x, y, z, r] of [[-0.98, -0.35, 0.32, 0.32], [0.98, -0.35, 0.32, 0.32], [-1.02, -0.95, 0.32, 0.33], [1.02, -0.95, 0.32, 0.33],
+        [-0.88, -1.55, 0.28, 0.3], [0.88, -1.55, 0.28, 0.3], [-0.5, -0.9, -0.3, 0.38], [0.5, -0.9, -0.3, 0.38], [0, -1.5, -0.35, 0.38],
+        [-0.45, -2.05, -0.15, 0.32], [0.45, -2.05, -0.15, 0.32]]) addMesh(piv, ball(r), m, x, y, z);
+      rig.jiggles.push(jiggle(piv, 0.6, 1));
+      if (!hatted) for (const [x, y, z] of [[-0.6, 0.86, 0.28], [0.05, 0.98, 0.32], [0.62, 0.86, 0.26], [-0.86, 0.5, -0.22], [0.86, 0.5, -0.22], [-0.5, 0.92, -0.35], [0.45, 0.94, -0.4]]) addMesh(head, ball(0.33), m, x, y, z);
       break;
     }
     case 'ponytail': {

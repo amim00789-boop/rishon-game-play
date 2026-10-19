@@ -1,0 +1,227 @@
+{
+  "id": "m18_mayor",
+  "act": 4,
+  "requires": [
+    "m17_live"
+  ],
+  "npcs": {
+    "mayor": {
+      "archetype": "mayor",
+      "fallback": "office_worker",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 2,
+        "dz": 18
+      }
+    },
+    "malul": {
+      "archetype": "malul",
+      "fallback": "beach_guy",
+      "at": {
+        "poi": "gan_hair",
+        "dx": -6,
+        "dz": 30
+      }
+    },
+    "dekel": {
+      "archetype": "dekel",
+      "fallback": "dati_leumi_man",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 0,
+        "dz": 34
+      }
+    },
+    "ofir": {
+      "archetype": "ofir",
+      "fallback": "mizrahi_street_guy",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 6,
+        "dz": 30
+      }
+    },
+    "adir": {
+      "archetype": "adir",
+      "fallback": "beach_guy",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 12,
+        "dz": 34
+      }
+    }
+  },
+  "giver": "mayor",
+  "offer": "d.offer",
+  "scene": [
+    {
+      "hold": "phone",
+      "id": "phone",
+      "by": "mayor",
+      "how": "ear"
+    }
+  ],
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "malul",
+      "gather": [
+        "dekel",
+        "ofir",
+        "adir",
+        "mayor"
+      ],
+      "obj": "obj.huddle",
+      "dialogue": "d.huddle",
+      "props": [
+        {
+          "remove": "phone"
+        }
+      ]
+    },
+    {
+      "type": "choice",
+      "npc": "dekel",
+      "obj": "obj.name",
+      "dialogue": "d.name",
+      "options": [
+        {
+          "text": "c.chair",
+          "reply": "d.rChair",
+          "effects": {
+            "scale": 1,
+            "flag": "event_chair"
+          }
+        },
+        {
+          "text": "c.spirits",
+          "reply": "d.rSpirits",
+          "effects": {
+            "flag": "event_spirits",
+            "trust": {
+              "youth": 1
+            }
+          }
+        },
+        {
+          "text": "c.saturday",
+          "reply": "d.rSaturday",
+          "effects": {
+            "flag": "event_saturday",
+            "trust": {
+              "haredi": 1,
+              "dati": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "minigame",
+      "game": "rhythm",
+      "npc": "malul",
+      "intro": "d.lesson",
+      "params": {
+        "chart": {
+          "id": "mayor_lesson",
+          "title": "quest.m18_mayor.chart",
+          "bpm": 88,
+          "offset": 0,
+          "countIn": 4,
+          "lengthBeats": 20,
+          "kit": "beach",
+          "lanes": 4,
+          "pass": 0,
+          "notes": [
+            [
+              0,
+              0
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              4,
+              0
+            ],
+            [
+              6,
+              1
+            ],
+            [
+              8,
+              0
+            ],
+            [
+              9,
+              0
+            ],
+            [
+              10,
+              1
+            ],
+            [
+              12,
+              0
+            ],
+            [
+              13,
+              3
+            ],
+            [
+              14,
+              1
+            ],
+            [
+              16,
+              0
+            ],
+            [
+              17,
+              2
+            ],
+            [
+              18,
+              1
+            ],
+            [
+              19,
+              3
+            ]
+          ]
+        },
+        "pass": 0
+      },
+      "props": [
+        {
+          "play": "malul",
+          "how": "drums"
+        }
+      ],
+      "propsDone": [
+        {
+          "play": "malul",
+          "how": false
+        }
+      ],
+      "cheer": "cheer",
+      "obj": "obj.lesson",
+      "dialogue": "d.lessonDone"
+    },
+    {
+      "type": "talk",
+      "npc": "mayor",
+      "gather": [
+        "dekel",
+        "malul"
+      ],
+      "obj": "obj.plan",
+      "dialogue": "d.plan",
+      "effects": {
+        "flag": "met_mayor"
+      }
+    }
+  ],
+  "after": "page"
+}

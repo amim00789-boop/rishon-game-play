@@ -1,0 +1,89 @@
+{
+  "ui": {
+    "games": {
+      "cinema": "Movie night"
+    }
+  },
+  "npc": {
+    "usher_dino": "Roni at the box office",
+    "usher_planet": "Tal at the box office"
+  },
+  "act_cinema_city": {
+    "title": "Movie night",
+    "c": {
+      "ticket": "A ticket for the show 🎟️",
+      "later": "Later"
+    },
+    "d": {
+      "hello": [
+        [
+          "usher_dino",
+          "Welcome to Cinema-ish City! Tonight: 'Dino-Mite', starring the dinosaur from the square. He insisted."
+        ]
+      ],
+      "go": [
+        [
+          "usher_dino",
+          "Hall 7. Keep the popcorn quiet in the sad bits. There are no sad bits, but still."
+        ]
+      ],
+      "after": [
+        [
+          "usher_dino",
+          "Well? The dinosaur is waiting for the reviews. Don't tell him you laughed at him."
+        ]
+      ],
+      "quit": [
+        [
+          "usher_dino",
+          "Left halfway? Fine, the dinosaur never makes it to the end either. He falls asleep in the credits."
+        ]
+      ],
+      "later": [
+        [
+          "usher_dino",
+          "The hall is open all evening. So is the popcorn."
+        ]
+      ]
+    }
+  },
+  "act_yes_planet": {
+    "title": "Movie night",
+    "c": {
+      "ticket": "A ticket for the show 🎟️",
+      "later": "Later"
+    },
+    "d": {
+      "hello": [
+        [
+          "usher_planet",
+          "Hi! Planet-ish is showing 'Rishon to Space' tonight. The 3D glasses are imaginary, the fun is real."
+        ]
+      ],
+      "go": [
+        [
+          "usher_planet",
+          "Hall 12, by the lake. If something lands on the roof halfway through, it's part of the show. Probably."
+        ]
+      ],
+      "after": [
+        [
+          "usher_planet",
+          "How was space? Malul already asked if they can book a gig up there."
+        ]
+      ],
+      "quit": [
+        [
+          "usher_planet",
+          "Back from space early? Happens to the best astronauts."
+        ]
+      ],
+      "later": [
+        [
+          "usher_planet",
+          "Whenever you like. The stars aren't going anywhere. Well, slowly they are."
+        ]
+      ]
+    }
+  }
+}

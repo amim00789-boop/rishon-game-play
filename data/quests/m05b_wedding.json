@@ -1,0 +1,137 @@
+{
+  "id": "m05b_wedding",
+  "act": 1,
+  "requires": [
+    "m05_bride"
+  ],
+  "npcs": {
+    "avi": {
+      "archetype": "dati_leumi_man",
+      "at": {
+        "lat": 31.979198,
+        "lon": 34.74847,
+        "dx": 4,
+        "dz": 34
+      }
+    },
+    "hodaya": {
+      "archetype": "hodaya_bride",
+      "fallback": "dati_leumi_woman",
+      "at": {
+        "lat": 31.979198,
+        "lon": 34.74847,
+        "dx": -4,
+        "dz": 32
+      }
+    },
+    "moshiko": {
+      "archetype": "mizrahi_street_guy",
+      "at": {
+        "lat": 31.979198,
+        "lon": 34.74847,
+        "dx": 10,
+        "dz": 30
+      }
+    },
+    "orit": {
+      "archetype": "dati_leumi_woman",
+      "at": {
+        "poi": "fuel_yellow",
+        "dx": 8,
+        "dz": 6
+      }
+    },
+    "savta": {
+      "archetype": "savta",
+      "at": {
+        "lat": 31.979198,
+        "lon": 34.74847,
+        "dx": -669,
+        "dz": 0,
+        "busStop": true,
+        "within": 200
+      }
+    }
+  },
+  "giver": "avi",
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "timed",
+      "item": "tray",
+      "pickup": {
+        "poi": "fuel_yellow",
+        "dx": 6,
+        "dz": 10
+      },
+      "at": {
+        "lat": 31.979198,
+        "lon": 34.74847,
+        "dx": 0,
+        "dz": 36
+      },
+      "modes": [
+        "scooter",
+        "bike"
+      ],
+      "timeFactor": 1.8,
+      "obj": "obj.pickup",
+      "objRun": "obj.run",
+      "dialogue": "d.delivered"
+    },
+    {
+      "type": "escort",
+      "npc": "savta",
+      "at": {
+        "lat": 31.979198,
+        "lon": 34.74847,
+        "dx": -6,
+        "dz": 38
+      },
+      "speed": 7,
+      "leash": 28,
+      "obj": "obj.meet",
+      "objWalk": "obj.walk",
+      "objWait": "obj.wait",
+      "start": "t.go",
+      "wait": "t.wait",
+      "dialogue": "d.arrived"
+    },
+    {
+      "type": "choice",
+      "npc": "moshiko",
+      "obj": "obj.ask",
+      "objRetry": "obj.retry",
+      "dialogue": "d.ask",
+      "retry": "d.retry",
+      "options": [
+        {
+          "text": "c.o1",
+          "reply": "d.r1",
+          "good": false
+        },
+        {
+          "text": "c.o2",
+          "reply": "d.r2",
+          "good": false
+        },
+        {
+          "text": "c.o3",
+          "reply": "d.r3",
+          "good": true
+        }
+      ]
+    },
+    {
+      "type": "talk",
+      "npc": "avi",
+      "gather": [
+        "moshiko",
+        "savta",
+        "hodaya"
+      ],
+      "obj": "obj.back",
+      "dialogue": "d.outro"
+    }
+  ]
+}

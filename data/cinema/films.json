@@ -1,0 +1,9 @@
+{
+  "_readme": "The founder's own clip per venue. Put an .mp4 (H.264 + AAC) in this folder and write its file name in 'file', e.g. \"file\": \"my-film.mp4\". Empty = the in-engine cartoon only. See docs/CINEMA.md.",
+  "cinema_city": {
+    "file": ""
+  },
+  "yes_planet": {
+    "file": ""
+  }
+}

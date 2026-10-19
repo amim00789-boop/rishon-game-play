@@ -1,0 +1,194 @@
+{
+  "id": "m20_certificate",
+  "act": 4,
+  "requires": [
+    "m19_tour"
+  ],
+  "npcs": {
+    "mayor": {
+      "archetype": "mayor",
+      "fallback": "office_worker",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": -18,
+        "dz": -8
+      }
+    },
+    "malul": {
+      "archetype": "malul",
+      "fallback": "beach_guy",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": -27,
+        "dz": -14
+      }
+    },
+    "dekel": {
+      "archetype": "dekel",
+      "fallback": "dati_leumi_man",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": -29,
+        "dz": -9
+      }
+    },
+    "ofir": {
+      "archetype": "ofir",
+      "fallback": "mizrahi_street_guy",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": -29,
+        "dz": -4
+      }
+    },
+    "adir": {
+      "archetype": "adir",
+      "fallback": "beach_guy",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": -27,
+        "dz": 1
+      }
+    },
+    "savta": {
+      "archetype": "savta",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": -33,
+        "dz": -8
+      }
+    }
+  },
+  "giver": "mayor",
+  "offer": "d.offer",
+  "scene": [
+    {
+      "show": "podium",
+      "id": "podium",
+      "at": {
+        "npc": "mayor",
+        "dx": 0.4,
+        "dz": -2.8
+      }
+    },
+    {
+      "hold": "certificate",
+      "id": "certificate",
+      "by": "mayor",
+      "how": "hand"
+    }
+  ],
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "mayor",
+      "gather": [
+        "malul",
+        "dekel",
+        "ofir",
+        "adir",
+        "savta",
+        "hodaya",
+        "shimon",
+        "grisha",
+        "itai",
+        "yanki",
+        "avi",
+        "ziva",
+        "shiri",
+        "orit",
+        "pnina"
+      ],
+      "obj": "obj.gather",
+      "dialogue": {
+        "event_chair": "d.speechChair",
+        "event_spirits": "d.speechSpirits",
+        "default": "d.speechSaturday"
+      }
+    },
+    {
+      "type": "choice",
+      "npc": "mayor",
+      "obj": "obj.who",
+      "dialogue": "d.who",
+      "options": [
+        {
+          "text": "c.malul",
+          "reply": "d.rMalul",
+          "effects": {
+            "flag": "cert_malul",
+            "trust": {
+              "youth": 1
+            }
+          }
+        },
+        {
+          "text": "c.savta",
+          "reply": "d.rSavta",
+          "effects": {
+            "flag": "cert_savta",
+            "trust": {
+              "elders": 1
+            }
+          }
+        },
+        {
+          "text": "c.all",
+          "reply": "d.rAll",
+          "effects": {
+            "flag": "cert_all",
+            "scale": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "talk",
+      "npc": "mayor",
+      "obj": "obj.photo",
+      "dialogue": "d.outro",
+      "props": [
+        {
+          "hold": "certificate",
+          "id": "certificate",
+          "by": "malul",
+          "how": "hand",
+          "if": "cert_malul"
+        },
+        {
+          "hold": "certificate",
+          "id": "certificate",
+          "by": "savta",
+          "how": "hand",
+          "if": "cert_savta"
+        },
+        {
+          "hold": "certificate",
+          "id": "certificate",
+          "by": "player",
+          "how": "hand",
+          "if": "cert_all"
+        },
+        {
+          "emote": "mayor",
+          "name": "wave"
+        }
+      ],
+      "effects": {
+        "flag": "mayor_done"
+      }
+    }
+  ],
+  "after": "page",
+  "leave": [
+    {
+      "show": "podium",
+      "id": "podium",
+      "at": {
+        "npc": "mayor",
+        "dx": 0.4,
+        "dz": -2.8
+      }
+    }
+  ]
+}

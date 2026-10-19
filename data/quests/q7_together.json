@@ -1,9 +1,10 @@
 {
   "id": "q7_together",
   "requires": [
-    "q6_wedding"
+    "q5_whatsapp",
+    "m05b_wedding"
   ],
-  "hum": 24,
+  "hum": 31,
   "npcs": {
     "savta": {
       "archetype": "savta",

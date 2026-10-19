@@ -32,6 +32,10 @@ const NPC_VISIBLE_R = 520;
 const GATHER_TELEPORT_R = 150; // gathered NPCs further than this appear at the host instead of walking
 const SCOOTER_SPEED = 22;      // vehicles.js cruise speed, the reference for delivery time limits
 const SAVE_KEY = 'rishon.quests.v1';
+// Quest ids that changed, so an old save keeps its progress. The wedding was a late side quest
+// (q6) whose cast outranked every main-story copy of Avi, Savta and Moshiko once unlocked early;
+// as m05b it sits in the main list right after the drive that brings the bride.
+const RENAMED = { q6_wedding: 'm05b_wedding' };
 const JUMP_R = 300;
 const LEAVE_R = 160;
 const INTRO_RIDE_R = 400;       // further than this from the first giver, the opening ends with a ride there            // a character moving on walks off visibly when the player is this close             // a pickup further than this from the player is reached by a jump
@@ -373,7 +377,7 @@ export class QuestSystem {
     if (!reset) {
       try {
         const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
-        if (s && Array.isArray(s.done)) this.state.done = s.done.filter((id) => this.byId[id]);
+        if (s && Array.isArray(s.done)) this.state.done = [...new Set(s.done.map((id) => RENAMED[id] || id))].filter((id) => this.byId[id]);
         if (s && s.story) this.story = { flags: s.story.flags || {}, scale: s.story.scale || 0, trust: s.story.trust || {} };
       } catch (_) { /* storage blocked */ }
     } else this.save();
@@ -1343,8 +1347,8 @@ export class QuestSystem {
           n.marker.material.map.dispose(); n.marker.material.map = fresh.material.map; n.marker.material.needsUpdate = true;
         }
       }
-      // Hidden while talking: the marker sits right in front of the camera during a dialogue.
-      n.marker.visible = !!kind && !this.dlg;
+      // Hidden while talking or in a minigame: the marker sits right in front of the camera then.
+      n.marker.visible = !!kind && !this.dlg && !this.mg;
       if (n.marker.visible) n.marker.position.y = (n.av.height || 5.2) + 2.2 + Math.sin(this.time * 3) * 0.3;
 
       const talkable = (n.activity && !this.mg) || (((n === stepNpc && (step.type === 'talk' || step.type === 'choice' || step.type === 'minigame')) || barter?.has(n)) && !n.target && !this.gathering(q, step));
@@ -1623,6 +1627,9 @@ export class QuestSystem {
       a.phase = 'run';
       a.deadline = this.time + a.limit;
       a.runStart = this.time;
+      // A retry starts from where this leg began: a multi-stop ride (m19) picks the passenger up
+      // where the last leg dropped them, not at their first spawn.
+      a.from = { x: n.x, z: n.z };
       n.riding = true; n.target = null;
       this.seat(n, player);
       this.clearStepObjs();
@@ -1631,7 +1638,7 @@ export class QuestSystem {
       // pickup, the drop-off); this step keeps the roadside scenes.
       if (s.calm && this.hasGame('calm')) {
         a.managed = this.startMinigame('calm', {
-          at: a.drop, radius: s.radius || 10, start: { x: n.home.x, z: n.home.z }, limit: a.limit, guide: false,
+          at: a.drop, radius: s.radius || 10, start: { x: a.from.x, z: a.from.z }, limit: a.limit, guide: false,
           passenger: n.seated ? null : { archetype: n.def.archetype }, name: `quest.npc.${n.id}`, calm: s.calm, waitSpots: s.waitSpots,
         }, (res) => {
           a.managed = false;
@@ -1680,7 +1687,8 @@ export class QuestSystem {
     if (this.hud) this.hud.toastMsg(this.t(msg));
     this.unseat(n);
     n.riding = false;
-    n.x = n.home.x; n.z = n.home.z; n.y = this.groundY(n.x, n.z);
+    const back = a.from || n.home;
+    n.x = back.x; n.z = back.z; n.y = this.groundY(n.x, n.z);
     this.clearStepObjs();
     a.phase = 'meet'; a.warned = false; a.tries = (a.tries || 0) + 1;
     a.limit = Math.ceil(a.limit * 1.15) + (a.bonus || 0); a.bonus = 0;
@@ -1873,7 +1881,7 @@ export class QuestSystem {
     this.refreshHud();
   }
 
-  static GAME_MODULE = { rhythm: 'rhythm', cue: 'rhythm', race: 'race', calm: 'passenger', photo: 'photo', parking: 'parking', crowd: 'crowdguide', debate: 'debate', surf: 'surf' };
+  static GAME_MODULE = { rhythm: 'rhythm', cue: 'rhythm', race: 'race', calm: 'passenger', photo: 'photo', parking: 'parking', crowd: 'crowdguide', debate: 'debate', surf: 'surf', skate: 'skate', cinema: 'cinema' };
 
   hasGame(kind) {
     const m = QuestSystem.GAME_MODULE[kind];

@@ -1,0 +1,35 @@
+{
+  "id": "act_yes_planet",
+  "needsPoi": "yes_planet",
+  "icon": "🎬",
+  "npcs": {
+    "usher_planet": {
+      "archetype": "kiosk_vendor",
+      "at": {
+        "lat": 31.9797335,
+        "lon": 34.7472685,
+        "dx": 3.0,
+        "dz": -8.5
+      },
+      "yaw": 0.3
+    }
+  },
+  "host": "usher_planet",
+  "dialogue": "d.hello",
+  "options": [
+    {
+      "text": "c.ticket",
+      "game": "cinema",
+      "params": {
+        "venue": "yes_planet"
+      },
+      "intro": "d.go",
+      "after": "d.after",
+      "afterQuit": "d.quit"
+    },
+    {
+      "text": "c.later",
+      "reply": "d.later"
+    }
+  ]
+}

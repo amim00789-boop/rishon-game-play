@@ -54,6 +54,7 @@ const CREST_K = 2.5;      // where a ramp leaves a deck
 const NODE_FADE = 24;     // node reconciliation fades out over this length
 const ATTACH_MAX = 3;     // an end this close in height to the street it lands on joins it
 const ATTACH_FADE = 40;   // ...fading back over this length
+const ATTACH_MAX_RAMP = 5; // a long slip road may climb this far to the road it lands on (DECK is 9.5)
 const MAX_FORCED = 0.1;   // steepest grade a ramp may take to touch down on the road it joins
 const HUMP_R = 12;
 const MAX_FORCED_PATH = 0.7; // footbridge approaches may be steep: past STAIR_GRADE they are drawn as stairs
@@ -1139,20 +1140,27 @@ function buildNetwork(data, ctx) {
         w.ya = ya;
       }
       // Every end at a node meets the highest one there; the difference (vertical-curve rounding,
-      // at most a few tenths) fades out along the lower way over NODE_FADE units.
-      for (const [k, list2] of ends) {
-        let top = -Infinity;
-        const at = list2.map(({ w, end }) => { const i = end ? w.pts.length - 1 : 0; const y = w.ya ? w.ya[i] : w.g[i]; top = Math.max(top, y); return y; });
-        list2.forEach(({ w, end }, m) => {
-          const d = top - at[m];
-          if (d < 1e-3) return;
-          if (!w.ya) w.ya = w.g.slice();
-          const n = w.pts.length, L = w.cum[n - 1];
-          for (let i = 0; i < n; i++) {
-            const u = Math.min(1, (end ? L - w.cum[i] : w.cum[i]) / NODE_FADE);
-            w.ya[i] += d * (1 - u * u * (3 - 2 * u));
-          }
-        });
+      // at most a few tenths) fades out along the lower way over NODE_FADE units. On a way shorter
+      // than NODE_FADE, lifting one end lifts the other a little too and reopens the node already
+      // matched there (0.54 u steps on the Komemiyut slip roads, round 7), so the pass repeats
+      // until every node agrees; it only ever lifts, so it settles.
+      for (let it = 0, moved = true; moved && it < 8; it++) {
+        moved = false;
+        for (const [k, list2] of ends) {
+          let top = -Infinity;
+          const at = list2.map(({ w, end }) => { const i = end ? w.pts.length - 1 : 0; const y = w.ya ? w.ya[i] : w.g[i]; top = Math.max(top, y); return y; });
+          list2.forEach(({ w, end }, m) => {
+            const d = top - at[m];
+            if (d < 1e-3) return;
+            if (d > 0.01) moved = true;
+            if (!w.ya) w.ya = w.g.slice();
+            const n = w.pts.length, L = w.cum[n - 1];
+            for (let i = 0; i < n; i++) {
+              const u = Math.min(1, (end ? L - w.cum[i] : w.cum[i]) / NODE_FADE);
+              w.ya[i] += d * (1 - u * u * (3 - 2 * u));
+            }
+          });
+        }
       }
       for (const w of live) {
         if (!w.ya) continue;
@@ -1228,18 +1236,48 @@ function buildNetwork(data, ctx) {
       if (!best) continue;
       for (const w of movable) {
         const diff = best.hy - yAt(w);
-        if (Math.abs(diff) < 0.05 || Math.abs(best.hy - y) > ATTACH_MAX) continue;
         const n = w.pts.length, end = keyOf(w.pts[0]) === k ? 0 : 1, L = w.cum[n - 1];
+        // A long enough slip road climbs a little further at ramp grade: the Ayalon on-ramp that
+        // lands on the descending Komemiyut deck west of the interchange ended 3.4 u under it.
+        // Never as far as a deck over a street (DECK), which must stay a pass-under.
+        const reach = w.cls ? Math.max(ATTACH_MAX, Math.min(ATTACH_MAX_RAMP, (L * 0.9 * RAMP_SLOPE) / 1.5)) : ATTACH_MAX;
+        if (Math.abs(diff) < 0.05 || Math.abs(best.hy - y) > reach) continue;
         if (!w.ya) w.ya = w.g.slice();
         // A path never fades all the way to its far end: on a short footbridge approach that
-        // moved the end joined to the deck and left a step there.
-        const F = w.cls ? ATTACH_FADE : Math.min(ATTACH_FADE, L * 0.8);
+        // moved the end joined to the deck and left a step there. A car way fades over enough
+        // length to keep the climb near ramp grade (the smoothstep peaks at 1.5x its mean).
+        const F = w.cls ? Math.min(Math.max(ATTACH_FADE, (1.5 * Math.abs(diff)) / RAMP_SLOPE), Math.max(ATTACH_FADE, L * 0.9)) : Math.min(ATTACH_FADE, L * 0.8);
         for (let j = 0; j < n; j++) {
           const u = Math.min(1, (end ? L - w.cum[j] : w.cum[j]) / F);
           w.ya[j] += diff * (1 - u * u * (3 - 2 * u));
         }
         touched.add(w);
         attached++;
+      }
+    }
+    // Attaching moves a whole short way (ATTACH_FADE is longer than it), so the node at its other
+    // end opened again (0.54-0.59 u steps on the Komemiyut slip roads, round 7): those nodes meet
+    // the highest end once more, faded over NODE_FADE, until they agree.
+    for (let it = 0, moved = touched.size > 0; moved && it < 8; it++) {
+      moved = false;
+      for (const [k, all2] of endKeys) {
+        const list = all2.filter((w) => !w.rail);
+        if (list.length < 2 || !list.some((w) => touched.has(w))) continue;
+        const idx = (w) => (keyOf(w.pts[0]) === k ? 0 : w.pts.length - 1);
+        const yEnd = (w) => (w.ya ? w.ya[idx(w)] : w.g[idx(w)]);
+        const top = Math.max(...list.map(yEnd));
+        for (const w of list) {
+          const d = top - yEnd(w);
+          if (d < 1e-3) continue;
+          if (d > 0.01) moved = true;
+          if (!w.ya) w.ya = w.g.slice();
+          const n = w.pts.length, L = w.cum[n - 1], end = idx(w) ? 1 : 0;
+          for (let j = 0; j < n; j++) {
+            const u = Math.min(1, (end ? L - w.cum[j] : w.cum[j]) / NODE_FADE);
+            w.ya[j] += d * (1 - u * u * (3 - 2 * u));
+          }
+          touched.add(w);
+        }
       }
     }
     for (const w of touched) {
@@ -1308,10 +1346,14 @@ function buildNetwork(data, ctx) {
   lap('dual carriageways');
   // ---- dual carriageways: find the opposite-direction twin of each one-way road ----
   const twinKey = (w) => w.name || w.ref || (w.rank >= 8 ? w.hw : '');
+  // Residential one-way pairs are twins too (Rothschild / Kikar HaMeyasdim by the Great Synagogue:
+  // two 2-lane one-ways 9-15 u apart drew overlapping carriageways with kerbed sidewalks down the
+  // middle), but only when close: same-named back streets 40-80 u apart are separate streets.
+  const TWIN_RANK = 3, twinReach = (rank) => (rank >= 4 ? 80 : 24);
   const owGrid = new SegGrid(40);
   for (const w of cars) {
     w.tkey = twinKey(w);
-    if (w.oneway && !w.roundabout && w.tkey && w.rank >= 4) for (let i = 0; i < w.pts.length - 1; i++) owGrid.add(mkSeg(w.pts[i], w.pts[i + 1], { ri: w.idx, tkey: w.tkey, hw: w.hw2 }), 80);
+    if (w.oneway && !w.roundabout && w.tkey && w.rank >= TWIN_RANK) for (let i = 0; i < w.pts.length - 1; i++) owGrid.add(mkSeg(w.pts[i], w.pts[i + 1], { ri: w.idx, tkey: w.tkey, hw: w.hw2 }), 80);
   }
   function twinAt(w, x, z, dx, dz, side) {
     const list = owGrid.at(x, z);
@@ -1320,7 +1362,7 @@ function buildNetwork(data, ctx) {
     for (const s of list) {
       if (s.ri === w.idx || s.tkey !== w.tkey || dx * s.ux + dz * s.uz > -0.75) continue;
       const d = segDist(s, x, z);
-      if (d > 80) continue;
+      if (d > twinReach(w.rank)) continue;
       const qx = s.ax + s.ux * s.len * segT, qz = s.az + s.uz * s.len * segT;
       if (Math.sign((qx - x) * -dz + (qz - z) * dx) !== side) continue;
       if (!best || d < best.d) best = { d, hw: s.hw };
@@ -1329,7 +1371,7 @@ function buildNetwork(data, ctx) {
   }
   for (const w of cars) {
     w.twinSide = 0;
-    if (!w.oneway || w.roundabout || !w.tkey || w.rank < 4) continue;
+    if (!w.oneway || w.roundabout || !w.tkey || w.rank < TWIN_RANK) continue;
     let n = 0, l = 0, r = 0;
     const probe = (x, z, dx, dz) => { n++; if (twinAt(w, x, z, dx, dz, -1)) l++; if (twinAt(w, x, z, dx, dz, 1)) r++; };
     for (const [x, z, dx, dz] of along(w.pts, 12, 6)) probe(x, z, dx, dz);
@@ -1516,6 +1558,9 @@ function buildNetwork(data, ctx) {
             const x = p.x - p.dz * o, z = p.z + p.dx * o;
             // Not on any road below the deck, ramps included (they used to get a pillar in the lane).
             if (inCarriage(x, z, w.idx ?? -1, 0, 0, 0, 1, 1.8, p.y - 1.5) || inRail(x, z, 0, BALLAST_HW + 1.5) || onPath(x, z, w)) continue;
+            // Nor where a slip road runs at deck level beside or into this deck: the pillar top
+            // stood a few tenths under its lanes and stopped cars dead on the Komemiyut ramp.
+            if (inCarriage(x, z, w.idx ?? -1, p.y, 0, 0, 1, 1.8, 3)) continue;
             const y0 = groundAt(x, z) - 0.3;
             if (deckBottom - y0 < 1) continue;
             box(layers.solid, x, y0, z, 2.4, deckBottom - y0, 2.4, rot, pillarC, pillarC);

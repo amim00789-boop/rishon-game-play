@@ -1,0 +1,83 @@
+{
+  "venue": {
+    "cinema_city": "Cinema-ish City",
+    "yes_planet": "Planet-ish"
+  },
+  "box": {
+    "title": "Box office · {venue}",
+    "film": "Next show: {film}",
+    "price": "Price: 0 ₪ (on the house)",
+    "combo": "Ticket + popcorn 🍿",
+    "ticket": "Just a ticket",
+    "cancel": "Maybe later"
+  },
+  "own": {
+    "title": "What's on?",
+    "line": "There's a special surprise film tonight too.",
+    "play": "The surprise film 🎞️",
+    "failed": "The surprise film didn't load, so the cartoon plays instead."
+  },
+  "toast": {
+    "ticket": "🎟️ Hall {hall}, row {row}, seat {seat}",
+    "empty": "Out of popcorn. As always, before the end."
+  },
+  "hint": {
+    "walk": "{k:Space} skip to seat · {k:Esc} leave",
+    "film": "{k:C} full screen · {k:Esc} leave early",
+    "filmPopcorn": "{k:Space} handful of popcorn · {k:C} full screen · {k:Esc} leave early"
+  },
+  "popcorn": "🍿 {n}",
+  "end": {
+    "title": "The End!",
+    "line": "The lights come up. Someone in the back row is still clapping.",
+    "popcorn": "The lights come up. You ate {n} pieces of popcorn and didn't miss a scene.",
+    "leave": "Leave",
+    "again": "Again {k:R}"
+  },
+  "film": {
+    "dino": {
+      "title": "Dino-Mite",
+      "tag": "The band that shook Rishon",
+      "soon": "Coming soon to a hall near you",
+      "rating": "All ages · popcorn required",
+      "ident1": "Cinema-ish City",
+      "ident2": "presents",
+      "t1": "This summer... in Rishon LeZion...",
+      "n": {
+        "dekel": "Dekel",
+        "ofir": "Ofir",
+        "adir": "Adir",
+        "malul": "Malul",
+        "rex": "The dinosaur"
+      },
+      "s1": "Bro, it's so quiet today.",
+      "s2": "Too quiet...",
+      "s3": "RRRROOOOAAARRR!",
+      "s4": "Hold on. Got a permit for a street gig?",
+      "s5": "...roar?",
+      "s6": "One, two, three, four!"
+    },
+    "space": {
+      "title": "Rishon to Space",
+      "tag": "Food tastes better at 400 kilometres",
+      "soon": "Coming soon to a hall near you",
+      "rating": "All ages · helmet recommended",
+      "ident1": "Planet-ish",
+      "ident2": "presents",
+      "n": {
+        "dekel": "Dekel",
+        "ofir": "Ofir",
+        "adir": "Adir",
+        "malul": "Malul",
+        "alien": "The alien"
+      },
+      "s1": "Checked everything. Fuel, helmets, pitas.",
+      "s2": "MumMYYY! I'm in space!",
+      "s3": "Wait, anyone remember where we parked?",
+      "s4": "Glob glob? Blorp?",
+      "s5": "It's falafel, bro. Try it.",
+      "s6": "GLOB GLOB GLOB!!!",
+      "s7": "The alien's in the band!"
+    }
+  }
+}

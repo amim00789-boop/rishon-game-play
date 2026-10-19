@@ -16,10 +16,12 @@ import { createParking } from './parking.js';
 import { createCrowdGuide } from './crowdguide.js';
 import { createDebate } from './debate.js';
 import { createSurf, loadSurfStrings } from './surf.js';
+import { createSkate, loadSkateStrings } from './skate.js';
+import { createCinema, loadCinemaStrings } from './cinema.js';
 import { jumpToStart } from './common.js';
 import { getGps } from '../gps.js';
 
-export { createRhythm, createRace, createPassenger, createPhoto, createParking, createCrowdGuide, createDebate, createSurf, loadSurfStrings };
+export { createRhythm, createRace, createPassenger, createPhoto, createParking, createCrowdGuide, createDebate, createSurf, loadSurfStrings, createSkate, loadSkateStrings, createCinema, loadCinemaStrings };
 export { createStory, STORY_KEY, SECTORS } from './story.js';
 export { loadMinigameStrings, mergeEffects, jumpToStart } from './common.js';
 export { getGps, createGps, gpsMode } from '../gps.js';
@@ -36,6 +38,10 @@ export function createMinigames(deps) {
     debate: createDebate(deps),
     // The surf club side activity (docs/MINIGAMES.md section 8); its text loads on its own.
     surf: createSurf(deps),
+    // The skate bowl at HaTeder (act_skate, and m08's trick list); its text loads on its own.
+    skate: createSkate(deps),
+    // A night at the movies at Cinema City or Yes Planet (docs/CINEMA.md); its text loads on its own.
+    cinema: createCinema(deps),
   };
   const list = Object.values(games);
   // Shared route guidance (one ribbon per scene). The race and the passenger ride drive it while

@@ -785,6 +785,22 @@ export const ARCHETYPES = {
     style: { stride: 0.8 },
     crowd: { zones: {} },
   },
+  // Gal, the flight attendant in the airliner on the dunes (Adir's friend, 2026-10-18): long dark
+  // curls, navy uniform with a teal neck scarf, small sparkly earrings.
+  gal: {
+    label: 'Gal (flight attendant)',
+    skin: '#e6b994',
+    face: { lashes: true, mouth: 'smile', blush: true, lips: '#d9707e' },
+    hair: { style: 'longCurly', color: '#2e1c13' },
+    body: { width: 0.9 },
+    shirt: { color: '#1f2f55', neck: 'collar', collarColor: '#ffffff', sleeves: 'long' },
+    skirt: { length: 'midi', color: '#1f2f55' },
+    legs: { lower: '#d9a882' },
+    shoes: { kind: 'shoes', color: '#141414' },
+    accessories: [{ type: 'stole', color: '#2ec4b6' }, { type: 'earrings', color: '#eef0f6' }],
+    style: { stride: 0.9 },
+    crowd: { zones: {} },
+  },
   // The seniors' choir: burgundy robes with a gold stole; a man and a woman by seed.
   choir_senior: {
     label: 'Choir (senior)',
@@ -832,6 +848,20 @@ export const ARCHETYPES = {
     shoes: { kind: 'shoes', color: '#141414' },
     accessories: [{ type: 'tichel', color: '#2a2f3a' }],
     style: { stride: 0.75, stroller: { color: '#3a4a6a' } },
+    crowd: { zones: {} },
+  },
+  // Raz, the mayor (round 7, missions m18-m20): a generic warm, busy city figure, not a portrait.
+  // Open-collar white shirt under a navy jacket, no tie, no pins or logos; a quick stride because
+  // he is always on his way to the next thing.
+  mayor: {
+    label: 'Raz (mayor)',
+    skin: '#e2b48e',
+    face: { mouth: 'grin', brows: 'up', browColor: '#3a2c22' },
+    hair: { style: 'short', color: '#4a3a2e' },
+    shirt: { color: '#ffffff', neck: 'collar', collarColor: '#ffffff', sleeves: 'long', cuff: '#ffffff', coat: '#25324d', coatGap: 40 },
+    pants: { kind: 'long', color: '#25324d', belt: '#1e140f' },
+    shoes: { kind: 'shoes', color: '#2a1d14' },
+    style: { stride: 1.15 },
     crowd: { zones: {} },
   },
 };

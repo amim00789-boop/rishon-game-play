@@ -3,7 +3,7 @@
   "requires": [
     "q4_bbq"
   ],
-  "hum": 14,
+  "hum": 21,
   "npcs": {
     "yanki": {
       "archetype": "haredi_man",

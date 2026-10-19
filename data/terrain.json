@@ -82,6 +82,11 @@
    "id": "skate_park",
    "level": 94.27,
    "range": 3.82
+  },
+  {
+   "id": "llrs_airfield",
+   "level": 44.3,
+   "range": 18.59
   }
  ],
  "cliffs": [
@@ -8436,12 +8441,12 @@
    -7872,
    5196
   ],
-  "ways": 9703,
-  "nodesTouched": 553042,
+  "ways": 9704,
+  "nodesTouched": 553011,
   "maxCut": 17.66,
   "maxFill": 12.62,
   "meanAbs": 0.392,
-  "seconds": 7.2
+  "seconds": 9.1
  },
  "source": {
   "name": "AWS Terrain Tiles (terrarium)",
@@ -8450,7 +8455,7 @@
   "tiles": 48,
   "docs": "https://github.com/tilezen/joerd/blob/master/docs/attribution.md",
   "underlying": "SRTM / GMTED2010 / ETOPO1",
-  "fetched": "2026-10-16"
+  "fetched": "2026-10-18"
  },
  "attribution": "Terrain: Mapzen/Tilezen Terrain Tiles (AWS Open Data); SRTM and GMTED2010 terrain data courtesy of the U.S. Geological Survey; ETOPO1 U.S. National Oceanic and Atmospheric Administration",
  "attributionRequired": "* ArcticDEM terrain data DEM(s) were created from DigitalGlobe, Inc., imagery and\n  funded under National Science Foundation awards 1043681, 1559691, and 1542736;\n* Australia terrain data © Commonwealth of Australia (Geoscience Australia) 2017;\n* Austria terrain data © offene Daten Österreichs – Digitales Geländemodell (DGM)\n  Österreich;\n* Canada terrain data contains information licensed under the Open Government\n  Licence – Canada;\n* Europe terrain data produced using Copernicus data and information funded by the\n  European Union - EU-DEM layers;\n* Global ETOPO1 terrain data U.S. National Oceanic and Atmospheric Administration\n* Mexico terrain data source: INEGI, Continental relief, 2016;\n* New Zealand terrain data Copyright 2011 Crown copyright (c) Land Information New\n  Zealand and the New Zealand Government (All rights reserved);\n* Norway terrain data © Kartverket;\n* United Kingdom terrain data © Environment Agency copyright and/or database right\n  2015. All rights reserved;\n* United States 3DEP (formerly NED) and global GMTED2010 and SRTM terrain data\n  courtesy of the U.S. Geological Survey.",

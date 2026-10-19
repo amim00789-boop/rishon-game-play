@@ -550,17 +550,17 @@
     },
     "clue": "At full strength the Hum jams WhatsApp. It's trying to cut us off from each other."
   },
-  "q6_wedding": {
+  "m05b_wedding": {
     "title": "Wedding Disaster",
     "obj": {
-      "ask": "Talk to Moshiko the DJ",
-      "retry": "Moshiko is hurt. Go back and try again",
-      "pickup": "Pick up the catering from Orit at Moshe Dayan station",
+      "pickup": "Pick up the trays from Orit at the yellow fuel station",
       "run": "Get the catering to the hall before it goes cold!",
       "meet": "Go to Savta Rachel at the bus stop",
       "walk": "Walk Savta Rachel to the hall, at her pace",
       "wait": "Savta stopped. Go back to her",
-      "back": "Back to Avi at the hall"
+      "ask": "Now the music: talk to Moshiko the DJ",
+      "retry": "Moshiko is offended. Go back and try again",
+      "back": "Back to Avi. Everyone is in the hall"
     },
     "c": {
       "o1": "He says your music is noise.",
@@ -575,25 +575,25 @@
       "offer": [
         [
           "avi",
-          "Ahalan, friend! Remember the barbecue? My daughter is getting married tonight. Here, at the hall by Cinema-ish City."
+          "Right: food first. Orit is at the yellow fuel station with the trays. Scooter or bike, in a car it all spills."
         ],
         [
           "avi",
-          "And there's a problem. Orit brought the kosher catering by train from the market and now she's stuck with it at Moshe Dayan station. The groom's grandma is stuck at a bus stop. And the DJ..."
-        ],
-        [
-          "avi",
-          "The DJ is the groom's cousin. Moshiko. He wants trance. I want Carlebach. The Hum already knocked the speakers out twice."
+          "Then Savta Rachel. She's at the bus stop down the street. Walk with her, at her pace. Don't offer her your arm, she gets offended."
         ],
         [
           "player",
-          "I'll talk to Moshiko."
+          "And Moshiko?"
+        ],
+        [
+          "avi",
+          "Moshiko last. If you can solve Moshiko, you can solve the Middle East."
         ]
       ],
       "ask": [
         [
           "moshiko",
-          "Achi! You! Tell me, what did the bride's dad say about me? He hates my music, right?"
+          "Bro! Food, check. Savta, check. Only the bride's dad left. Tell me, what did he say about me? He hates my music, right?"
         ]
       ],
       "retry": [
@@ -625,33 +625,37 @@
       "r3": [
         [
           "moshiko",
-          "...Carlebach with bass. Achi. You're a genius. I'm crying."
+          "...Carlebach with bass. Bro. You're a genius. I'm crying."
         ],
         [
           "moshiko",
-          "But no food, no wedding. Bring the trays from Orit at Moshe Dayan station. Scooter or bike, in a car it'll spill. Hurry, before the bride arrives!"
+          "Go tell Avi. I'm setting up the dance floor."
         ]
       ],
       "delivered": [
         [
           "avi",
-          "You made it! And the food is still hot! Orit sent tomatoes too. Seven ninety-five."
+          "You made it! And the food's still hot! Orit sent tomatoes too. Seven ninety-five."
         ],
         [
           "avi",
-          "Wait, where's the groom's grandma? She's at the bus stop and won't take a taxi. \"I walk, I'm not old.\""
+          "Now Savta Rachel. She's at the bus stop on this street. Go to her."
         ]
       ],
       "arrived": [
         [
           "savta",
-          "We're here. See? Didn't even get out of breath. You, on the other hand..."
+          "We're here. See? Not even out of breath. You, on the other hand..."
+        ],
+        [
+          "savta",
+          "And what's that noise? A DJ or a power drill? Go and sort it out."
         ]
       ],
       "outro": [
         [
           "narrator",
-          "Moshiko plays Carlebach with bass. Avi dances. Savta Rachel dances more."
+          "Moshiko plays Carlebach with bass. Avi dances. Savta Rachel dances harder. Hodaya laughs."
         ],
         [
           "avi",
@@ -663,37 +667,40 @@
         ],
         [
           "avi",
-          "I fought a guy over bass, and in the end that bass is the happiest thing here."
-        ],
-        [
-          "moshiko",
-          "And I thought they don't know how to party. Achi, they party harder than me."
+          "I fought with Moshiko about bass, and in the end the bass is the happiest thing here."
         ],
         [
           "savta",
-          "You're both sweet. Now bring me another chicken thigh."
+          "You're both sweet."
         ],
         [
           "narrator",
-          "Someone stuck an eye-rolling sticker on the cake. From it, a trail of stickers leads to the old cellar of the Camel Cellars."
+          "Someone has stuck a sticker on the cake: a rolling eye, and under it \"these people...\"."
+        ],
+        [
+          "savta",
+          "Those stickers again. They're all over town. Every time someone mutters \"these people\", the hum gets louder. That's what knocked your speakers out."
+        ],
+        [
+          "savta",
+          "One day I'll catch whoever is sticking them. Now bring me more chicken."
         ]
       ]
-    },
-    "clue": "The sticker trail leads to the Camel Cellars. That's where the Heckler hides."
+    }
   },
   "q7_together": {
     "title": "All Together",
     "obj": {
-      "s1": "Find the sticker near the Great Synagogue",
-      "s2": "Find the sticker near the Founders' Well",
-      "s3": "Find the sticker near Founders Square",
-      "door": "Go down into the Camel Cellars",
+      "s1": "Sticker 1 of 3: by the Great Synagogue",
+      "s2": "Sticker 2 of 3: by the Founders' Well",
+      "s3": "Sticker 3 of 3: by Founders' Square",
+      "door": "The arrow points at the Camel Cellars. Go down to the cellar",
       "ask": "Talk to the person in the hoodie",
       "retry": "The Heckler backed off. Find him again and try another way",
       "meet": "Go to the Heckler",
       "walk": "Walk the Heckler to Founders Square",
       "wait": "The Heckler is waiting for you",
-      "final": "Talk to Grisha in the square. Everyone's there"
+      "final": "Talk to Grisha in Founders' Square. Savta has gathered everyone"
     },
     "c": {
       "o1": "You're the villain! I'll stop you!",
@@ -708,19 +715,19 @@
       "offer": [
         [
           "savta",
-          "So you came. The Heckler is downstairs, in the cellar. I saw him. Hoodie, stickers, muttering all the time."
+          "Morning. Remember the sticker on the cake at Hodaya's wedding? Last night I saw him: someone in a hoodie, going round the old town sticking \"these people...\" on every post."
         ],
         [
           "savta",
-          "But he's sly. He left a trail of stickers in the old town to send us in circles. Find them and they'll show you the door."
+          "He ran off before I saw where. But he leaves a trail. Follow the stickers, one after another, and they'll lead you to where he hides."
         ],
         [
           "player",
-          "What if he's dangerous?"
+          "And if he's dangerous?"
         ],
         [
           "savta",
-          "Habibi, I'm a grandmother. I've seen worse in the queue at the health clinic. Go."
+          "Habibi, I'm a grandmother. I've seen more dangerous things in the queue at the clinic. Go."
         ]
       ],
       "s1": [
@@ -798,13 +805,21 @@
         ],
         [
           "heckler",
-          "You want me quiet? Then you'll have to answer me. Everyone. Together. In the square."
+          "You want me quiet? Then answer me. All of you. Together. In Founders' Square."
+        ],
+        [
+          "narrator",
+          "Savta Rachel has already posted to the WhatsApp group: \"Everyone to Founders' Square. Now. Whoever doesn't come, don't come for Shabbat.\""
         ]
       ],
       "square": [
         [
           "narrator",
-          "At Founders Square everyone is already waiting. Someone brought falafel. The fryer is still a little offended."
+          "In Founders' Square everyone is already waiting: Yanki, Grisha, Alex, Lena, Shiri, Orit, Avi, Moshiko and Savta. Someone brought falafel. Nobody brought a chair."
+        ],
+        [
+          "savta",
+          "The rule is simple: everyone says one good thing about someone from \"these people\". Out loud. In front of everyone."
         ]
       ],
       "outro": [
@@ -850,7 +865,11 @@
         ],
         [
           "player",
-          "Because you're us. And we're okay."
+          "Because \"these people\" is us. And we're actually all right."
+        ],
+        [
+          "narrator",
+          "With every sentence the hoodie shrinks, until only a small mirror is left on the square. In it, everyone sees themselves."
         ],
         [
           "narrator",
