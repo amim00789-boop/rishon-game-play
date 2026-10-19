@@ -11,7 +11,7 @@
 import * as THREE from 'three';
 import { KINDS, pickPaint, createFleet } from './models.js';
 import { PARK_RESERVE, MOVING_W, ground } from './network.js';
-import { SCALE } from '../geo.js';
+import { SCALE, project } from '../geo.js';
 
 const NEAR_R = 90, MID_R = 330, FAR_R = 650;
 const REBIN_MOVE = 30;
@@ -24,6 +24,10 @@ const STREET_FILL = { residential: 0.34, living_street: 0.34, unclassified: 0.38
 // Never park beside these. OSM parking:lane / parking:both tags could allow exceptions, but our
 // extract carries none, so there are no exceptions (founder, round 3).
 const NO_PARK = /^(motorway|trunk|primary)(_link)?$/;
+// No kerbside parking (street rows or kerb stalls) around these spots: the old centre by the Rothschild mall is
+// already tight for cars and people (founder, 2026-10-19). Lots are not affected.
+const NO_PARK_ZONES = [{ ...project(31.96349, 34.80147), r: 260 * SCALE }]; // Rothschild mall, OSM shop=mall
+const inNoParkZone = (x, z) => NO_PARK_ZONES.some((q) => Math.hypot(x - q.x, z - q.z) < q.r);
 const CLEAR = 15 * SCALE; // keep 15 m from junction mouths and zebras
 const SW_HALF = 2.35; // city.js sidewalk strip half width (U(2.8) / 2: SCALE 1.2 x WIDEN 1.4)
 
@@ -362,6 +366,7 @@ export function buildParked({ scene, city, lots = [], collision = null, net, rnd
     const K = KINDS[kind];
     const sx = Math.sin(yaw), cz = Math.cos(yaw);
     const half = (K.L * scale) / 2;
+    if (src !== 'lot' && inNoParkZone(x, z)) { zoneSkipped++; return false; }
     // nothing parks inside a sealed zone (src/world/details.js), not even a lot or kerb behind its fence
     if (restrictedAt && (restrictedAt(x, z) || restrictedAt(x + sx * half, z + cz * half) || restrictedAt(x - sx * half, z - cz * half))) { zoneSkipped++; return false; }
     const yc = yAbs ?? ground(x, z) + 0.2;
