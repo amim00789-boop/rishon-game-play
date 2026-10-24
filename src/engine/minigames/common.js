@@ -16,6 +16,10 @@ export const COLORS = {
 };
 
 // The game passes i18n.t; standalone tools may pass nothing.
+// Super Malul is Malul in a suit: while the player plays him, scenes leave the regular Malul out.
+export const playerIsMalul = () => {
+  try { return typeof window !== 'undefined' && !!window.__game && window.__game.hero === 'super_malul'; } catch (_) { return false; }
+};
 export const textFn = (t) => (typeof t === 'function' ? t : i18nT);
 
 // Minigame text lives in data/i18n/minigames.<lang>.json (same shape in every language) and is

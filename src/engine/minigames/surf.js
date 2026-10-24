@@ -11,7 +11,7 @@
 // title (key), autoContinue, assist (0..2 extra catch window from the start), seed.
 // Waves are a local overlay (surf/waves.js) on top of the sea; water.js is not touched.
 import * as THREE from 'three';
-import { createOverlay, addStyle, textFn, cameraRig, keyListener, toaster, clamp, rich, showCard, placePlayer } from './common.js';
+import { createOverlay, addStyle, textFn, cameraRig, keyListener, toaster, clamp, rich, showCard, placePlayer, playerIsMalul } from './common.js';
 import { register, i18n } from '../../i18n.js';
 import { shoreFrame, WaveField, WaveMesh, LipRibbons, Spray, SURF } from '../surf/waves.js';
 import { Rider } from '../surf/riders.js';
@@ -194,7 +194,7 @@ export function createSurf(deps = {}) {
       try { make = (await import('../../characters/avatar.js')).createAvatar; } catch (_) { make = null; }
     }
     if (!S || S !== s || !make) return;
-    FRIEND_IDS.forEach((id, i) => {
+    FRIEND_IDS.filter((id) => !(id === 'malul' && playerIsMalul())).forEach((id, i) => {
       let av = null;
       try { av = make(surfLook(id)); } catch (e) { console.warn('[surf] friend avatar failed', id, e); }
       const r = new Rider({ field: s.field, scene: s.root, av, look: id, name: id, spray: s.spray, skill: id === 'malul' ? 1 : id === 'ofir' ? 0.86 : 0.62 });
@@ -240,7 +240,7 @@ export function createSurf(deps = {}) {
   // A friend shouts a line (an array of lines per event in the string table).
   function cheer(id, ev) {
     const s = S;
-    if (!s) return;
+    if (!s || (id === 'malul' && playerIsMalul())) return;
     const lines = t(`surf.cheer.${id}.${ev}`);
     if (!Array.isArray(lines) || !lines.length) return;
     const line = lines[Math.floor(s.rnd() * lines.length)];

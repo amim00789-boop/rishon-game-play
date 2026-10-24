@@ -25,6 +25,9 @@ import { project } from '../geo.js';
 import { PropStage } from './questprops.js';
 import { t as tr, register, i18n, dir, poiName, placeName, rich } from '../i18n.js';
 
+// The character the player becomes in the hero story (Super Malul): never shown as an NPC then.
+const PLAYER_HERO_CHAR = 'malul';
+
 const TALK_R = 10;      // world units; avatars are ~5 u tall, so this is a couple of body lengths
 const TALK_R_VEHICLE = 20; // a car stops on the road, not at the pavement where the step's character stands
 const PICK_R = 6;
@@ -657,6 +660,8 @@ export class QuestSystem {
   // unlocked, else its first appearance.
   // `unlockOnly` characters (the Heckler) do not exist before their quest opens.
   current(char) {
+    // Super Malul is Malul in a suit: while the player is him, the regular Malul is nowhere.
+    if (this.heroMode && char === PLAYER_HERO_CHAR) return null;
     // The quest being played, or the next one offered, owns its characters even when a later-listed
     // side quest is also unlocked (they would otherwise hide the giver: Moshiko of sm01 vs q1).
     const pref = this._prefer && this._prefer.get(char);
@@ -1521,7 +1526,8 @@ export class QuestSystem {
       for (const id of Object.keys(crowd.named || {})) {
         // The copy on screen may be one walking off; the crowd gets its friend back only once
         // that copy is out of sight.
-        const n = (this._showing && this._showing[id]) || this.current(id), hold = !!(n && n.av && n.av.group.visible);
+        const n = (this._showing && this._showing[id]) || this.current(id);
+        const hold = (this.heroMode && id === PLAYER_HERO_CHAR) || !!(n && n.av && n.av.group.visible);
         if (hold !== !!this._held[id]) { this._held[id] = hold; try { crowd.holdNamed(id, hold); } catch (_) { /* optional */ } }
       }
     }

@@ -11,7 +11,7 @@
 // can screen his own clip instead: put an mp4 under data/cinema/ and name it in
 // data/cinema/films.json (docs/CINEMA.md). Text: data/minigames/cinema.<lang>.json under `cinema`.
 import * as THREE from 'three';
-import { createOverlay, addStyle, textFn, keyListener, toaster, showCard, rich } from './common.js';
+import { createOverlay, addStyle, textFn, keyListener, toaster, showCard, rich, playerIsMalul } from './common.js';
 import { register, i18n } from '../../i18n.js';
 import { openVenue, fader } from '../experiences/venue.js';
 import { toon, basic, box, cyl, rbox, textPlane, seatRows, blobCrowd, curtainHalf, popcornBucket, ease, lerp } from '../experiences/kit.js';
@@ -150,7 +150,7 @@ export function createCinema(deps = {}) {
       s.me = me;
       // the friends who came along, already in their seats
       s.friends = [];
-      for (const [id, dc] of [['adir', 1], ['malul', 2]]) {
+      for (const [id, dc] of [['adir', 1], ['malul', 2]].filter(([id]) => !(id === 'malul' && playerIsMalul()))) {
         const a = await v.avatar(id, s.hall);
         sitAt(a, seatAt(MY.row, MY.col + dc));
         s.friends.push(a);

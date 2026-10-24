@@ -533,7 +533,7 @@
     "title": "The Cape in the Crate",
     "obj": {
       "savta": "Talk to Savta Rachel by the crate",
-      "secret": "Decide who knows the new identity, with Malul",
+      "secret": "Decide with Moshiko who knows the new identity",
       "suit": "Back to Moshiko to suit up (then V switches to Super Malul)"
     },
     "c": {
