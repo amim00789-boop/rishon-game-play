@@ -75,7 +75,7 @@
     "savta": "Savta Rachel",
     "dudi": "Dudi",
     "noa": "Noa",
-    "haviav": "Haviav",
+    "haviav": "Plonter",
     "moshiko": "Moshiko",
     "orit": "Orit"
   },
@@ -872,26 +872,26 @@
     }
   },
   "sm05_haviav": {
-    "title": "Haviav",
+    "title": "Plonter",
     "obj": {
       "haviav": "Find out who is taking the city's speakers down",
-      "dudi": "Decide with Dudi what to do about Haviav",
+      "dudi": "Decide with Dudi what to do about Plonter",
       "shimon": "Report to Shimon"
     }
   },
   "sm06_chase": {
     "title": "A Chase in a Cape",
     "obj": {
-      "reach": "Chase Haviav to the Teder",
-      "haviav": "Talk to Haviav by the Teder",
+      "reach": "Chase Plonter to the Teder",
+      "haviav": "Talk to Plonter by the Teder",
       "pnina": "Help Pnina, stuck in the commotion"
     }
   },
   "sm07_band": {
     "title": "The Band Before",
     "obj": {
-      "dekel": "Ask Dekel about Haviav, by the cliff",
-      "haviav": "Talk to Haviav a second time"
+      "dekel": "Ask Dekel about Plonter, by the cliff",
+      "haviav": "Talk to Plonter a second time"
     }
   },
   "sm08_practice": {
@@ -912,9 +912,9 @@
   "sm10_tournament": {
     "title": "The Solo Tournament",
     "obj": {
-      "haviav": "Talk to Haviav before the tournament",
-      "duel": "Beat Haviav in the solo",
-      "havi": "Decide what to do about Haviav after the win",
+      "haviav": "Talk to Plonter before the tournament",
+      "duel": "Beat Plonter in the solo",
+      "havi": "Decide what to do about Plonter after the win",
       "noa": "Talk to Noa after the tournament"
     },
     "cheer": "The crowd is on its feet! Your solo won"

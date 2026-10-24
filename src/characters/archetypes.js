@@ -766,9 +766,9 @@ export const ARCHETYPES = {
     style: { stride: 1.1, swagger: 0.5 },
     crowd: { zones: {} },
   },
-  // Haviav, the villain: a fussy event organiser in a grey suit, once in Malul's band.
+  // Plonter (id haviav), the villain: a fussy event organiser in a grey suit, once in Malul's band.
   haviav: {
-    label: 'Haviav',
+    label: 'Plonter',
     skin: '#e6b994',
     face: { mouth: 'smirk', brows: 'down', glasses: '#2b2b33' },
     hair: { style: 'quiff', color: '#8a8a92' },
