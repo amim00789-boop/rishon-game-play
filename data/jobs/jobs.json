@@ -7,8 +7,8 @@
       "icon": "🚌",
       "spot": { "lat": 31.967586, "lon": 34.785573, "snapTo": "busStop" },
       "npc": { "archetype": "older_man", "seed": 7 },
-      "params": { "stops": 4, "minLeg": 170, "maxLeg": 700, "pace": 11, "grace": 14, "dwell": 4, "speedLimit": 26 },
-      "pay": { "base": 40, "perStar": 30 }
+      "params": { "line": "data/jobs/line5.json", "stops": 4, "minLeg": 170, "maxLeg": 700, "pace": 16, "grace": 14, "dwell": 4, "speedLimit": 26 },
+      "pay": { "base": 60, "perStar": 40 }
     },
     "bakery": {
       "game": "bakery",

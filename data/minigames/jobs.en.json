@@ -18,8 +18,10 @@
   "bus": {
     "name": "Bus driver",
     "npc": "Dispatcher Moti",
-    "pitch": "Route 99 is short. Drive smooth, stop at every stop, open the doors, and be on time.",
-    "title": "Route 99",
+    "pitch": "Egged line 5, the real route across the whole city. One shift west to Kanyon HaZahav via Moshe Dayan, one shift east via Herzl to Shamir hospital. Drive smooth, stop at the marked stops, and be on time.",
+    "title": "Line 5",
+    "lineTitle": "Line {ref} to {to}",
+    "lineEnd": "End of the line: {name}",
     "next": "Next stop: {name}",
     "terminus": "Back to the station",
     "dist": "{d} m",

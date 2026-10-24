@@ -43,7 +43,7 @@
     "howStart": "There: {k:F} next to {name} to start",
     "howBeam": "Step into the light beam to start",
     "howBarter": "{k:F} next to a neighbour to offer something",
-    "heroWait": "Super Malul's story starts after the mayor's speech. Play the regular story meanwhile; V switches back",
+    "heroWait": "Super Malul's next mission is not open yet. V switches back to the regular story",
     "heroDone": "You have finished the Super Malul missions that exist so far. V switches back to the Rishoni"
   },
   "npc": {
@@ -545,7 +545,7 @@
       "offer": [
         [
           "narrator",
-          "City Hall plaza, after the speech. Moshiko rolls a crate marked \"Weddings, fragile, no Carlebach\"."
+          "City Hall plaza. Moshiko rolls a crate marked \"Weddings, fragile, no Carlebach\"."
         ],
         [
           "moshiko",

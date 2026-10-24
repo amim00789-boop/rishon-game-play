@@ -1,0 +1,186 @@
+{
+ "version": 1,
+ "note": "Egged line 5, Rishon LeZion. Stop order from Moovit's line 5 map PDF (appassets.mvtdev.com/map/62/l/1/16137007.pdf), read 2026-10-24. Stop names match nameLocal in data/rishon.json busStops. The bus drives through every stop in order (waypoints) and opens its doors only where serve is true. The job alternates between the two shifts. A shift with fromDepot false starts at its first stop found in the game instead of at the job's station kerb (the east shift: the station's exits only lead south, so Ben Gurion is a 1.6 km loop away in the road graph).",
+ "ref": "5",
+ "shifts": [
+  {
+   "id": "west",
+   "to": "קניון הזהב",
+   "stops": [
+    {
+     "stop": "ת. מרכזית ראשל''צ/רציפים"
+    },
+    {
+     "stop": "ישראל גלילי/הסחלב"
+    },
+    {
+     "stop": "ישראל גלילי/התקומה",
+     "serve": true
+    },
+    {
+     "stop": "נגבה/אושה"
+    },
+    {
+     "stop": "נגבה/חניתה",
+     "serve": true
+    },
+    {
+     "stop": "מרכז גנים/נגבה"
+    },
+    {
+     "stop": "המצלתיים/התזמורת"
+    },
+    {
+     "stop": "התזמורת/האורגן",
+     "serve": true
+    },
+    {
+     "stop": "התזמורת/העוגב"
+    },
+    {
+     "stop": "התזמורת/הפסנתר"
+    },
+    {
+     "stop": "החצוצרה/מוטה גור"
+    },
+    {
+     "stop": "מוטה גור/אלי ויזל"
+    },
+    {
+     "stop": "המכללה למינהל/מוטה גור",
+     "serve": true
+    },
+    {
+     "stop": "לוי אשכול/ישראל גלילי"
+    },
+    {
+     "stop": "לוי אשכול/היין"
+    },
+    {
+     "stop": "קניון הבאר/תור הזהב",
+     "serve": true
+    },
+    {
+     "stop": "תור הזהב/הרשבא"
+    },
+    {
+     "stop": "גדולי ישראל/שייקה אופיר"
+    },
+    {
+     "stop": "חיים בר לב/גדולי ישראל"
+    },
+    {
+     "stop": "חיים בר לב/משה דיין",
+     "serve": true
+    },
+    {
+     "stop": "שדרות משה דיין/בסקינד"
+    },
+    {
+     "stop": "מתחם שבעת הכוכבים",
+     "serve": true
+    },
+    {
+     "stop": "חונים קונים/לישנסקי"
+    },
+    {
+     "stop": "דוד סחרוב/אלחנן"
+    },
+    {
+     "stop": "דוד סחרוב/אליעזר מזל"
+    },
+    {
+     "stop": "קניון הזהב/דוד סחרוב",
+     "serve": true
+    }
+   ]
+  },
+  {
+   "id": "east",
+   "to": "המרכז הרפואי שמיר",
+   "stops": [
+    {
+     "stop": "ת. מרכזית ראשל''צ/רציפים"
+    },
+    {
+     "stop": "ת. מרכזית ראשל''צ"
+    },
+    {
+     "stop": "בן גוריון/ההסתדרות",
+     "serve": true
+    },
+    {
+     "stop": "בן גוריון/כיכר השוטר"
+    },
+    {
+     "stop": "כצנלסון/ארלוזורוב"
+    },
+    {
+     "stop": "כצנלסון/קפלן אליעזר",
+     "serve": true
+    },
+    {
+     "stop": "כצנלסון/לילינבלום"
+    },
+    {
+     "stop": "ז'בוטינסקי/אז''ר"
+    },
+    {
+     "stop": "הרצל/רוטשילד",
+     "serve": true
+    },
+    {
+     "stop": "הרצל/עין הקורא"
+    },
+    {
+     "stop": "הרצל/אוסישקין",
+     "serve": true
+    },
+    {
+     "stop": "הרצל/קרן היסוד"
+    },
+    {
+     "stop": "צבי פרנק/הרב צדוק",
+     "serve": true
+    },
+    {
+     "stop": "צבי פרנק/יעקובזון"
+    },
+    {
+     "stop": "צבי פרנק/גבעתי"
+    },
+    {
+     "stop": "מרכז קדמת ראשון/פופל",
+     "serve": true
+    },
+    {
+     "stop": "סגל/פיקא"
+    },
+    {
+     "stop": "מנחם כהן/הצופים"
+    },
+    {
+     "stop": "יעקב פריימן/תנועות הנוער"
+    },
+    {
+     "stop": "יוסף בורג/ההתיישבות",
+     "serve": true
+    },
+    {
+     "stop": "כתריאל רפפורט/ד''ר יוסף בורג"
+    },
+    {
+     "stop": "כתריאל רפפורט/חיים הרצוג"
+    },
+    {
+     "stop": "צומת צריפין לצפון"
+    },
+    {
+     "stop": "המרכז רפואי יצחק שמיר",
+     "serve": true
+    }
+   ],
+   "fromDepot": false
+  }
+ ]
+}

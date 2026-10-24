@@ -475,8 +475,8 @@ async function boot() {
   }
   // One simulation step. Exposed as __game.tick so automated playtests can advance the game
   // when the tab is hidden and rAF is paused; `draw` is skipped there to keep ticks cheap.
-  // Second story mode (docs/SUPER_MALUL.md): after the mayor's speech (m20) V swaps the player
-  // between the regular Rishoni and Super Malul. The choice is its own save key.
+  // Second story mode (docs/SUPER_MALUL.md): from the start, V swaps the player between the
+  // regular Rishoni and Super Malul, each with his own story. The choice is its own save key.
   const HERO_KEY = 'rishon.hero.v1';
   // Super Malul on foot: a jump about 2.9x as high (apex ~8 units, the normal one ~3) and a 1.55x sprint.
   const HERO_POWERS = { jump: 1.7, run: 1.55 };

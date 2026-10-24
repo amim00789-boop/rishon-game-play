@@ -79,9 +79,14 @@ export async function createJobSpots(deps) {
     wasShown = true;
     if (input.wasPressed('KeyF')) {
       hud.setPrompt(null); wasShown = false;
+      // The same handle the quest system makes for a minigame step: it calls the registry's update
+      // every frame, freezes the player while the game blocks, and skips its own talk prompt.
+      const handle = { game: mg.jobs, kind: 'jobs', cfg: {}, get blocks() { return !!mg.blocksPlayer; },
+        update: (dt, pl, inp) => mg.update(dt, inp), cancel: () => { try { mg.jobs.cancel(); } catch (_) { /* optional */ } } };
+      quests.mg = handle;
       mg.jobs.start({ job: s.id, params: { depot: s.depot } }).then((r) => {
         if (r && r.ok && hud.toastMsg) hud.toastMsg(t('jobs.ui.earned', { n: r.earned }));
-      });
+      }).finally(() => { if (quests.mg === handle) quests.mg = null; });
     }
   }
 

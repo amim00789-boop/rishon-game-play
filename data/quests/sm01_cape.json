@@ -1,9 +1,7 @@
 {
   "id": "sm01_cape",
   "act": 5,
-  "requires": [
-    "m20_certificate"
-  ],
+  "requires": [],
   "giver": "moshiko",
   "npcs": {
     "moshiko": {

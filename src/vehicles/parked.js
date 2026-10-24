@@ -49,7 +49,7 @@ function hashStr(s) {
 
 export function buildParked({ scene, city, lots = [], collision = null, net, rnd = Math.random, restrictedAt = null }) {
   const cars = [];
-  let zoneSkipped = 0, underDeck = 0;
+  let zoneSkipped = 0, underDeck = 0, onRoadSkipped = 0;
   // Topmost walkable surface at (x, z) (city.heightAt with a mover far above), checked only where a
   // footbridge (city.footbridges) passes over the spot.
   const deckAbove = city && typeof city.heightAt === 'function' ? (x, z) => city.heightAt(x, z, 1e6) : null;
@@ -367,6 +367,8 @@ export function buildParked({ scene, city, lots = [], collision = null, net, rnd
     const sx = Math.sin(yaw), cz = Math.cos(yaw);
     const half = (K.L * scale) / 2;
     if (src !== 'lot' && inNoParkZone(x, z)) { zoneSkipped++; return false; }
+    // an OSM lot drawn over the street (a mapping slip) must not leave a car standing in a lane
+    if (src === 'lot' && city && city.onCarriage && city.onCarriage(x, z, 0)) { onRoadSkipped++; return false; }
     // nothing parks inside a sealed zone (src/world/details.js), not even a lot or kerb behind its fence
     if (restrictedAt && (restrictedAt(x, z) || restrictedAt(x + sx * half, z + cz * half) || restrictedAt(x - sx * half, z - cz * half))) { zoneSkipped++; return false; }
     const yc = yAbs ?? ground(x, z) + 0.2;
@@ -461,7 +463,7 @@ export function buildParked({ scene, city, lots = [], collision = null, net, rnd
       if (Math.hypot(px - lastX, pz - lastZ) > REBIN_MOVE) rebin(px, pz);
     },
     stats() {
-      return { total: cars.length, street: cars.length - lotCars, lot: lotCars, stalls: stallsSeen, stallsRejected: rejected, zoneSkipped, underDeck, streets, buildMs, ...counts, drawCalls: fleet.drawCalls(), kerbside: auditResult };
+      return { total: cars.length, street: cars.length - lotCars, lot: lotCars, stalls: stallsSeen, stallsRejected: rejected, zoneSkipped, onRoadSkipped, underDeck, streets, buildMs, ...counts, drawCalls: fleet.drawCalls(), kerbside: auditResult };
     },
   };
 }

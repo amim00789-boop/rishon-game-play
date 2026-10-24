@@ -1287,7 +1287,7 @@ export class QuestSystem {
       const av = this.available()[0];
       if (!av) {
         const finished = this.quests.length && this.quests.every((q) => this.state.done.includes(q.id));
-        if (this.heroMode && !finished) return { title: '', text: this.t(this.state.done.includes('m20_certificate') ? 'ui.heroDone' : 'ui.heroWait'), target: null };
+        if (this.heroMode && !finished) return { title: '', text: this.t(this.quests.filter((q) => q.mode === 'hero').every((q) => this.state.done.includes(q.id)) ? 'ui.heroDone' : 'ui.heroWait'), target: null };
         return { title: '', text: this.t(finished ? 'ui.freePlay' : 'ui.allDone'), target: null };
       }
       const g = this.npc(av, av.giver);
