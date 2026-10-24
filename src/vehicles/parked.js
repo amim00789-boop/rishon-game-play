@@ -21,6 +21,8 @@ const STREET_KINDS = { residential: 1, living_street: 0.8, unclassified: 0.9, te
 // busy shopping streets (Rothschild is tertiary/secondary) stay fuller (founder, round 3: a third fewer cars).
 // (x0.81 after the 0.85 vehicle scale, so shorter cars do not raise the count: same ~34.6k total.)
 const STREET_FILL = { residential: 0.34, living_street: 0.34, unclassified: 0.38, tertiary: 0.69, secondary: 0.81 };
+// Founder, 2026-10-24: too many cars in the whole game; parked ones a third fewer too.
+const PARKED_SHARE = 0.67;
 // Never park beside these. OSM parking:lane / parking:both tags could allow exceptions, but our
 // extract carries none, so there are no exceptions (founder, round 3).
 const NO_PARK = /^(motorway|trunk|primary)(_link)?$/;
@@ -295,7 +297,7 @@ export function buildParked({ scene, city, lots = [], collision = null, net, rnd
     if (pl && !fits(false, true)) pl = false;
     if (!pr && !pl) continue;
     streets++;
-    const fill = (0.6 + rr() * 0.25) * (STREET_FILL[road.kind] || 0.6);
+    const fill = (0.6 + rr() * 0.25) * (STREET_FILL[road.kind] || 0.6) * PARKED_SHARE;
     for (const e of list) {
       if (pr) e.parkR = PARK_RESERVE;
       if (pl) e.parkL = PARK_RESERVE;
@@ -344,7 +346,7 @@ export function buildParked({ scene, city, lots = [], collision = null, net, rnd
     const lr = mulberry(hashStr(String(lot.id ?? lot.stalls.length)));
     // Big lots (malls, cinemas, stations) stay busy; small neighbourhood lots are half empty.
     const big = lot.stalls.length >= 80;
-    const fill = big ? 0.62 + lr() * 0.2 : 0.38 + lr() * 0.2;
+    const fill = (big ? 0.62 + lr() * 0.2 : 0.38 + lr() * 0.2) * PARKED_SHARE;
     const kerb = lot.kind === 'street_side';
     for (const st of lot.stalls) {
       stallsSeen++;

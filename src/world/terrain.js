@@ -116,9 +116,21 @@ export function metresAt(x, z) { return T ? groundAt(x, z) / T.unitsPerMetre : 0
 // edge of the data the edge row continues (it used to drop to 0: a 40 u cliff under the roads that
 // run off the map), and the baked grid already spans 1.35 km past the playable bounds.
 export function groundAt(x, z) {
+  if (OVR && x > OVR.box[0] && x < OVR.box[2] && z > OVR.box[1] && z < OVR.box[3]) return OVR.at(x, z);
+  return groundAtRaw(x, z);
+}
+
+// The heightfield itself, without any override: what the override is designed on.
+export function groundAtRaw(x, z) {
   const g = baseAt(x, z);
   return CUT && g > 0 ? g - cutDepth(x, z) : g;
 }
+
+// A designed area that owns its ground (src/world/dayan: the Moshe Dayan interchange, graded under
+// its roads): { box: [x0, z0, x1, z1], at(x, z) }. Inside the box groundAt answers with it and the
+// terrain mesh leaves a hole for the area's own ground mesh, which meets this one at the box edge.
+let OVR = null;
+export function setGroundOverride(o) { OVR = o && o.box && typeof o.at === 'function' ? o : null; }
 
 function baseAt(x, z) {
   if (!T) return 0;
@@ -282,6 +294,7 @@ function buildChunk(i0, j0, i1, j1, material) {
   for (let j = 0; j < d - 1; j++) {
     for (let i = 0; i < w - 1; i++) {
       const a = j * w + i, b = a + 1, e = a + w, f = e + 1;
+      if (OVR && pos[a * 3] > OVR.box[0] + 1 && pos[b * 3] < OVR.box[2] - 1 && pos[a * 3 + 2] > OVR.box[1] + 1 && pos[e * 3 + 2] < OVR.box[3] - 1) continue;
       // Split each quad along the diagonal that follows the terrain better (less faceting on ridges).
       const ha = pos[a * 3 + 1], hb = pos[b * 3 + 1], he = pos[e * 3 + 1], hf = pos[f * 3 + 1];
       if (Math.abs(ha - hf) <= Math.abs(hb - he)) { idx.set([a, e, f, a, f, b], n); }
@@ -293,7 +306,7 @@ function buildChunk(i0, j0, i1, j1, material) {
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
   g.setAttribute('color', new THREE.BufferAttribute(colr, 3));
-  g.setIndex(new THREE.BufferAttribute(idx, 1));
+  g.setIndex(new THREE.BufferAttribute(n < idx.length ? idx.subarray(0, n) : idx, 1));
   g.computeBoundingBox();
   g.computeBoundingSphere();
   const mesh = new THREE.Mesh(g, material);

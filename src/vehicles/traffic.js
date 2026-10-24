@@ -19,7 +19,7 @@ import { t as tr } from '../i18n.js';
 
 const NEAR_R = 110, MID_R = 300, FAR_R = 520;
 const SPAWN_MIN = 210, SPAWN_R = 440, DESPAWN_R = 530;
-const MAX_VEH = 100, MIN_VEH = 8; // a third under the first cut (founder, round 3)
+const MAX_VEH = 67, MIN_VEH = 6; // round 3 cut a third; founder 2026-10-24: another third off
 const RIDER_R = 55, RIDER_OUT = 68, MAX_RIDERS = 8;
 const DEC = 12; // comfortable braking, u/s^2
 const BRAKE = 30, ACCEL = 9;

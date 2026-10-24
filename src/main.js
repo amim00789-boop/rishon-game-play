@@ -193,6 +193,13 @@ async function boot() {
   const tm = await tryImport('./world/terrain.js', 'terrain');
   if (tm?.loadTerrain) { try { await tm.loadTerrain(); } catch (e) { console.warn('[main] loadTerrain failed', e); } }
   tp = measure('terrain load', tp);
+  // The Moshe Dayan interchange (src/world/dayan) owns the ground in its box: before anything sits on it.
+  let updateDayan = null;
+  try {
+    const dm = await tryImport('./world/dayan/index.js', 'dayan');
+    if (await dm?.loadDayan?.(tm)) updateDayan = dm.updateDayan;
+  } catch (e) { console.warn('[main] loadDayan failed', e); }
+  tp = measure('dayan interchange', tp);
 
   await progress(15, t('load.landmarks'));
   let landmarks = { colliders: [], pois: [] };
@@ -514,6 +521,7 @@ async function boot() {
     crowd.update(dt, player.pos.x, player.pos.z);
     if (plane) plane.update(player.pos);
     if (updateLandmarks) { try { updateLandmarks(dt); } catch (e) { console.warn('[main] updateLandmarks failed', e); updateLandmarks = null; } }
+    if (updateDayan) { try { updateDayan(camera, player); } catch (e) { console.warn('[main] updateDayan failed', e); updateDayan = null; } }
     hud.update(dt, player, chase.yaw);
     if (bigmap) bigmap.update(dt);
     if (audio) { try { audio.update(dt); } catch (e) { console.warn('[main] audio.update failed', e); audio = null; } }

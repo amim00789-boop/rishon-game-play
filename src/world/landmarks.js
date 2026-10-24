@@ -21,6 +21,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { project, SCALE } from '../geo.js';
 import { bowlSpec, bowlGeometry, bowlColor, bowlOutline } from './skatebowl.js';
+import { dayanActive } from './dayan/index.js';
 
 // Optional modules owned by other agents. Both are guarded: without them the landmarks
 // still build, with English sign text and flat ground.
@@ -3975,7 +3976,10 @@ function buildMosheDayan(flags) {
   const bandZ = centroid(band)[1]; // canopies south of the bridge (larger z) are white and green (founder, round 8)
   // Platform canopies and the hall: columns stand on the platform centre lines only, so no
   // column lands on a track.
-  for (const [[ax, az], [bx, bz]] of plats) {
+  // With the Moshe Dayan interchange in (src/world/dayan) the platforms, canopies, hall and stairs
+  // are its own; this landmark keeps the big name sign, the train and the POI.
+  const lab = dayanActive();
+  for (const [[ax, az], [bx, bz]] of lab ? [] : plats) {
     const len = Math.hypot(bx - ax, bz - az), ry = Math.atan2(bx - ax, bz - az), n = Math.floor(len / 14);
     for (let k = 0; k < n; k++) {
       const t = (k + 0.5) / n, x = ax + (bx - ax) * t, z = az + (bz - az) * t;
@@ -4007,14 +4011,16 @@ function buildMosheDayan(flags) {
   const hallLen = a1 - a0, hallW = Math.max(...acros) - Math.min(...acros), am = (a0 + a1) / 2, cm = (Math.max(...acros) + Math.min(...acros)) / 2;
   const hx = f.x + ax0[0] * am + cr0[0] * cm, hz = f.z + ax0[1] * am + cr0[1] * cm;
   const vault = new THREE.CylinderGeometry(hallW / 2, hallW / 2, hallLen, 20, 1, false, Math.PI / 2, Math.PI); // upper half once turned on its side
-  b.add(vault, 0xa9b0b8, M(hx, HALL_ROOF + 0.4, hz, Math.PI / 2, ryAx0, 0, 1, 1, HALL_RISE), (x, y, z) => (Math.floor(y / 4) % 2 ? 0xa9b0b8 : 0xb9c0c7));
-  b.add(G.box(hallW + 1, 0.8, hallLen + 1, 0.3), 0xd9d2c4, M(hx, HALL_ROOF + 0.2, hz, 0, ryAx0));
-  // (Round 4: the round-2 stair tower stood on the tracks between the islands; the stairs now come
-  // down onto the platforms, see dressMosheDayan.)
-  g.add(b.mesh('station_moshe_dayan'));
+  if (!lab) {
+    b.add(vault, 0xa9b0b8, M(hx, HALL_ROOF + 0.4, hz, Math.PI / 2, ryAx0, 0, 1, 1, HALL_RISE), (x, y, z) => (Math.floor(y / 4) % 2 ? 0xa9b0b8 : 0xb9c0c7));
+    b.add(G.box(hallW + 1, 0.8, hallLen + 1, 0.3), 0xd9d2c4, M(hx, HALL_ROOF + 0.2, hz, 0, ryAx0));
+    // (Round 4: the round-2 stair tower stood on the tracks between the islands; the stairs now come
+    // down onto the platforms, see dressMosheDayan.)
+    g.add(b.mesh('station_moshe_dayan'));
+  }
   // Name boards hang under the canopies along both platforms, and the big sign stands on
   // the north end of the hall roof, facing the Ayalon both ways.
-  plats.forEach(([[ax, az], [bx, bz]], pi) => {
+  (lab ? [] : plats).forEach(([[ax, az], [bx, bz]], pi) => {
     const ry = Math.atan2(bx - ax, bz - az);
     for (const t of [0.2, 0.75]) {
       const x = ax + (bx - ax) * t, z = az + (bz - az) * t;
@@ -4046,7 +4052,7 @@ function buildMosheDayan(flags) {
   const train = new Batch();
   for (let i = 0; i < 4; i++) train.add(G.box(3.4, 4.0, 24, 0.9), C.white, M(0, 2.9, -i * 25), (x, y) => (y > 0.7 && y < 1.6 ? C.navy : (y < -1.3 ? C.red : C.white)));
   train.add(G.box(3.45, 1.3, 98, 0.4), C.glass, M(0, 3.5, -37.5));
-  dressMosheDayan(g, plats);
+  if (!lab) dressMosheDayan(g, plats);
   // Round 7: with the canopies up at ROOF, a player on the stairs or at a platform end has the
   // chase camera above them, so a panel between the lens and the player is hidden until the
   // view is clear again. Positions are relative to the group, which seats on the ground.

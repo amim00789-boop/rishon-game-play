@@ -30,7 +30,8 @@ export const CLASS = {
 };
 const DEFAULT_CLASS = { v: 14, dens: 0.002 };
 // Founder, round 3: the street felt too busy. Every class keeps its relative density, one third less.
-export const TRAFFIC_DENSITY = 0.67;
+// Founder, 2026-10-24: still too many cars in the whole game; another third off (0.67 -> 0.45).
+export const TRAFFIC_DENSITY = 0.45;
 
 // Both follow the 0.85 vehicle scale (models.js VEHICLE_SCALE): the widest parked car is ~3.1 wide.
 export const PARK_RESERVE = 3.3; // kerb band a parked car takes (up to 3.1 wide + kerb gap)
@@ -161,7 +162,9 @@ export function buildNetwork(city, { restrictedAt = null, light = false } = {}) 
   const edges = [];
   for (const r of roads) {
     const pts = r.points;
-    const ya = r.heights && r.heights.some((y) => y > 0.05) ? absoluteHeights(pts, r.heights) : null;
+    // `abs` (src/world/dayan roads): exact asphalt heights; the edge adds its lift back on top
+    const ya = r.abs ? r.abs.map((y) => y - ROAD_LIFT(r.rank) + 0.07)
+      : r.heights && r.heights.some((y) => y > 0.05) ? absoluteHeights(pts, r.heights) : null;
     let start = 0;
     for (let i = 1; i < pts.length; i++) {
       const last = i === pts.length - 1;
@@ -308,7 +311,7 @@ function overheadClearance(city, edges) {
   const decks = new Grid(48);
   for (const r of city.roads || []) {
     if (!r.points || r.points.length < 2 || !r.heights || !r.heights.some((y) => y > 2)) continue;
-    const ya = absoluteHeights(r.points, r.heights);
+    const ya = r.abs || absoluteHeights(r.points, r.heights);
     for (let i = 0; i < r.points.length - 1; i++) {
       if (r.heights[i] < 2 && r.heights[i + 1] < 2) continue; // only the raised stretches
       const a = r.points[i], b = r.points[i + 1];

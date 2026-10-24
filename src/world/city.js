@@ -2755,6 +2755,106 @@ function buildNetwork(data, ctx) {
   return { roads, sidewalks, busStops, medians, crossings, heightAt, onCarriage, cars, junctions: junctions.length, junctionNodes, rings, rampStats, prof, platformAt, stationStairs, platformHandled, sidePlatforms, streetSigns };
 }
 
+// ---------- the Moshe Dayan interchange (src/world/dayan) ----------
+
+// Cut the city's data at the interchange box. Car roads and rails keep only their parts outside the
+// box; each cut end snaps to the interchange's boundary node of the same road (within 2.5 u), so
+// the traffic graph joins them. At-grade footways stay (they drape on the interchange's ground)
+// except where they run under or over its deck; footbridges and steps inside the box go, and so do
+// platforms and bus stops (the interchange draws its station and its stops).
+function clipToDayan(data, D) {
+  const [x0, z0, x1, z1] = D.box;
+  const inside = (x, z) => x > x0 && x < x1 && z > z0 && z < z1;
+  const snaps = D.boundaryNodes;
+  const snap = (x, z) => {
+    let best = null, bd = 2.5;
+    for (const n of snaps) { const d = Math.hypot(n.x - x, n.z - z); if (d < bd) { bd = d; best = n; } }
+    return best ? [best.x, best.z] : [x, z];
+  };
+  // [t0, t1] of segment a-b inside the box (Liang-Barsky), or null
+  const span = (ax, az, bx, bz) => {
+    let t0 = 0, t1 = 1; const dx = bx - ax, dz = bz - az;
+    for (const [p, q] of [[-dx, ax - x0], [dx, x1 - ax], [-dz, az - z0], [dz, z1 - az]]) {
+      if (p === 0) { if (q < 0) return null; continue; }
+      const r = q / p; if (p < 0) t0 = Math.max(t0, r); else t1 = Math.min(t1, r);
+      if (t0 > t1) return null;
+    }
+    return t1 - t0 > 1e-6 ? [t0, t1] : null;
+  };
+  // flat [x, z, ...] -> list of flat runs outside the box, cut exactly on the box edge
+  const outsideRuns = (f) => {
+    const runs = []; let cur = [];
+    const end = () => { if (cur.length >= 4) runs.push(cur); cur = []; };
+    for (let i = 0; i + 3 < f.length; i += 2) {
+      const ax = f[i], az = f[i + 1], bx = f[i + 2], bz = f[i + 3];
+      const sp = span(ax, az, bx, bz);
+      if (!sp) { if (!cur.length) cur.push(ax, az); cur.push(bx, bz); continue; }
+      if (sp[0] > 1e-6) { const p = snap(ax + (bx - ax) * sp[0], az + (bz - az) * sp[0]); if (!cur.length) cur.push(ax, az); cur.push(p[0], p[1]); }
+      end();
+      if (sp[1] < 1 - 1e-6) { const p = snap(ax + (bx - ax) * sp[1], az + (bz - az) * sp[1]); cur.push(p[0], p[1], bx, bz); }
+    }
+    end();
+    return runs;
+  };
+  // footways: keep the vertices (densified to 3 u) where `off` is false
+  const keptRuns = (f, off) => {
+    const runs = []; let cur = [];
+    const end = () => { if (cur.length >= 4) runs.push(cur); cur = []; };
+    for (let i = 0; i + 1 < f.length; i += 2) {
+      const ax = f[i], az = f[i + 1];
+      const n = i + 3 < f.length ? Math.max(1, Math.ceil(Math.hypot(f[i + 2] - ax, f[i + 3] - az) / 3)) : 1;
+      for (let k = 0; k < n; k++) {
+        if (k > 0 && i + 3 >= f.length) break;
+        const x = k ? ax + (f[i + 2] - ax) * k / n : ax, z = k ? az + (f[i + 3] - az) * k / n : az;
+        if (off(x, z)) end(); else cur.push(x, z);
+      }
+    }
+    end();
+    return runs;
+  };
+  const PATHY = /^(footway|path|cycleway|pedestrian|track|bridleway|sidewalk)$/;
+  const roads = [];
+  let cut = 0;
+  for (const row of data.roads || []) {
+    const [kind0, name, f, a0] = row;
+    const a = a0 || {};
+    let touches = false;
+    for (let i = 0; i + 1 < f.length; i += 2) if (inside(f[i], f[i + 1])) { touches = true; break; }
+    if (!touches && !(f.length >= 4 && (() => { for (let i = 0; i + 3 < f.length; i += 2) if (span(f[i], f[i + 1], f[i + 2], f[i + 3])) return true; return false; })())) { roads.push(row); continue; }
+    cut++;
+    const hw = a.hw || kind0;
+    if (PATHY.test(hw) && !a.bridge && !a.layer) {
+      // a footway at grade stays, minus its stretches under the deck or on an interchange carriageway
+      const off = (x, z) => D.band.inBand(x, z) || D.onCarriage(x, z, 0.5);
+      for (const r of keptRuns(f, off)) roads.push([kind0, name, r, a0]);
+      continue;
+    }
+    for (const r of outsideRuns(f)) roads.push([kind0, name, r, a0]);
+  }
+  data.roads = roads;
+  data.rail = (data.rail || []).flatMap(([tun, f, a]) => outsideRuns(f).map((r) => [tun, r, a]));
+  data.platforms = (data.platforms || []).filter((f) => { for (let i = 0; i + 1 < f.length; i += 2) if (inside(f[i], f[i + 1])) return false; return true; });
+  data.busStops = (data.busStops || []).filter((b) => !inside(b[2], b[3]));
+  D.cityCut = cut;
+}
+
+// After the city's network: the interchange's roads join city.roads (traffic, signal plan, minimap),
+// its crossings join city.crossings, and inside the box heightAt, onCarriage and the colliders are
+// the interchange's.
+async function joinDayan(net, colliders, root, dayan) {
+  const D = dayan.design;
+  for (const e of D.roadEntries()) net.roads.push(e);
+  for (const c of D.crossingEntries()) net.crossings.push(c);
+  const h0 = net.heightAt, c0 = net.onCarriage;
+  net.heightAt = (x, z, y = 0) => (dayan.inBox(x, z) ? D.heightAt(x, z, y) : h0(x, z, y));
+  net.onCarriage = (x, z, m = 0) => (dayan.inBox(x, z) ? D.onCarriage(x, z, m) : c0(x, z, m));
+  const { buildDayanGroup } = await import('./dayan/index.js');
+  const g = await buildDayanGroup();
+  if (g) root.add(g);
+  for (const c of D.colliders) colliders.push(c); // after the build: it adds the pier and gantry columns
+  net.prof.dayan = { ms: dayan.ms, cityRowsCut: D.cityCut, roads: D.ways.length, colliders: D.colliders.length };
+}
+
 // ---------- rail trench along the Ayalon (cut defined by terrain.js) ----------
 
 // Retaining walls down both sides of the cut and a lip strip over the rim, where the terrain mesh
@@ -3060,6 +3160,15 @@ export async function buildCity(scene, { exclude = [] } = {}) {
   if (!res.ok) throw new Error(`rishon.json: HTTP ${res.status}`);
   const data = await res.json();
   if (data.meta.scale && Math.abs(data.meta.scale - SCALE) > 1e-9) rescaleData(data, SCALE / data.meta.scale);
+  // The Moshe Dayan interchange owns its box (src/world/dayan, loaded by main.js after the terrain):
+  // the city's own roads, rails, platforms and bus stops stop at the box edge.
+  const dayan = await import('./dayan/index.js').then((m) => m.getDayan()).catch(() => null);
+  if (dayan) {
+    clipToDayan(data, dayan.design);
+    // nothing of the city's own stands under the interchange deck (the old station stair house,
+    // OSM building 1566, came up through it)
+    exclude = [...exclude, { id: 'dayan_deck', points: dayan.design.deckPoly }];
+  }
   // Terrain is optional: without terrain.js (or its data) the world stays flat at y = 0.
   let terrain = false, cuts = null;
   groundAt = () => 0;
@@ -3156,6 +3265,7 @@ export async function buildCity(scene, { exclude = [] } = {}) {
     for (const f of list) {
       const r = ring(f);
       if (ownedByLandmark(r)) continue;
+      if (dayan && dayan.inBox(...centroid(r))) continue;
       const bb = bbox(r), near = beaches.some((b) => b.bb.minX <= bb.maxX && b.bb.maxX >= bb.minX && b.bb.minZ <= bb.maxZ && b.bb.maxZ >= bb.minZ);
       fill(ground, r, y, c, near ? onBeach : null);
     }
@@ -3227,6 +3337,7 @@ export async function buildCity(scene, { exclude = [] } = {}) {
   };
   const tNet = performance.now();
   const net = buildNetwork(data, { coast, inBuilding, colliders, layers, K, platforms, terrain, waterTop: water.topAt });
+  if (dayan) await joinDayan(net, colliders, root, dayan);
   const netMs = Math.round(performance.now() - tNet);
   performance.measure?.('boot:city/network', { start: tNet, end: performance.now() });
   if (cuts && cuts.list.length) buildTrench(layers, colliders, cuts);
