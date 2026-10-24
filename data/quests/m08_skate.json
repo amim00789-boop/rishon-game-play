@@ -12,14 +12,41 @@
         "dx": 8,
         "dz": 6
       },
-      "fallback": "kid"
+      "fallback": "kid",
+      "look": {
+        "skin": "#d9a27a",
+        "hair": {
+          "style": "messy",
+          "color": "#2a1a12"
+        },
+        "shirt": {
+          "color": "#e8364f",
+          "neck": "crew",
+          "sleeves": "short",
+          "print": "star",
+          "printColor": "#ffffff"
+        },
+        "pants": {
+          "kind": "shorts",
+          "color": "#2b3a55"
+        },
+        "accessories": [
+          {
+            "type": "cap",
+            "color": "#2e86de",
+            "brim": "#2e86de",
+            "backwards": true
+          }
+        ]
+      }
     },
     "grisha": {
       "archetype": "russian_speaking_grandpa",
       "at": {
         "poi": "teder",
-        "dx": -20,
-        "dz": -18
+        "dx": 24,
+        "dz": 50,
+        "street": true
       }
     }
   },

@@ -1,0 +1,65 @@
+{
+  "id": "act_skate_shikma",
+  "needsPoi": "skate_bowl_shikma",
+  "icon": "🛹",
+  "npcs": {
+    "yaara": {
+      "archetype": "skater_kid",
+      "at": {
+        "poi": "skate_bowl_shikma",
+        "dx": -9,
+        "dz": 0
+      },
+      "look": {
+        "skin": "#8d5a3b",
+        "face": {
+          "lashes": true
+        },
+        "hair": {
+          "style": "curly",
+          "color": "#1c1210"
+        },
+        "shirt": {
+          "color": "#ff7a2a",
+          "neck": "crew",
+          "sleeves": "long",
+          "print": null
+        },
+        "pants": {
+          "kind": "long",
+          "color": "#3b4a5c"
+        },
+        "accessories": [
+          {
+            "type": "headband",
+            "color": "#ffffff"
+          }
+        ]
+      }
+    }
+  },
+  "host": "yaara",
+  "dialogue": "d.hello",
+  "options": [
+    {
+      "text": "c.skate",
+      "game": "skate",
+      "params": {
+        "seconds": 60,
+        "at": {
+          "poi": "skate_bowl_shikma"
+        }
+      },
+      "intro": "d.go",
+      "after": "d.after",
+      "afterFail": "d.again",
+      "introFirst": "d.first",
+      "afterBest": "d.best",
+      "afterQuit": "d.quit"
+    },
+    {
+      "text": "c.later",
+      "reply": "d.later"
+    }
+  ]
+}

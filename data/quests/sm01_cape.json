@@ -1,0 +1,99 @@
+{
+  "id": "sm01_cape",
+  "act": 5,
+  "requires": [
+    "m20_certificate"
+  ],
+  "giver": "moshiko",
+  "npcs": {
+    "moshiko": {
+      "archetype": "mizrahi_street_guy",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": -8,
+        "dz": -12
+      }
+    },
+    "savta": {
+      "archetype": "savta",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": -2,
+        "dz": -12
+      }
+    },
+    "malul": {
+      "archetype": "malul",
+      "fallback": "beach_guy",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": -5,
+        "dz": -18
+      }
+    }
+  },
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "savta",
+      "obj": "obj.savta",
+      "dialogue": "d.savta",
+      "effects": {
+        "rel": {
+          "rachel": 2
+        },
+        "heroFlag": "rachel_knew"
+      }
+    },
+    {
+      "type": "choice",
+      "npc": "malul",
+      "obj": "obj.secret",
+      "dialogue": "d.secret",
+      "options": [
+        {
+          "text": "c.all",
+          "reply": "d.rAll",
+          "effects": {
+            "rel": {
+              "noa": -1
+            },
+            "heroFlag": "identity_public"
+          }
+        },
+        {
+          "text": "c.secret",
+          "reply": "d.rSecret",
+          "effects": {
+            "rel": {
+              "noa": 1
+            },
+            "heroFlag": "identity_secret"
+          }
+        },
+        {
+          "text": "c.savta",
+          "reply": "d.rSavta",
+          "effects": {
+            "rel": {
+              "rachel": 1
+            },
+            "heroFlag": "identity_family"
+          }
+        }
+      ]
+    },
+    {
+      "type": "talk",
+      "npc": "moshiko",
+      "obj": "obj.suit",
+      "dialogue": "d.suit",
+      "effects": {
+        "heroFlag": "hero_unlocked"
+      }
+    }
+  ],
+  "after": "page",
+  "mode": "hero"
+}

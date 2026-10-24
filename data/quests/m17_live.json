@@ -9,27 +9,27 @@
     "malul": {
       "archetype": "malul",
       "at": {
-        "poi": "gan_hair",
-        "dx": -6,
-        "dz": 30
+        "poi": "city_hall_plaza",
+        "dx": 21.6,
+        "dz": -34.1
       },
       "fallback": "beach_guy"
     },
     "dekel": {
       "archetype": "dekel",
       "at": {
-        "poi": "gan_hair",
-        "dx": 0,
-        "dz": 34
+        "poi": "city_hall_plaza",
+        "dx": 17.1,
+        "dz": -32.6
       },
       "fallback": "dati_leumi_man"
     },
     "ofir": {
       "archetype": "ofir",
       "at": {
-        "poi": "gan_hair",
-        "dx": 6,
-        "dz": 30
+        "poi": "city_hall_plaza",
+        "dx": 21.6,
+        "dz": -30.6
       },
       "fallback": "mizrahi_street_guy",
       "look": {
@@ -45,18 +45,18 @@
     "adir": {
       "archetype": "adir",
       "at": {
-        "poi": "gan_hair",
-        "dx": 12,
-        "dz": 34
+        "poi": "city_hall_plaza",
+        "dx": 26.1,
+        "dz": -32.6
       },
       "fallback": "beach_guy"
     },
     "savta": {
       "archetype": "savta",
       "at": {
-        "poi": "gan_hair",
-        "dx": -10,
-        "dz": 44
+        "poi": "city_hall_plaza",
+        "dx": 12,
+        "dz": -27
       }
     }
   },
@@ -145,9 +145,6 @@
       "type": "talk",
       "npc": "savta",
       "gather": [
-        "dekel",
-        "ofir",
-        "adir",
         "alex",
         "moshiko",
         "yanki",
@@ -186,27 +183,48 @@
             "dz": 2.2
           }
         }
-      ]
+      ],
+      "seat": "rows"
     }
   ],
   "after": "page",
   "scene": [
     {
+      "show": "stage",
+      "id": "stage",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": 21.6,
+        "dz": -32.6
+      }
+    },
+    {
+      "show": "chair_rows",
+      "id": "rows",
+      "rows": 3,
+      "cols": 5,
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": 21.6,
+        "dz": -24
+      }
+    },
+    {
       "show": "speaker",
       "id": "spkL",
       "at": {
-        "poi": "gan_hair",
-        "dx": -9,
-        "dz": 24
+        "poi": "city_hall_plaza",
+        "dx": 14.6,
+        "dz": -30.4
       }
     },
     {
       "show": "speaker",
       "id": "spkR",
       "at": {
-        "poi": "gan_hair",
-        "dx": 9,
-        "dz": 24
+        "poi": "city_hall_plaza",
+        "dx": 28.6,
+        "dz": -30.4
       }
     },
     {
@@ -221,24 +239,6 @@
   ],
   "leave": [
     {
-      "show": "speaker",
-      "id": "spkL",
-      "at": {
-        "poi": "gan_hair",
-        "dx": -9,
-        "dz": 24
-      }
-    },
-    {
-      "show": "speaker",
-      "id": "spkR",
-      "at": {
-        "poi": "gan_hair",
-        "dx": 9,
-        "dz": 24
-      }
-    },
-    {
       "show": "cat",
       "id": "mitzi",
       "at": {
@@ -247,5 +247,11 @@
         "dz": 2.2
       }
     }
+  ],
+  "onStage": true,
+  "dismantle": true,
+  "clear": [
+    "m09_flag:alex_table",
+    "m09_flag:avi_table"
   ]
 }

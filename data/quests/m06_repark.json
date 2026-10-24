@@ -11,6 +11,19 @@
         "poi": "surf_club",
         "dx": -14,
         "dz": 20
+      },
+      "look": {
+        "hair": {
+          "style": "buzz",
+          "color": "#c9c9c9"
+        },
+        "beard": {
+          "style": "trim",
+          "color": "#c9c9c9"
+        },
+        "body": {
+          "width": 1.16
+        }
       }
     },
     "friedman": {
@@ -28,6 +41,29 @@
         "poi": "surf_club",
         "dx": 8,
         "dz": 6
+      },
+      "look": {
+        "skin": "#c48a5c",
+        "face": {
+          "sunglasses": null
+        },
+        "hair": {
+          "style": "curly",
+          "color": "#5a3a24"
+        },
+        "shirt": {
+          "color": "#ffcb3d",
+          "pattern": null,
+          "neck": "crew",
+          "sleeves": "short",
+          "print": "palm",
+          "printColor": "#2e9e57"
+        },
+        "pants": {
+          "color": "#2ec4b6",
+          "pattern": null
+        },
+        "accessories": []
       }
     },
     "malul": {

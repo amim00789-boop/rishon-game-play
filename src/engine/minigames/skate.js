@@ -8,9 +8,10 @@
 //
 // Config: seconds (60), goal (score to pass, null = any run passes), tricks + need (a checklist:
 // the run passes once `need` of the listed tricks have landed; ids like 'kickflip', 'grind_rail',
-// 'quarter_180' map onto the tricks below by name), best (the score to beat, for the HUD),
-// title (key), autoContinue. The pool is the 'skate-bowl' mesh landmarks.js builds; the start and
-// exit spot is the poi 'skate_bowl' (else in front of the pool's south wall).
+// 'quarter_180' map onto the tricks below by name), at ({x, z}: ride the pool nearest to it; default
+// is HaTeder's), best (the score to beat, for the HUD),
+// title (key), autoContinue. Pools are the 'skate-bowl' meshes landmarks.js builds (HaTeder, Neot
+// Shikma); the start and exit spot is the pool's `exitPoi` (else in front of its south wall).
 import * as THREE from 'three';
 import { createOverlay, addStyle, textFn, cameraRig, keyListener, toaster, clamp, rich, showCard, placePlayer, countdown } from './common.js';
 import { register, i18n } from '../../i18n.js';
@@ -91,10 +92,13 @@ export function createSkate(deps = {}) {
   const camPos = new THREE.Vector3(), camLook = new THREE.Vector3(), wantPos = new THREE.Vector3(), wantLook = new THREE.Vector3();
   const _v = new THREE.Vector3();
 
+  // The pool nearest to config.at ({x, z}, e.g. { poi: ... } in a quest config); without one, the
+  // pool at HaTeder (the poi 'skate_bowl'), so older configs keep their pool.
   function findBowl(config) {
     if (config.bowlMesh) return config.bowlMesh;
+    let at = config.at;
+    if (!at) { const home = poisOf().find((p) => p.id === 'skate_bowl'); if (home) at = home; }
     let best = null, bd = Infinity;
-    const at = config.at;
     deps.scene.traverse((o) => {
       if (!o.isMesh || !o.userData || !o.userData.skateBowl) return;
       if (!at) { if (!best) best = o; return; }
@@ -126,7 +130,7 @@ export function createSkate(deps = {}) {
       deps.scene.add(root);
       const toWorld = (x, y, z, out = new THREE.Vector3()) => out.set(x, y, z).applyMatrix4(root.matrix);
       // where the player walks off to afterwards: the poi in front of the pool, facing it
-      const poi = poisOf().find((p) => p.id === 'skate_bowl');
+      const poi = poisOf().find((p) => p.id === (spec.exitPoi || 'skate_bowl'));
       const exitL = { x: 0, z: spec.fz + spec.Ec + spec.deck + 3 };
       const exitW = poi ? { x: poi.x, z: poi.z } : (() => { const w = toWorld(exitL.x, 0, exitL.z); return { x: w.x, z: w.z }; })();
       const cW = toWorld(0, 0, 0);

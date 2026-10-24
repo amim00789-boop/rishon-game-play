@@ -1,0 +1,94 @@
+{
+  "id": "sm05_haviav",
+  "act": 5,
+  "mode": "hero",
+  "requires": [
+    "sm04_noa"
+  ],
+  "giver": "shimon",
+  "npcs": {
+    "shimon": {
+      "archetype": "older_man",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": 40,
+        "dz": 10,
+        "street": true
+      }
+    },
+    "haviav": {
+      "archetype": "haviav",
+      "fallback": "office_worker",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": 60,
+        "dz": -30,
+        "street": true
+      }
+    },
+    "dudi": {
+      "archetype": "dudi",
+      "fallback": "kid",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": 34,
+        "dz": 14,
+        "street": true
+      }
+    }
+  },
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "haviav",
+      "obj": "obj.haviav",
+      "dialogue": "d.haviav",
+      "effects": {
+        "heroFlag": "haviav_met"
+      }
+    },
+    {
+      "type": "choice",
+      "npc": "dudi",
+      "obj": "obj.dudi",
+      "dialogue": "d.dudi",
+      "options": [
+        {
+          "text": "c.plan",
+          "reply": "d.rPlan",
+          "effects": {
+            "rel": {
+              "dudi": 1
+            }
+          }
+        },
+        {
+          "text": "c.talk",
+          "reply": "d.rTalk",
+          "effects": {
+            "rel": {
+              "havi": 1
+            }
+          }
+        },
+        {
+          "text": "c.fight",
+          "reply": "d.rFight",
+          "effects": {
+            "rel": {
+              "havi": -1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "talk",
+      "npc": "shimon",
+      "obj": "obj.shimon",
+      "dialogue": "d.shimon"
+    }
+  ],
+  "after": "page"
+}

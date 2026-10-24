@@ -1,0 +1,70 @@
+{
+  "npc": {
+    "yaara": "Yaara from the Shikma park"
+  },
+  "act_skate_shikma": {
+    "title": "Skate the Neot Shikma bowl",
+    "c": {
+      "skate": "Let's ride the bowl",
+      "later": "Later"
+    },
+    "d": {
+      "hello": [
+        [
+          "yaara",
+          "Hi! The bowl here is taller than the HaTeder pool, and more forgiving. I've got a spare board if you want it."
+        ]
+      ],
+      "first": [
+        [
+          "yaara",
+          "This bowl sits on the ground, so you climb the slope and drop in off the lip. {k:W} on the way down gives you speed. That's pumping."
+        ],
+        [
+          "yaara",
+          "Hit the wall fast and you fly. In the air {k:J} is a kickflip, {k:K} a grab, {k:A} {k:D} a 180 spin. Land with the board along the wall."
+        ],
+        [
+          "yaara",
+          "At the lip, or on the bar in the middle, {k:L} is a grind. A few tricks in a row without falling is a combo, and it's worth a lot more. You get one minute."
+        ]
+      ],
+      "go": [
+        [
+          "yaara",
+          "Take the red board. It forgives anyone who respects it."
+        ]
+      ],
+      "after": [
+        [
+          "yaara",
+          "{score}! Nice. Your best: {best}. One more round?"
+        ]
+      ],
+      "again": [
+        [
+          "yaara",
+          "{score}. The bowl beats everyone at first. Your best is still {best}."
+        ]
+      ],
+      "best": [
+        [
+          "yaara",
+          "{score}?! New best! I'm posting that to the park group chat."
+        ]
+      ],
+      "quit": [
+        [
+          "yaara",
+          "The bowl isn't going anywhere. I'm here until they switch the lights off."
+        ]
+      ],
+      "later": [
+        [
+          "yaara",
+          "Cool. I'm here until they switch the lights off."
+        ]
+      ]
+    }
+  }
+}

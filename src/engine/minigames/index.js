@@ -18,10 +18,13 @@ import { createDebate } from './debate.js';
 import { createSurf, loadSurfStrings } from './surf.js';
 import { createSkate, loadSkateStrings } from './skate.js';
 import { createCinema, loadCinemaStrings } from './cinema.js';
+import { createBus } from './bus.js';
+import { createBakery } from './bakery.js';
+import { createJobs, loadJobStrings, loadJobDefs } from './jobs.js';
 import { jumpToStart } from './common.js';
 import { getGps } from '../gps.js';
 
-export { createRhythm, createRace, createPassenger, createPhoto, createParking, createCrowdGuide, createDebate, createSurf, loadSurfStrings, createSkate, loadSkateStrings, createCinema, loadCinemaStrings };
+export { createRhythm, createRace, createPassenger, createPhoto, createParking, createCrowdGuide, createDebate, createSurf, loadSurfStrings, createSkate, loadSkateStrings, createCinema, loadCinemaStrings, createBus, createBakery, createJobs, loadJobStrings, loadJobDefs };
 export { createStory, STORY_KEY, SECTORS } from './story.js';
 export { loadMinigameStrings, mergeEffects, jumpToStart } from './common.js';
 export { getGps, createGps, gpsMode } from '../gps.js';
@@ -42,7 +45,11 @@ export function createMinigames(deps) {
     skate: createSkate(deps),
     // A night at the movies at Cinema City or Yes Planet (docs/CINEMA.md); its text loads on its own.
     cinema: createCinema(deps),
+    // The jobs (docs/JOBS.md): job games shown through the shared result card of `jobs`.
+    bus: createBus(deps),
+    bakery: createBakery(deps),
   };
+  games.jobs = createJobs({ ...deps, games });
   const list = Object.values(games);
   // Shared route guidance (one ribbon per scene). The race and the passenger ride drive it while
   // they run; quest steps can use it too and then call gps.update(dt, player) every frame.

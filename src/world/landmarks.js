@@ -114,6 +114,7 @@ const SUPERLAND_POLY = [[31.980615,34.745969],[31.979773,34.74571],[31.979743,34
 // 34.74356-34.74389) facing the Minster Blvd parking (way 174090721) and the
 // "Superland/Sderot Minster" bus stop (node 12172598729, 31.979174, 34.742528).
 const SL_ENTRANCE = [31.97878, 34.74372];
+const SL_BOOTHS = [-9.7, -5.9, 5.9, 9.7]; // gate-local x of the four ticket booths
 const SL = {
   bigWheel: [31.976798, 34.743587],   // node 6961632055 attraction=big_wheel
   smallWheel: [31.977823, 34.743524], // node 9083640749 attraction=big_wheel
@@ -214,6 +215,7 @@ const FOUNDERS_CW_HW = 8.4;
 // Rotenberg way 28863767, 10.9 u): the plaza is clipped back from them.
 const HEICHAL_STREETS = [[[31.963007, 34.800539], [31.963083, 34.801474]], [[31.963062, 34.801294], [31.962622, 34.801335]]];
 const HEICHAL_STREET_HW = 5.46;
+const HEICHAL_SIDEWALK = 4.7; // city.js sidewalk width beside a residential street
 // Great Synagogue, OSM way 155789594 (building=synagogue, 17 x 14 m). Look VERIFIED from
 // Commons "The Great Synagogue in Rishon Lezion.jpg": cream two-storey front with a white
 // arched gable, arched windows, a menorah on top, steps and a railing. Facade faces the
@@ -625,13 +627,18 @@ const L = (() => {
     ...(() => {
       const bboxRect = (...polys) => { const pts = polys.flat(); const xs = pts.map((p) => p[0]), zs = pts.map((p) => p[1]); return [[Math.min(...xs), Math.min(...zs)], [Math.max(...xs), Math.min(...zs)], [Math.max(...xs), Math.max(...zs)], [Math.min(...xs), Math.max(...zs)]]; };
       const ch = projPoly(CITY_HALL_POLY), chP = projPoly(CITY_HALL_PLAZA_POLY);
-      const hA = projPoly(HEICHAL_A_POLY), hB = projPoly(HEICHAL_B_POLY), hP = HEICHAL_STREETS.reduce((p, ll) => clipOffRoad(p, ll, HEICHAL_STREET_HW), projPoly(HEICHAL_PLAZA_POLY));
+      // Round 8 (founder: the Hall of Culture spills onto the roads): the two buildings are cut back
+      // to the far side of each street's kerb and sidewalk (the OSM outlines run to the property
+      // line, and the foundation used to be one slab over the whole bounding box); the plaza stays
+      // clipped to the carriageway edge because people walk on it.
+      const cutBack = (p) => HEICHAL_STREETS.reduce((q, ll) => clipOffRoad(q, ll, HEICHAL_STREET_HW + HEICHAL_SIDEWALK), p);
+      const hA = cutBack(projPoly(HEICHAL_A_POLY)), hB = cutBack(projPoly(HEICHAL_B_POLY)), hP = HEICHAL_STREETS.reduce((p, ll) => clipOffRoad(p, ll, HEICHAL_STREET_HW + 1.5), projPoly(HEICHAL_PLAZA_POLY)); // the straight street lines are 1-2 u off the real, curved carriageways
       const sk = projPoly(SKATE_POLY), td = projPoly(TEDER_POLY), bc = projPoly(BEACH_COMPLEX_POLY);
       const chSeat = bboxRect(ch, chP), hSeat = bboxRect(hA, hB, hP), sSeat = bboxRect(sk, td);
       return {
         cityHall: { f: frame(...centroid(ch)), world: ch, plaza: chP, seat: chSeat },
         ganHair: { world: projPoly(GAN_HAIR_POLY) },
-        heichal: { f: frame(...centroid(hSeat)), A: hA, B: hB, plaza: hP, seat: hSeat },
+        heichal: { f: frame(...centroid(hSeat)), A: hA, B: hB, plaza: hP, seat: hSeat, parts: [hA, hB, hP] },
         skate: { f: frame(...centroid(sk)), skate: sk, teder: td, seat: sSeat },
         beachComplex: { f: frame(...centroid(bc)), world: bc },
         surfClub: (() => { const sc = projPoly(SURF_CLUB_POLY); return { f: frame(...centroid(sc)), world: sc, rect: bboxRect(sc) }; })(),
@@ -699,7 +706,85 @@ const L5 = (() => {
   };
 })();
 
+// Lago Events (OSM way 357003535, events_venue inside a mapped fence ring; the three hall volumes
+// are plain OSM buildings). Round 8 (founder): the wedding is held in the back yard of the hall's
+// garden, and the fenced plot had no way in. Frames: `court` runs along the north wall of the
+// middle hall (local +z faces south, into the hall), `yard` along the south wall of the east hall
+// (local +z faces south, into the garden). Anchors are lat/lon read off the OSM outline; the
+// gates punch gaps in the fence ring through LANDMARK_FOOTPRINTS (details.js drops fence samples
+// that sit inside a footprint it cannot slide out of, so the footprints are long corridors).
+const LAGO = (() => {
+  const court = frame(...P([31.979493, 34.748473]), -0.107);
+  const yard = frame(...P([31.978943, 34.748614]), -0.121);
+  const gE = P([31.978867, 34.748874]), footE = P([31.978894, 34.748958]);
+  const pathE = [footE, gE, yard.w(16, 11)];
+  const walk = [[31.979493, 34.748808], [31.979433, 34.748914], [31.979297, 34.748918], [31.979146, 34.748905], [31.978996, 34.748878], [31.978905, 34.748826]].map(P);
+  const roadEnd = P([31.979802, 34.748411]);
+  const driveX = -10.5; // court-local x of the driveway centre line
+  const drive = [roadEnd, court.w(driveX, -22), court.w(driveX, -8)];
+  const dirE = (() => { const dx = pathE[2][0] - gE[0], dz = pathE[2][1] - gE[1], l = Math.hypot(dx, dz); return [dx / l, dz / l]; })();
+  const gateEf = frame(gE[0], gE[1], Math.atan2(dirE[0], dirE[1]));
+  const gateN = court.w(driveX, -22);
+  return {
+    court, yard, gE, footE, pathE, walk, drive, driveX, dirE, gateN,
+    apron: court.rect(5, -8.5, 46, 13),
+    patio: yard.rect(0, 12, 28, 16),
+    gateEFoot: gateEf.rect(0, 0, 7, 30),
+    gateNFoot: court.rect(driveX, -22, 11, 30),
+    dropoff: court.w(3, -8.5), parking: court.w(driveX, -31), garden: yard.w(0, 12), events: court.w(5, -6),
+  };
+})();
+
+// Round 8 monuments (built by buildMonuments below; OSM node positions, docs/RESEARCH_MONUMENTS.md).
+const MONUMENT_SITES = {
+  scooter_kid: [31.96656, 34.78472],      // OSM 4720138202, Histadrut square by the bus station
+  tree_of_knowledge: [31.96972, 34.76908], // OSM 14173103412, centre of its roundabout
+  tree_of_life: [31.97241, 34.76403],      // OSM 14173103413, centre of its roundabout
+  choshen_stones: [31.98489, 34.77523],    // OSM 14173103411
+  mother_and_child: [31.98598, 34.78295],  // OSM 8668765873
+  olei_hagardom: [31.9609, 34.80048],      // OSM 2593284048 memorial=obelisk
+  off_the_lip: [32.00179, 34.73402],       // OSM 5584599036, beach
+  memorial_doors: [31.9774, 34.78156],     // Open Doors, Commons category (RESEARCH_MONUMENTS addendum 2.1)
+  memorial_ethiopia: [31.97735, 34.78118], // monument to the Ethiopian Jews who died on the way to Israel, Commons 133443
+  memorial_beacon: [31.97751, 34.78198],   // the Tekuma beacon lantern (look ASSUMED)
+  memorial_tekuma: [31.97652, 34.78369],   // OSM 4019662505
+  memorial_fighters: [31.97726, 34.78175], // OSM 4019662513
+  memorial_sign: [31.97694, 34.78343],     // the garden's bus stop, where the sign stands
+  memorial_police: [31.96801, 34.78966],   // Kikar HaShoter, the police officers' pillar (Commons 85010)
+  memorial_terror: [31.96142, 34.82145],   // OSM 253771531, victims of terrorism (Commons 85381)
+  memorial_shayetet: [31.99706, 34.7321],  // OSM 4359836078, Shayetet 13 on the promenade
+  memorial_yad_lanadiv: [31.96191, 34.80327], // OSM 2592152546 (Commons 133210)
+  memorial_egypt: [31.96366, 34.80327],    // OSM 2429500105, the 1948 Egyptian bombing victims
+  memorial_ramat_eliyahu: [31.97988, 34.78536], // Ramat Eliyahu sons and daughters
+  chess_sculpture: [31.97321, 34.76891],   // OSM 5730083254, Naot Shikma park (Commons 88584)
+  sea_lookout: [31.93763, 34.70889],       // OSM 3913452483; ASSUMED to be the lookout meant by "the lookout"
+  yad_labanim: [31.96199, 34.80729],       // OSM 253262815 (building exists; this adds the poi)
+  baron_stables: [31.96499, 34.80513],     // OSM 253262835 (building exists; this adds the poi)
+  city_emblem: null,
+};
+const MONUMENT_WORLD = Object.fromEntries(Object.entries(MONUMENT_SITES).filter(([, v]) => v).map(([k, v]) => [k, P(v)]));
+// Haberfeld Stadium (Hapoel Rishon LeZion), Sderot Maryland 1: OSM way 80798213, leisure=stadium,
+// capacity 6000, wikidata Q641841 (checked 2026-10-22, docs/RESEARCH_MONUMENTS.md). The outline is
+// 188 x 230 units and sits axis-aligned: the pitch runs north-south (local +z is south). Pitch
+// 105 x 68 m, two long uncovered stands on the west and east sides, grass banks behind both goals
+// (Wikipedia, Commons photos 2013 and 2016). Club colours, the mosaic pattern on the seats and the
+// ad boards are ASSUMED or invented (brand names are parody).
+const HABERFELD_POLY = [[31.974194,34.752023],[31.974119,34.752144],[31.974102,34.752249],[31.974099,34.75227],[31.974099,34.753145],[31.974147,34.753273],[31.974235,34.753394],[31.97427,34.753426],[31.974341,34.753458],[31.974421,34.753495],[31.974633,34.753524],[31.97468,34.75353],[31.975015,34.753541],[31.975112,34.753535],[31.975626,34.753486],[31.97569,34.75341],[31.975744,34.753347],[31.975822,34.75312],[31.975836,34.753082],[31.97582,34.752305],[31.975819,34.752231],[31.975726,34.75201],[31.975654,34.75199],[31.975582,34.751969],[31.975347,34.751901],[31.975316,34.7519],[31.974977,34.751888],[31.974872,34.751884],[31.974575,34.751917],[31.974454,34.751935],[31.974345,34.751955],[31.974263,34.751964]];
+const HABERFELD = (() => {
+  const world = projPoly(HABERFELD_POLY), [cx, cz] = [(Math.min(...world.map((q) => q[0])) + Math.max(...world.map((q) => q[0]))) / 2, (Math.min(...world.map((q) => q[1])) + Math.max(...world.map((q) => q[1]))) / 2];
+  return { world, f: frame(cx, cz, 0) };
+})();
+
 export const LANDMARK_FOOTPRINTS = [
+  // Round 8: the stadium replaces the OSM stand buildings and pitch fills inside its outline.
+  { id: 'haberfeld_stadium', points: HABERFELD.world },
+  // A corridor across the mapped fence (details.js drops fence samples inside a footprint): the players' entrance.
+  { id: 'haberfeld_gate_south', points: HABERFELD.f.rect(0, 118, 14, 36) },
+  // Round 8: Lago Events entrances (fence gaps), forecourt and back-yard patio.
+  { id: 'lago_gate_east', points: LAGO.gateEFoot },
+  { id: 'lago_gate_north', points: LAGO.gateNFoot },
+  { id: 'lago_forecourt', points: LAGO.apron },
+  { id: 'lago_garden', points: LAGO.patio },
   // Round 5. The Azrieli outline replaces the OSM building in buildings.js (centroid test).
   { id: 'azrieli_rishonim', points: L5.azrieli.world },
   { id: 'cliff_lookout', points: L5.lookout.f.rect(0, 2, 60, 26) },
@@ -926,6 +1011,46 @@ function signMesh(lines, w, h, { key = null, bg = '#ffd23f', fg = '#e0243a', out
 }
 
 // Place a sign on an edge (lx along, y up, d outward from the wall).
+// The city emblem as a plaque (canvas-drawn). Sources: Hebrew Wikipedia, "Rishon LeZion emblem"
+// (checked 2026-10-22): a vine with a bunch of grapes, a well with a bucket under the words "we
+// found water", a tree with fruit, fields and factories. The layout and colours are ASSUMED (no
+// picture of the emblem was found), reduced to the three main parts: grapes, well, fruit tree.
+function emblemMesh(w, h) {
+  const cw = 512, ch = Math.round((512 * h) / w), cv = document.createElement('canvas');
+  cv.width = cw; cv.height = ch;
+  const c = cv.getContext('2d');
+  c.fillStyle = '#f4ecd6'; c.fillRect(0, 0, cw, ch);
+  c.lineWidth = 14; c.strokeStyle = '#1f3f7a'; c.strokeRect(7, 7, cw - 14, ch - 14);
+  const disc = (x, y, r, col) => { c.fillStyle = col; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill(); };
+  // Grapes and a leaf, top left.
+  for (let row = 0; row < 4; row++) for (let k = 0; k <= 3 - row; k++) disc(100 + (k + row * 0.5) * 34, 86 + row * 30, 17, '#7b3f98');
+  c.fillStyle = '#3f8f43'; c.beginPath(); c.moveTo(110, 66); c.lineTo(160, 22); c.lineTo(190, 70); c.lineTo(150, 74); c.closePath(); c.fill();
+  // Fruit tree, top right.
+  c.fillStyle = '#6b4a2b'; c.fillRect(372, 90, 18, 70);
+  disc(382, 70, 52, '#4f9d4a');
+  for (const [x, y] of [[352, 60], [396, 50], [372, 86], [412, 84], [366, 40]]) disc(x, y, 9, '#f28c28');
+  // Well with a bucket, centre.
+  c.fillStyle = '#9aa0a6'; c.fillRect(206, 190, 100, 70);
+  c.fillStyle = '#6f7880'; for (let i = 0; i < 4; i++) c.fillRect(206, 190 + i * 18, 100, 3);
+  c.fillStyle = '#8a4b2a'; c.fillRect(196, 128, 120, 14); c.fillRect(204, 128, 10, 66); c.fillRect(298, 128, 10, 66);
+  c.fillStyle = '#6b4a2b'; c.fillRect(250, 142, 4, 38); c.fillRect(238, 178, 28, 22);
+  // Fields, bottom.
+  c.fillStyle = '#d8b84a'; c.fillRect(40, 285, 432, 18); c.fillStyle = '#7fb069'; c.fillRect(40, 303, 432, 18);
+  // The motto on a ribbon.
+  c.fillStyle = '#c8202f'; c.fillRect(34, ch - 120, cw - 68, 74);
+  c.fillStyle = '#ffffff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
+  const motto = String(tx('sign.city_emblem', 'WE FOUND WATER'));
+  c.direction = isRtlText(motto) ? 'rtl' : 'ltr';
+  let sz = 56; c.font = `900 ${sz}px ${FONT}`;
+  while (c.measureText(motto).width > cw - 110 && sz > 12) { sz -= 3; c.font = `900 ${sz}px ${FONT}`; }
+  c.fillText(motto, cw / 2, ch - 83);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex }));
+  m.name = 'sign';
+  return m;
+}
+
 function edgeSign(g, e, sign, lx, y, d) {
   sign.position.set(e.mx + lx * Math.cos(e.ry) + d * Math.sin(e.ry), y, e.mz - lx * Math.sin(e.ry) + d * Math.cos(e.ry));
   sign.rotation.y = e.ry;
@@ -938,7 +1063,8 @@ function edgeSign(g, e, sign, lx, y, d) {
 // ---------------------------------------------------------------------------
 class Flags {
   constructor() { this.geos = []; }
-  add(x, y, z, w, h, color, phase = Math.random() * 6) {
+  // `base` ({ w, u0 }): a patch on a bigger cloth waves like the cloth does (the cloth's width, starting at u0 of it).
+  add(x, y, z, w, h, color, phase = Math.random() * 6, base = null) {
     y += _flagBase ?? gAt(x, z); // flags are world-space, so they take their landmark's ground here
     const g = new THREE.PlaneGeometry(w, h, 8, 2).toNonIndexed();
     g.deleteAttribute('uv');
@@ -946,12 +1072,12 @@ class Flags {
     const n = g.attributes.position.count;
     const u = new Float32Array(n), ph = new Float32Array(n), col = new Float32Array(n * 3);
     _col.set(color);
-    for (let i = 0; i < n; i++) { u[i] = g.attributes.position.getX(i) / w; ph[i] = phase; col.set([_col.r, _col.g, _col.b], i * 3); }
+    for (let i = 0; i < n; i++) { u[i] = (base ? base.u0 : 0) + g.attributes.position.getX(i) / (base ? base.w : w); ph[i] = phase; col.set([_col.r, _col.g, _col.b], i * 3); }
     g.translate(x, y, z);
     g.setAttribute('aU', new THREE.BufferAttribute(u, 1));
     g.setAttribute('aPh', new THREE.BufferAttribute(ph, 1));
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    g.userData.w = w;
+    g.userData.w = base ? base.w : w;
     this.geos.push(g);
   }
   mesh() {
@@ -1109,6 +1235,43 @@ function eye(b, x, y, z, r, side) {
   b.add(G.sph(r, 14, 10), C.white, M(x, y, z));
   b.add(G.sph(r * 0.56, 12, 8), C.black, M(x + side * r * 0.25, y + r * 0.05, z + r * 0.62));
   b.add(G.sph(r * 0.18, 8, 6), C.white, M(x + side * r * 0.12, y + r * 0.3, z + r * 0.98));
+}
+
+// Seated toon rider for the Superland rides (round 8). Built into the ride's own batch where the
+// ride is one mesh (carousels, swing ride, pirate ship, drop-tower ring), and into a twin
+// InstancedMesh next to instanced cars and gondolas, so riders cost no draw call of their own on
+// spinning rides and one per instanced ride. Origin on the seat surface, facing local +z, about
+// 2.1 u tall seated at s = 1 (rides are small next to the 5 u avatars, so s runs 0.55-0.85).
+const RIDER_SHIRTS = [0xf0433a, 0x3a86ff, 0xffd23f, 0x2ec4b6, 0xff6fb5, 0xff8c2a, 0x7b4dff, 0x5bc85b];
+const RIDER_SKIN = [0xf2c9a0, 0xe0a97a, 0xc68a5b, 0x8d5a3b];
+const RIDER_HAIR = [0x2b1d14, 0x5a3a24, 0xc9a34a, 0x1d1d24, 0xa8431f];
+const RIDER_PANTS = [0x27407a, 0x3b3f4a, 0x6b4a2e, 0x2f6b3a];
+function rider(b, x, y, z, ry, seed, { s = 1, arms = 'lap' } = {}) {
+  const r = rng(seed * 7919 + 13), pick = (a) => a[Math.floor(r() * a.length)];
+  const shirt = pick(RIDER_SHIRTS), skin = pick(RIDER_SKIN), hair = pick(RIDER_HAIR), pants = pick(RIDER_PANTS);
+  const base = M(x, y, z, 0, ry, 0, s, s, s);
+  const part = (geo, color, lx, ly, lz, rx = 0, rz = 0, sx = 1, sy = sx, sz = sx) => b.add(geo, color, new THREE.Matrix4().multiplyMatrices(base, M(lx, ly, lz, rx, 0, rz, sx, sy, sz)));
+  part(G.cube(0.8, 0.3, 1.0), pants, 0, 0.15, 0.35);
+  for (const k of [-1, 1]) {
+    part(G.cube(0.3, 0.85, 0.3), pants, k * 0.2, -0.3, 0.8);
+    part(G.cube(0.32, 0.2, 0.5), C.black, k * 0.2, -0.78, 0.92);
+  }
+  part(G.cube(0.85, 1.05, 0.5), shirt, 0, 0.8, -0.05);
+  part(G.sph(0.4, 8, 6), skin, 0, 1.7, 0);
+  part(G.sph(0.42, 8, 5), hair, 0, 1.82, -0.08, 0, 0, 1, 0.72, 1);
+  for (const k of [-1, 1]) part(G.sph(0.06, 4, 3), C.black, k * 0.15, 1.72, 0.37);
+  for (const k of [-1, 1]) {
+    if (arms === 'up') part(G.cube(0.22, 0.95, 0.22), shirt, k * 0.62, 1.45, 0.05, 0, k * 0.3);
+    else part(G.cube(0.22, 0.22, 0.8), shirt, k * 0.55, 0.75, 0.38);
+  }
+}
+// An InstancedMesh of one rider group, for the cars and gondolas that already have a matrix each.
+function riderInstances(name, count, build) {
+  const rb = new Batch();
+  build(rb);
+  const m = new THREE.InstancedMesh(rb.mesh().geometry, toonMat(), count);
+  m.name = name; m.castShadow = true;
+  return m;
 }
 
 // Instanced round trees (trunk + two crown balls) with colour variation; one draw call.
@@ -1717,12 +1880,19 @@ function ferrisWheel(g, x, z, R, hub, ry, colors) {
   const wheel = wb.mesh('ferris-wheel');
   const wg = new THREE.Group(); wg.position.set(x, hub, z); wg.rotation.y = ry; wg.add(wheel); g.add(wg);
   const gb = new Batch();
-  gb.add(G.box(2.4, 2.0, 2.0, 0.5), C.white, M(0, -1.6, 0));
+  // Open cabin (round 8, so the riders show): floor, low walls, bench against the back wall, four
+  // posts under the canopy; the riders sit in a twin InstancedMesh that follows each cabin.
+  gb.add(G.box(2.4, 0.3, 2.0, 0.1), C.white, M(0, -2.45, 0));
+  for (const s of [-1, 1]) gb.add(G.box(0.2, 1.0, 2.0, 0.05), C.white, M(s * 1.1, -1.95, 0));
+  for (const s of [-1, 1]) gb.add(G.box(2.4, 1.0, 0.2, 0.05), C.white, M(0, -1.95, s * 0.9));
+  gb.add(G.box(2.2, 0.3, 0.7, 0.1), C.sky, M(0, -2.15, -0.45));
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) gb.add(G.cube(0.12, 1.65, 0.12), C.white, M(sx * 1.1, -1.475, sz * 0.9));
   gb.add(G.box(2.7, 0.4, 2.3, 0.18), C.white, M(0, -0.45, 0));
-  gb.add(G.box(2.0, 0.8, 2.05, 0.2), C.sky, M(0, -1.3, 0));
   gb.add(G.cyl(0.12, 0.12, 0.9, 6), C.dkgrey, M(0, 0, 0));
   const N = Math.max(8, Math.round(R * 0.9));
   const gondolas = new THREE.InstancedMesh(gb.mesh().geometry, toonMat(), N);
+  const seated = riderInstances('gondola-riders', N, (rb) => { rider(rb, -0.5, -2.0, -0.4, 0, 1, { s: 0.65 }); rider(rb, 0.5, -2.0, -0.4, 0, 2, { s: 0.65 }); });
+  wg.add(seated);
   gondolas.name = 'gondolas';
   gondolas.castShadow = true;
   const gcols = [C.red, C.yellow, C.teal, C.purple, C.orange, C.pink];
@@ -1737,14 +1907,16 @@ function ferrisWheel(g, x, z, R, hub, ry, colors) {
       const a = rot + (i / N) * Math.PI * 2;
       gmat.makeTranslation(Math.cos(a) * R, Math.sin(a) * R, 0);
       gondolas.setMatrixAt(i, gmat);
+      seated.setMatrixAt(i, gmat);
     }
     gondolas.instanceMatrix.needsUpdate = true;
+    seated.instanceMatrix.needsUpdate = true;
   });
   return [[x - Math.cos(ry) * R * 0.45 - Math.sin(ry) * 3.5, z + Math.sin(ry) * R * 0.45 - Math.cos(ry) * 3.5], [x + Math.cos(ry) * R * 0.45 - Math.sin(ry) * 3.5, z - Math.sin(ry) * R * 0.45 - Math.cos(ry) * 3.5], [x + Math.cos(ry) * R * 0.45 + Math.sin(ry) * 3.5, z - Math.sin(ry) * R * 0.45 + Math.cos(ry) * 3.5], [x - Math.cos(ry) * R * 0.45 + Math.sin(ry) * 3.5, z + Math.sin(ry) * R * 0.45 + Math.cos(ry) * 3.5]];
 }
 
 // Coaster from an OSM ground track: heights from keyframes, vertical loops spliced in.
-function coaster(g, llTrack, { keys, loops = [], loopR = 9, track = C.coasterBlue, support = C.steel, cars = 5, carColors, name, radius = 0.6 }) {
+function coaster(g, llTrack, { keys, loops = [], loopR = 9, track = C.coasterBlue, support = C.steel, cars = 5, carColors, name, radius = 0.6, riders = null }) {
   const ground = smooth(resample(projPoly(llTrack), 3, true), 2, true);
   const flat = resample(ground, 2.2, true);
   const n = flat.length;
@@ -1798,6 +1970,13 @@ function coaster(g, llTrack, { keys, loops = [], loopR = 9, track = C.coasterBlu
   (carColors || [C.yellow, C.teal, C.pink, C.purple, C.orange]).slice(0, cars).forEach((c, i) => carsMesh.setColorAt(i, new THREE.Color(c)));
   for (let i = 0; i < cars; i++) carsMesh.setColorAt(i, new THREE.Color((carColors || [C.yellow, C.teal, C.pink, C.purple, C.orange])[i % 5]));
   g.add(carsMesh);
+  // riders: { rows: [z...], xs: [x...], s, arms }; the same matrix as the car, so they ride along.
+  let seated = null;
+  if (riders) {
+    const seatY = 1.3 + radius;
+    seated = riderInstances(`${name}-riders`, cars, (rb) => { let k = 0; for (const z of riders.rows) for (const x of riders.xs) rider(rb, x, seatY, z, 0, 10 + (k++), { s: riders.s, arms: riders.arms }); });
+    g.add(seated);
+  }
   const total = curve.getLength(), gap = 2.9 / total;
   const cm = new THREE.Matrix4(), cp = new THREE.Vector3(), ca = new THREE.Vector3(), up = new THREE.Vector3(), cq = new THREE.Quaternion(), one = new THREE.Vector3(1, 1, 1), tmp = new THREE.Vector3();
   let u = 0;
@@ -1821,8 +2000,10 @@ function coaster(g, llTrack, { keys, loops = [], loopR = 9, track = C.coasterBlu
       cq.setFromRotationMatrix(cm);
       cm.compose(cp, cq, one);
       carsMesh.setMatrixAt(i, cm);
+      if (seated) seated.setMatrixAt(i, cm);
     }
     carsMesh.instanceMatrix.needsUpdate = true;
+    if (seated) seated.instanceMatrix.needsUpdate = true;
   });
   return ground;
 }
@@ -1892,6 +2073,7 @@ function buildSuperland(flags) {
   const bigGround = coaster(g, SL_COASTER, {
     keys: [[0, 4], [0.06, 4], [0.2, 32], [0.3, 4], [0.38, 4], [0.48, 18], [0.55, 6], [0.62, 4], [0.7, 4], [0.8, 15], [0.9, 7], [0.96, 4], [1, 4]],
     loops: [0.34, 0.66], loopR: 10, name: 'blue-coaster', cars: 6,
+    riders: { rows: [-0.8, 0.5], xs: [-0.45, 0.45], s: 0.8, arms: 'up' },
   });
   const st = projPoly(SL_COASTER.slice(0, 2)), stx = (st[0][0] + st[1][0]) / 2, stz = (st[0][1] + st[1][1]) / 2, sry = Math.atan2(st[1][0] - st[0][0], st[1][1] - st[0][1]);
   b.add(G.box(9, 0.6, 24, 0.3), C.coasterBlue, M(stx, 7.4, stz, 0, sry));
@@ -1901,6 +2083,7 @@ function buildSuperland(flags) {
   const smallGround = coaster(g, SL_SMALL_COASTER, {
     keys: [[0, 2.5], [0.15, 2.5], [0.35, 8], [0.5, 3], [0.7, 6], [0.85, 2.5], [1, 2.5]],
     name: 'family-coaster', track: C.red, support: C.yellow, cars: 3, radius: 0.4, carColors: [C.yellow, C.teal, C.pink],
+    riders: { rows: [-0.2], xs: [-0.45, 0.45], s: 0.7, arms: 'up' },
   });
   for (const [x, z] of resample(smallGround, 12, true)) blocked.push([x, z, 6]);
 
@@ -1924,6 +2107,7 @@ function buildSuperland(flags) {
     boat.add(G.cyl(0.25, 0.25, 7, 6), C.woodDk, M(0, -H + 7.5, 0));
     boat.add(G.box(5, 3.6, 0.15, 0.05), C.white, M(0, -H + 8.2, 0), (xx, yy) => (yy > 0.6 ? C.black : C.white));
     for (const s of [-1, 1]) boat.add(G.cube(0.3, H - 3.2, 0.3), C.grey, M(s * 2.5, -(H - 3.2) / 2, 0, 0, 0, -s * 0.18));
+    for (let k = 0; k < 8; k++) rider(boat, -5.4 + (k >> 1) * 3.6, -H + 4.75, k & 1 ? 1.4 : -1.4, k & 1 ? 0 : Math.PI, 70 + k, { s: 0.8, arms: 'up' });
     const bm = boat.mesh('pirate-boat');
     const pivot = new THREE.Group(); pivot.position.set(x, H, z); pivot.rotation.y = ry - Math.PI / 2; pivot.add(bm); g.add(pivot);
     anim((t) => { bm.rotation.z = Math.sin(t * 1.1) * 0.85; });
@@ -1942,7 +2126,11 @@ function buildSuperland(flags) {
     g.add(db.mesh('drop-tower'));
     const rb = new Batch();
     rb.add(G.torus(3.0, 0.5, 8, 24), C.yellow, M(0, 0, 0, Math.PI / 2));
-    for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; rb.add(G.box(1.2, 1.6, 1.0, 0.35), [C.red, C.blue][i % 2], M(Math.cos(a) * 3.0, -0.6, Math.sin(a) * 3.0, 0, -a + Math.PI / 2)); }
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      rb.add(G.box(1.2, 1.6, 1.0, 0.35), [C.red, C.blue][i % 2], M(Math.cos(a) * 3.0, -0.6, Math.sin(a) * 3.0, 0, -a + Math.PI / 2));
+      rider(rb, Math.cos(a) * 3.0, 0.15, Math.sin(a) * 3.0, Math.PI / 2 - a, 80 + i, { s: 0.7, arms: 'up' }); // facing outward
+    }
     const ring = rb.mesh('drop-ring'); ring.position.set(x, 3, z); ring.userData.seated = true; g.add(ring);
     const gy = gAt(x, z);
     anim((t) => {
@@ -1969,6 +2157,8 @@ function buildSuperland(flags) {
       const dx = Math.cos(a) * Math.sin(tilt) * 7, dz = Math.sin(a) * Math.sin(tilt) * 7, dy = Math.cos(tilt) * 7;
       top.add(G.cube(0.12, 7, 0.12), C.grey, M(ox + dx / 2, -dy / 2, oz + dz / 2, 0, -a, tilt));
       top.add(G.box(1.2, 0.4, 1.2, 0.15), [C.red, C.blue, C.yellow, C.teal][i % 4], M(ox + dx, -dy, oz + dz));
+      // Riders hang in the chairs, facing the way the ride turns.
+      if (i % 6 !== 5) rider(top, ox + dx, -dy + 0.2, oz + dz, -a, 60 + i, { s: 0.7, arms: 'up' });
     }
     const tm = top.mesh('swing-top'); tm.position.set(x, 14, z); g.add(tm);
     anim((t) => { tm.rotation.y = t * 0.9; });
@@ -1983,18 +2173,22 @@ function buildSuperland(flags) {
     for (const s of [-1, 1]) kb.add(G.box(1.1, Math.hypot(H, 9), 1.1, 0.4), C.teal, M(x + Math.cos(ry) * s * 4.5, H / 2, z - Math.sin(ry) * s * 4.5, 0, ry, -s * Math.atan2(9, H) * 1.0));
     kb.add(G.box(3, 1.4, 1.4, 0.4), C.yellow, M(x, H, z, 0, ry));
     g.add(kb.mesh('skycoaster'));
-    const rider = new Batch();
-    rider.add(G.cube(0.12, 18, 0.12), C.dkgrey, M(0, -9, 0));
-    rider.add(G.box(1.6, 0.8, 3.0, 0.35), C.orange, M(0, -18, 0));
-    const rm = rider.mesh('skycoaster-rider');
+    const pod = new Batch();
+    pod.add(G.cube(0.12, 18, 0.12), C.dkgrey, M(0, -9, 0));
+    pod.add(G.box(1.6, 0.8, 3.0, 0.35), C.orange, M(0, -18, 0));
+    pod.add(G.box(1.5, 0.5, 2.9, 0.2), C.white, M(0, -17.55, 0));
+    for (const k of [0, 1]) rider(pod, 0, -17.3, -0.9 + k * 1.6, 0, 90 + k, { s: 0.7, arms: 'up' });
+    const rm = pod.mesh('skycoaster-rider');
     const pv = new THREE.Group(); pv.position.set(x, H, z); pv.rotation.y = ry; pv.add(rm); g.add(pv);
     anim((t) => { rm.rotation.x = Math.sin(t * 0.8) * 1.1; });
     for (const s of [-1, 1]) colliders.push(frame(x + Math.cos(ry) * s * 13, z - Math.sin(ry) * s * 13).circle(0, 0, 1.2, 6));
   }
 
   // Carousels: the big one in its round building, small spinners elsewhere.
+  let carouselNo = 0;
   const carousel = (x, z, r, canopy, name) => {
     const kb = new Batch();
+    const seed0 = 100 + 20 * (carouselNo++), rd = rng(seed0), rs = 0.6; // only the big carousel has headroom under its platform for riders
     kb.add(G.cone(r * 1.05, r * 0.5, 20), canopy, M(0, r * 1.1, 0), stripes(canopy, C.white, 20));
     kb.add(G.cyl(r, r, 0.8, 20), C.yellow, M(0, r * 0.82, 0));
     for (let i = 0; i < 8; i++) {
@@ -2002,6 +2196,8 @@ function buildSuperland(flags) {
       kb.add(G.cyl(0.12, 0.12, r * 0.82, 6), C.gold, M(px, r * 0.41, pz));
       kb.add(G.box(0.8, 1.4, 2.4, 0.35), [C.white, C.sky, C.blush, C.yellow][i % 4], M(px, 2.2 + (i % 2) * 0.6, pz, 0, -a, 0));
       kb.add(G.box(0.7, 1.0, 0.9, 0.3), [C.white, C.sky, C.blush, C.yellow][i % 4], M(px + Math.cos(a + Math.PI / 2) * 1.2, 3.0 + (i % 2) * 0.6, pz + Math.sin(a + Math.PI / 2) * 1.2, 0, -a, 0));
+      // A rider on most horses, facing the way the horse runs (tangent of the ring).
+      if (r >= 6 && rd() < 0.85) rider(kb, px - Math.cos(a + Math.PI / 2) * 0.3, 2.85 + (i % 2) * 0.6, pz - Math.sin(a + Math.PI / 2) * 0.3, -a, seed0 + i, { s: rs, arms: 'up' });
     }
     const m = kb.mesh(name); m.position.set(x, 0, z); g.add(m);
     b.add(G.cyl(r * 1.02, r * 1.08, 0.8, 20), C.cream, M(x, 0.4, z));
@@ -2198,7 +2394,10 @@ function buildSuperland(flags) {
     eb.add(G.box(26, 3.4, 1.6, 0.4), 0x3b8fd0, M(0, 7.6, 0));
     eb.add(G.box(26.6, 0.6, 2.2, 0.2), C.red, M(0, 9.5, 0));
     for (const s of [-1, 1]) eb.add(G.box(1.4, 9.4, 1.4, 0.4), C.yellow, M(s * 12.4, 4.7, 0));
-    for (let k = 0; k < 4; k++) eb.add(G.box(4.4, 5.6, 3, 0.3), [C.teal, C.cream, C.cream, C.teal][k], M(-9 + k * 6, 2.8, -2.2), (x, y) => (y > 0.8 && y < 2.2 && Math.abs(x) < 1.6 ? C.glass : [C.teal, C.cream, C.cream, C.teal][k]));
+    // Ticket booths in two pairs beside the gateway. Round 8: they used to stand in one row across
+    // the whole opening between the pillars and, with a single collider over the row, nobody
+    // could walk in; the middle 8 u stays open.
+    for (let k = 0; k < 4; k++) eb.add(G.box(3.6, 5.6, 3, 0.3), [C.teal, C.cream, C.cream, C.teal][k], M(SL_BOOTHS[k], 2.8, -2.2), (x, y) => (y > 0.8 && y < 2.2 && Math.abs(x) < 1.4 ? C.glass : [C.teal, C.cream, C.cream, C.teal][k]));
     // Sea serpents: tube bodies along arches, with heads.
     const serpent = (side, color) => {
       const pts = [];
@@ -2223,7 +2422,7 @@ function buildSuperland(flags) {
     const sign = signMesh(['SUPER-DUPER LAND'], 24, 3.0, { key: 'superland', bg: '#3b8fd0', fg: '#ffd23f', outline: '#d9343a' });
     sign.position.set(...[f.w(0, 0.85)].map(([x, z]) => [x, 7.6, z])[0]); sign.rotation.y = f.ry; g.add(sign);
     for (const s of [-1, 1]) colliders.push(f.rect(s * 12.4, 0, 1.6, 1.6));
-    colliders.push(f.rect(0, -2.2, 24, 3.2), f.rect(gx, gz, 3.4, 6.4));
+    colliders.push(f.rect(-7.8, -2.2, 7.6, 3.2), f.rect(7.8, -2.2, 7.6, 3.2), f.rect(gx, gz, 3.4, 6.4));
     blocked.push([f.x, f.z, 24]);
     for (const s of [-1, 1]) { const [x, z] = f.w(s * 12.4, 0); flags.add(x, 14, z, 2.2, 1.3, s > 0 ? C.yellow : C.red); }
     const fp = new Batch(); for (const s of [-1, 1]) fp.add(G.cyl(0.12, 0.12, 4.6, 6), C.white, M(...[f.w(s * 12.4, 0)].map(([x, z]) => [x, 11.7, z])[0])); g.add(fp.mesh());
@@ -2781,7 +2980,11 @@ function buildCityHall(flags) {
   g.add(b.mesh('city-hall'));
   const sign = signMesh(['CITY HALL'], 16, 2.6, { key: 'city_hall', bg: '#f3f1ec', fg: '#c8202f', outline: '#f3f1ec' });
   edgeSign(g, hyp, sign, 0, FL + 1.6, 0.45);
-  return { group: g, colliders: [world], pois: [{ id: 'city_hall', name: 'City Hall', x: f.x, z: f.z }] };
+  // Round 8: the city emblem on the facade, above the name.
+  const emblem = emblemMesh(5, 6);
+  edgeSign(g, hyp, emblem, 0, FL + 1.6 + 1.3 + 3.4 + 4.2, 0.55); // above the arcade canopies
+  const [emx, emz] = f.w(hyp.mx + 0.45 * Math.sin(hyp.ry) * 4, hyp.mz + 0.45 * Math.cos(hyp.ry) * 4);
+  return { group: g, colliders: [world], pois: [{ id: 'city_hall', name: 'City Hall', x: f.x, z: f.z }, { id: 'city_emblem', name: 'Rishon LeZion Emblem', x: emx, z: emz }] };
 }
 
 // City Hall plaza (OSM way 374561816): the lot falls about 7 u across (ground 109.8-117.0
@@ -3100,6 +3303,7 @@ function buildSkatePark(flags) {
     // Its own shadow on the near-vertical walls showed as saw teeth (acne) under the low sun.
     bm.castShadow = false;
     bm.userData.skateBowl = bowl;
+    bowl.exitPoi = 'skate_bowl';
     g.add(bm);
   }
   const bowlLip = bowl.fx + bowl.Ec * 0.97, bowlLipZ = bowl.fz + bowl.Ec * 0.97;
@@ -3375,17 +3579,20 @@ const PLATFORM_TOP = 1.0; // city.js draws platform floors 1.0 u above the groun
 // Round 7 (founder): the roof sat 6.4 u over the treads and the chase camera (about 9 u over
 // the player) saw only its top, so it now clears STAIR_ROOF, and the roof is its own mesh
 // (userData.mdRoof) that the station hides while the player is on or beside the stair.
-const STAIR_ROOF = 10.5;
+// Round 8 (founder, from the deck): 13.5 put the roof above the deck level (about 11.5 u over the ground), tilted over the
+// lanes. 7.5 keeps it under the deck, 7.8 u over the treads at the foot of the stair.
+const STAIR_ROOF = 7.5; // the camera test below adds 3
 function stairEnclosure(len, rise, w) {
   const b = new Batch(), r = new Batch();
   const pitch = -Math.atan2(rise, len), hyp = Math.hypot(len, rise);
   for (const s of [-1, 1]) {
     b.add(G.cube(0.12, 1.2, hyp), 0x9fd3e6, M(s * (w / 2 + 0.15), rise / 2 + 0.6, len / 2, pitch, 0));
     b.add(G.cube(0.2, 0.2, hyp), 0x5d6670, M(s * (w / 2 + 0.15), rise / 2 + 1.25, len / 2, pitch, 0));
-    for (const t of [0, 0.5, 1]) b.add(G.cube(0.25, STAIR_ROOF + 0.2, 0.25), 0x5d6670, M(s * (w / 2 + 0.2), rise * t + (STAIR_ROOF + 0.2) / 2, len * t));
+    // No post or roof over the top 30 percent: it stood on the deck edge and read as poles sticking
+    // up into the Sderot Moshe Dayan lanes (founder, round 8).
+    for (const t of [0, 0.35]) b.add(G.cube(0.25, STAIR_ROOF + 0.2, 0.25), 0x5d6670, M(s * (w / 2 + 0.2), rise * t + (STAIR_ROOF + 0.2) / 2, len * t));
   }
-  r.add(G.cube(w + 0.8, 0.2, hyp + 1.2), 0xd9dde1, M(0, rise / 2 + STAIR_ROOF + 0.3, len / 2, pitch, 0));
-  r.add(G.cube(w + 0.9, 0.5, 0.3), 0x27407a, M(0, rise + STAIR_ROOF, len + 0.6));
+  r.add(G.cube(w + 0.8, 0.2, hyp * 0.4 + 1.2), 0xd9dde1, M(0, rise * 0.2 + STAIR_ROOF + 0.3, len * 0.2, pitch, 0));
   const grp = new THREE.Group();
   grp.add(b.mesh('md-stair'));
   const roof = r.mesh('md-stair-roof');
@@ -3747,7 +3954,16 @@ const MOSHE_DAYAN_BRIDGE = [[31.987379, 34.75666], [31.987143, 34.757803], [31.9
 // Canopy underside over the ground. Round 7 (founder): at 6.0 it was 5 u over the 1.0 platform,
 // an avatar's height, and the chase camera (about 9 u over the player) saw only canopy roofs.
 // 10.5 keeps the camera under it on the platform; canopies stay out of the bridge band.
-const ROOF = 10.5;
+// Round 8 (founder, from the deck): at 13.5 the shelters stood above the bridge deck (11.5 u over the ground) and read as slabs
+// floating over the lanes. 9 is 8 u over the platform floor (an avatar is 5.2 u), and the canopy top stays under the deck.
+// The hall keeps HALL_ROOF; the big name sign keeps its old height (BIG_SIGN) because it stands at the hall's end.
+const ROOF = 9;
+const BIG_SIGN = 13.5;
+// Vault rise as a fraction of the half width. The founder's aerial (docs/media/reference/moshe-dayan-station-aerial.jpg)
+// shows the barrel hall clearly taller than the cars and trucks on the deck beside it. 0.22 puts the crown ~3 u above the eaves.
+const HALL_RISE = 0.22;
+// The main grey hall roof stands higher than the platform shelters (founder, round 8: still too low at 13.5).
+const HALL_ROOF = 21;
 function buildMosheDayan(flags) {
   const { f, world } = L.mosheDayan;
   const g = new THREE.Group();
@@ -3756,6 +3972,7 @@ function buildMosheDayan(flags) {
   const band = scalePoly(projPoly(MOSHE_DAYAN_BRIDGE), 1.15);
   const plats = MOSHE_DAYAN_PLATFORMS.map((line) => projPoly(line));
   const canopies = [];
+  const bandZ = centroid(band)[1]; // canopies south of the bridge (larger z) are white and green (founder, round 8)
   // Platform canopies and the hall: columns stand on the platform centre lines only, so no
   // column lands on a track.
   for (const [[ax, az], [bx, bz]] of plats) {
@@ -3765,10 +3982,11 @@ function buildMosheDayan(flags) {
       if (pointInPoly(x, z, band)) continue; // the bridge itself shelters this stretch
       if (MD_STEPS.some((st) => { const [sx, sz] = P(st.top); return Math.hypot(x - sx, z - sz) < 16; })) continue; // stair enclosure there
       const inHall = pointInPoly(x, z, world);
-      b.add(G.cyl(0.3, 0.3, ROOF, 8), C.white, M(x, ROOF / 2 + 0.3, z));
+      const colH = inHall ? HALL_ROOF : ROOF;
+      b.add(G.cyl(0.3, 0.3, colH, 8), C.white, M(x, colH / 2 + 0.3, z));
       if (!inHall) {
         const cb = new Batch();
-        cb.add(G.box(7.2, 0.45, 14.2, 0.2), k % 2 ? C.teal : C.white, M(0, 0, 0, 0, ry));
+        cb.add(G.box(7.2, 0.45, 14.2, 0.2), k % 2 ? (z > bandZ ? C.green : C.teal) : C.white, M(0, 0, 0, 0, ry));
         const cm = cb.mesh('md-canopy');
         cm.position.set(x, ROOF + 0.25, z);
         g.add(cm);
@@ -3789,8 +4007,8 @@ function buildMosheDayan(flags) {
   const hallLen = a1 - a0, hallW = Math.max(...acros) - Math.min(...acros), am = (a0 + a1) / 2, cm = (Math.max(...acros) + Math.min(...acros)) / 2;
   const hx = f.x + ax0[0] * am + cr0[0] * cm, hz = f.z + ax0[1] * am + cr0[1] * cm;
   const vault = new THREE.CylinderGeometry(hallW / 2, hallW / 2, hallLen, 20, 1, false, Math.PI / 2, Math.PI); // upper half once turned on its side
-  b.add(vault, 0xa9b0b8, M(hx, ROOF + 0.4, hz, Math.PI / 2, ryAx0, 0, 1, 1, 0.3), (x, y, z) => (Math.floor(y / 4) % 2 ? 0xa9b0b8 : 0xb9c0c7));
-  b.add(G.box(hallW + 1, 0.8, hallLen + 1, 0.3), 0xd9d2c4, M(hx, ROOF + 0.2, hz, 0, ryAx0));
+  b.add(vault, 0xa9b0b8, M(hx, HALL_ROOF + 0.4, hz, Math.PI / 2, ryAx0, 0, 1, 1, HALL_RISE), (x, y, z) => (Math.floor(y / 4) % 2 ? 0xa9b0b8 : 0xb9c0c7));
+  b.add(G.box(hallW + 1, 0.8, hallLen + 1, 0.3), 0xd9d2c4, M(hx, HALL_ROOF + 0.2, hz, 0, ryAx0));
   // (Round 4: the round-2 stair tower stood on the tracks between the islands; the stairs now come
   // down onto the platforms, see dressMosheDayan.)
   g.add(b.mesh('station_moshe_dayan'));
@@ -3810,17 +4028,17 @@ function buildMosheDayan(flags) {
   const [nx, nz] = [f.x + north[0] * 0.55, f.z + north[1] * 0.55];
   const ryAx = Math.atan2(plats[0][1][0] - plats[0][0][0], plats[0][1][1] - plats[0][0][1]);
   const fr = new Batch();
-  fr.add(G.box(0.6, 3.4, 22.6, 0.2), C.navy, M(nx, ROOF + 2.6, nz, 0, ryAx));
-  for (const s of [-8, 8]) fr.add(G.cube(0.4, 2.2, 0.4), C.dkgrey, M(nx + Math.sin(ryAx) * s, ROOF + 1.4, nz + Math.cos(ryAx) * s));
+  fr.add(G.box(0.6, 3.4, 22.6, 0.2), C.navy, M(nx, BIG_SIGN + 2.6, nz, 0, ryAx));
+  for (const s of [-8, 8]) fr.add(G.cube(0.4, 2.2, 0.4), C.dkgrey, M(nx + Math.sin(ryAx) * s, BIG_SIGN + 1.4, nz + Math.cos(ryAx) * s));
   g.add(fr.mesh());
   for (const side of [1, -1]) {
     const label = signMesh(['MOSHE DAYAN'], 22, 3.0, { key: 'station_moshe_dayan', bg: '#27407a', fg: '#ffffff', outline: '#27407a', sub: 'TRAIN STATION', subColor: '#ffd23f' });
-    label.position.set(nx + Math.cos(ryAx) * 0.35 * side, ROOF + 2.6, nz - Math.sin(ryAx) * 0.35 * side);
+    label.position.set(nx + Math.cos(ryAx) * 0.35 * side, BIG_SIGN + 2.6, nz - Math.sin(ryAx) * 0.35 * side);
     label.rotation.y = ryAx + (side > 0 ? Math.PI / 2 : -Math.PI / 2);
     g.add(label);
   }
-  flags.add(nx, ROOF + 9, nz, 2.4, 1.5, C.blue);
-  const p = new Batch(); p.add(G.cyl(0.1, 0.1, 5, 6), C.white, M(nx, ROOF + 6.5, nz)); g.add(p.mesh());
+  flags.add(nx, BIG_SIGN + 9, nz, 2.4, 1.5, C.blue);
+  const p = new Batch(); p.add(G.cyl(0.1, 0.1, 5, 6), C.white, M(nx, BIG_SIGN + 6.5, nz)); g.add(p.mesh());
   // Shuttle train on the track between the two islands.
   const [[a1x, a1z], [b1x, b1z]] = plats[0], [[a2x, a2z], [b2x, b2z]] = plats[1];
   const A = [(a1x + a2x) / 2, (a1z + a2z) / 2], B = [(b1x + b2x) / 2, (b1z + b2z) / 2];
@@ -3848,13 +4066,46 @@ function buildMosheDayan(flags) {
   tm.rotation.y = Math.atan2(ux, uz);
   tm.userData.seated = true; // positioned on the ground every frame below
   g.add(tm);
+  // Round 8 (founder): the train ran on a track that does not exist, in the gap between the two
+  // islands. It now follows the OSM rail on the east side of the station (once the city is built).
+  let railPath = null;
+  _aligners.push((city) => {
+    const mid = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2];
+    let best = null;
+    for (const r of city.roads || []) {
+      if (r.kind !== 'rail' || r.tunnel) continue;
+      let bd = Infinity, bi = 0;
+      r.points.forEach((q, i) => { const d = Math.hypot(q[0] - mid[0], q[1] - mid[1]); if (d < bd) { bd = d; bi = i; } });
+      if (bd > 45) continue;
+      // The east rail: the one whose nearest point has the larger x.
+      if (!best || r.points[bi][0] > best.r.points[best.bi][0]) best = { r, bi };
+    }
+    if (!best) return;
+    const pts = best.r.points, cum = [0];
+    for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    const i0 = best.bi, i1 = Math.min(pts.length - 1, i0 + 3), i2 = Math.max(0, i0 - 3);
+    const sgn = ((pts[i1][0] - pts[i2][0]) * ux + (pts[i1][1] - pts[i2][1]) * uz) >= 0 ? 1 : -1;
+    railPath = { pts, cum, s0: cum[i0], sgn, total: cum[cum.length - 1] };
+  });
+  const railAt = (s) => {
+    const { pts, cum, total } = railPath, q = Math.max(0, Math.min(total, s));
+    let i = 1;
+    while (i < cum.length - 1 && cum[i] < q) i++;
+    const t = (q - cum[i - 1]) / ((cum[i] - cum[i - 1]) || 1), a = pts[i - 1], b = pts[i];
+    return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, b[0] - a[0], b[1] - a[1]];
+  };
   anim((t) => {
     const c = t % 40, mid = trackLen / 2;
     let d;
     if (c < 10) { const k = c / 10; d = mid - (mid + 120) * Math.pow(1 - k, 2); }
     else if (c < 22) d = mid;
     else { const k = (c - 22) / 10; d = mid + (mid + 200) * k * k; }
-    const x = A[0] + ux * d, z = A[1] + uz * d;
+    let x = A[0] + ux * d, z = A[1] + uz * d;
+    if (railPath) {
+      const [rx, rz, dx, dz] = railAt(railPath.s0 + railPath.sgn * (d - mid));
+      x = rx; z = rz;
+      tm.rotation.y = Math.atan2(dx * railPath.sgn, dz * railPath.sgn);
+    }
     tm.position.set(x, 0.6 + gAt(x, z), z);
     tm.visible = d > -60 && d < trackLen + 120;
   });
@@ -4505,14 +4756,23 @@ function buildShikmaSkate(flags) {
   const put = (geo, col, lx, ly, lz, rx = 0, rry = 0, cf) => { const [x, z] = F.w(lx, lz); b.add(geo, col, M(x, Y(lx, lz) + ly, z, rx, ry + rry), cf); };
   const spot = (kind, a, c) => { const [ax, az] = F.w(a[0], a[2]), [bx, bz] = F.w(c[0], c[2]); spots.push({ kind, a: [ax, Y(a[0], a[2]) + a[1], az], b: [bx, Y(c[0], c[2]) + c[1], bz] }); };
   const L2 = best.d / 2;
-  // Bowl at one end.
-  { const R0 = 2.6, R1 = 7, HB = 2.4, R2 = 8.4, prof = [new THREE.Vector2(0.01, 0.05)];
-    for (let k = 0; k <= 8; k++) { const t = k / 8; prof.push(new THREE.Vector2(R0 + (R1 - R0) * t, 0.05 + (HB - 0.05) * (1 - Math.cos((t * Math.PI) / 2)))); }
-    prof.push(new THREE.Vector2(R2, HB), new THREE.Vector2(R2, 0.05));
-    const lz = -L2 + 11;
-    put(bothSides(new THREE.LatheGeometry(prof, 26)), conc, 0, 0, lz, 0, 0, (x, y) => (y > HB - 0.1 ? 0xd3d5d5 : y > 0.1 ? 0x9fa4a6 : 0xb7babb));
-    put(G.torus(R1, 0.12, 4, 26), steel, 0, HB + 0.05, lz, Math.PI / 2);
-    spot('bowl', [-R1, HB, lz], [R1, HB, lz]); spot('bowl', [0, HB, lz - R1], [0, HB, lz + R1]); }
+  // Pool at one end: the same analytic shape the HaTeder pool and the skate minigame use
+  // (skatebowl.js), so the minigame rides what is drawn. Above ground: the floor sits on the
+  // slab, the deck stands Pool.H higher, and the outer wall reaches down to the lowest ground
+  // under the footprint. The mesh sits at the pool's floor centre, turned with the park.
+  const lz = -L2 + 12.5, POOL = bowlSpec({ ox: 9.6, oz: 9.6, Rt: 3.2 });
+  let lowest = Infinity;
+  for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) { const [x, z] = F.w(i * 4.8, lz + j * 4.8); lowest = Math.min(lowest, gAt(x, z)); }
+  POOL.cy = Math.max(0.3, Y(0, lz) - lowest + 0.1);
+  POOL.exitPoi = 'skate_bowl_shikma';
+  { const [x, z] = F.w(0, lz), pb = new Batch();
+    pb.add(bowlGeometry(POOL), conc, M(0, POOL.cy, 0), bowlColor(POOL));
+    const bm = pb.mesh('skate-bowl');
+    bm.position.set(x, Y(0, lz) - POOL.cy, z); bm.rotation.y = ry;
+    bm.castShadow = bm.receiveShadow = false; bm.userData.seated = true; bm.userData.skateBowl = POOL;
+    g.add(bm); }
+  const lipX = POOL.fx + POOL.Ec * 0.97, lipZ = POOL.fz + POOL.Ec * 0.97;
+  spot('bowl', [-lipX, POOL.H, lz], [lipX, POOL.H, lz]); spot('bowl', [0, POOL.H, lz - lipZ], [0, POOL.H, lz + lipZ]);
   // Quarter pipes facing each other across the middle.
   for (const sd of [-1, 1]) {
     const R = 2.2, width = 10, lx = sd * 7.5, lz = 4;
@@ -4549,7 +4809,548 @@ function buildShikmaSkate(flags) {
     for (const s2 of [-2.4, 2.4]) { const [px, pz] = F.w(s2, L2 + 2); sp.add(G.cube(0.14, HEADROOM + 0.4, 0.14), steel, M(px, gAt(px, pz) + (HEADROOM + 0.4) / 2, pz)); }
     const spm = sp.mesh(); spm.userData.seated = true; g.add(spm);
     for (const back of [false, true]) { const sg = signMesh(['NEOT SHIKMA SKATEPARK'], 4.8, 1.3, { key: 'neot_shikma_skate', bg: '#ffffff', fg: '#1f4fa3', outline: '#ffffff' }); sg.position.set(x + (back ? -1 : 1) * Math.sin(ry) * 0.06, y + HEADROOM - 0.2, z + (back ? -1 : 1) * Math.cos(ry) * 0.06); sg.rotation.y = ry + (back ? Math.PI : 0); sg.userData.seated = true; g.add(sg); } }
-  return { group: g, colliders: [], pois: [{ id: 'neot_shikma_skate', name: 'Neot Shikma Skatepark', x: cx, z: cz }], spots: { neot_shikma_skate: spots } };
+  // The pool is a solid block to walkers and cars; the session starts and ends at the poi in front
+  // of its park-side wall (local +z, where the rider drops in).
+  const poolW = bowlOutline(POOL, 0.1).map(([x, z]) => F.w(x, lz + z));
+  const [ex, ez] = F.w(0, lz + POOL.fz + POOL.Ec + POOL.deck + 3);
+  return { group: g, colliders: [poolW], pois: [{ id: 'neot_shikma_skate', name: 'Neot Shikma Skatepark', x: cx, z: cz }, { id: 'skate_bowl_shikma', name: 'Neot Shikma Skate Bowl', x: ex, z: ez }], spots: { neot_shikma_skate: spots } };
+}
+
+// ---------------------------------------------------------------------------
+// Round 8: the stone flower in the interchange loop behind the new central bus station (Gan Raveh
+// loop, OSM relation 3067395 landuse=grass with a flower-shaped hole, hole way 166046318; the
+// medallion is the ring way 117491155; checked 2026-10-22, docs/RESEARCH_FLOWER.md). The outline
+// below is the hole's 91 distinct nodes, so the 8 petals are the real ones. ASSUMED from the
+// founder's aerial photo and not from a ground view: light stone petals with thin radial joints,
+// a terracotta medallion ring around a pale disc, a warm band where the paving meets the lawn.
+// ---------------------------------------------------------------------------
+const FLOWER_POLY = [[31.966008,34.784782],[31.966030,34.784738],[31.966043,34.784687],[31.966045,34.784629],[31.966027,34.784556],[31.965988,34.784496],[31.965934,34.784455],[31.965816,34.784422],[31.965908,34.784381],[31.965958,34.784330],[31.965997,34.784238],[31.966000,34.784160],[31.965981,34.784085],[31.965941,34.784022],[31.965885,34.783980],[31.965819,34.783962],[31.965754,34.783972],[31.965653,34.784027],[31.965678,34.783934],[31.965682,34.783856],[31.965663,34.783783],[31.965623,34.783721],[31.965569,34.783680],[31.965504,34.783662],[31.965439,34.783672],[31.965381,34.783707],[31.965337,34.783764],[31.965321,34.783800],[31.965307,34.783876],[31.965305,34.783978],[31.965269,34.783839],[31.965230,34.783778],[31.965176,34.783736],[31.965111,34.783719],[31.965047,34.783729],[31.964990,34.783764],[31.964945,34.783820],[31.964930,34.783856],[31.964916,34.783931],[31.964925,34.784007],[31.964956,34.784075],[31.965030,34.784182],[31.964925,34.784102],[31.964860,34.784085],[31.964796,34.784094],[31.964737,34.784130],[31.964693,34.784186],[31.964677,34.784222],[31.964664,34.784298],[31.964673,34.784374],[31.964703,34.784442],[31.964759,34.784498],[31.964821,34.784524],[31.964891,34.784538],[31.964849,34.784553],[31.964791,34.784588],[31.964747,34.784645],[31.964731,34.784680],[31.964718,34.784756],[31.964727,34.784832],[31.964757,34.784899],[31.964813,34.784956],[31.964874,34.784981],[31.964939,34.784980],[31.965000,34.784953],[31.965101,34.784851],[31.965022,34.784991],[31.965020,34.785072],[31.965040,34.785132],[31.965071,34.785200],[31.965126,34.785257],[31.965187,34.785282],[31.965252,34.785281],[31.965312,34.785254],[31.965362,34.785204],[31.965401,34.785147],[31.965428,34.785041],[31.965470,34.785133],[31.965525,34.785189],[31.965586,34.785215],[31.965651,34.785214],[31.965711,34.785187],[31.965760,34.785137],[31.965798,34.785047],[31.965801,34.784971],[31.965782,34.784899],[31.965742,34.784833],[31.965832,34.784870],[31.965896,34.784869],[31.965953,34.784847],[31.965993,34.784810]];
+const FLOWER_CENTRE = [31.965362, 34.784464]; // centre of the medallion ring (way 117491155, r about 20 m)
+// Petal edges as angles around the centre, counter-clockwise from east on the map (north up),
+// from the slits between the petals in the OSM outline.
+const FLOWER_SLITS = [8, 51, 96, 142, 186, 233, 277, 322];
+
+// Ground-following triangulated polygon: earcut, then split the long edges so it hugs the terrain
+// (a staircase of grid cells would ruin a petal outline).
+function smoothPatch(poly, maxEdge, lift) {
+  const pts = poly.map(([x, z]) => new THREE.Vector2(x, z));
+  const idx = THREE.ShapeUtils.triangulateShape(pts, []);
+  let tris = idx.map(([a, b, c]) => [pts[a], pts[b], pts[c]]);
+  const out = [];
+  while (tris.length) {
+    const [a, b, c] = tris.pop();
+    const e = [a.distanceTo(b), b.distanceTo(c), c.distanceTo(a)], k = e.indexOf(Math.max(...e));
+    if (e[k] <= maxEdge) { out.push([a, b, c]); continue; }
+    const [p, q, r] = k === 0 ? [a, b, c] : k === 1 ? [b, c, a] : [c, a, b], m = p.clone().add(q).multiplyScalar(0.5);
+    tris.push([p, m, r], [m, q, r]);
+  }
+  const pos = [];
+  for (let [a, b, c] of out) {
+    if ((b.y - a.y) * (c.x - a.x) - (b.x - a.x) * (c.y - a.y) < 0) [b, c] = [c, b]; // face up
+    for (const v of [a, b, c]) pos.push(v.x, gAt(v.x, v.y) + lift, v.y);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.computeVertexNormals();
+  return g;
+}
+// ribbon() leaves its triangles wound either way (it only fixes the normals), which the one-sided
+// toon material then culls; this one winds every triangle upward.
+function ribbonUp(pts, w, y, closed) {
+  const geo = ribbon(pts, w, y, closed), pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i += 3) {
+    const ux = pos.getX(i + 1) - pos.getX(i), uz = pos.getZ(i + 1) - pos.getZ(i), vx = pos.getX(i + 2) - pos.getX(i), vz = pos.getZ(i + 2) - pos.getZ(i);
+    if (uz * vx - ux * vz < 0) {
+      const x = pos.getX(i + 1), yy = pos.getY(i + 1), z = pos.getZ(i + 1);
+      pos.setXYZ(i + 1, pos.getX(i + 2), pos.getY(i + 2), pos.getZ(i + 2)); pos.setXYZ(i + 2, x, yy, z);
+    }
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+// Distance from c along angle `a` (radians, world x/z) to where it leaves a polygon.
+function rayExit(poly, c, a) {
+  const dx = Math.cos(a), dz = Math.sin(a);
+  let best = 0;
+  for (let i = 0; i < poly.length; i++) {
+    const [ax, az] = poly[i], [bx, bz] = poly[(i + 1) % poly.length], ex = bx - ax, ez = bz - az;
+    const den = dx * ez - dz * ex;
+    if (Math.abs(den) < 1e-9) continue;
+    const t = ((ax - c[0]) * ez - (az - c[1]) * ex) / den, u = ((ax - c[0]) * dz - (az - c[1]) * dx) / den;
+    if (t > 0 && u >= 0 && u <= 1 && t > best) best = t;
+  }
+  return best;
+}
+function buildStoneFlower(flags) {
+  const g = new THREE.Group();
+  g.name = 'stone-flower';
+  const world = FLOWER_POLY.map(P), C = P(FLOWER_CENTRE);
+  const band = 0xa68c6c, stone = 0xcfcdc4, joint = 0xa8a395, terracotta = 0xb35c36, pale = 0xe3dac6;
+  const b = new Batch();
+  // Warm band under the paving, then the petals, then the medallion.
+  b.add(smoothPatch(world.map(([x, z]) => [C[0] + (x - C[0]) * 1.04, C[1] + (z - C[1]) * 1.04]), 6, 0.3), band);
+  b.add(smoothPatch(world, 3, 0.42), stone);
+  // Radial joints: seven per petal, from the medallion to just short of the petal edge.
+  for (let k = 0; k < FLOWER_SLITS.length; k++) {
+    const a0 = FLOWER_SLITS[k], a1 = FLOWER_SLITS[(k + 1) % FLOWER_SLITS.length] + (k === FLOWER_SLITS.length - 1 ? 360 : 0);
+    for (let j = 1; j <= 7; j++) {
+      const a = (((a0 + ((a1 - a0) * j) / 8) * Math.PI) / 180), wa = -a;
+      const r1 = rayExit(world, C, wa) * 0.9, r0 = 29;
+      if (r1 <= r0 + 2) continue;
+      const line = [];
+      for (let r = r0; r < r1 + 1e-6; r += 3) line.push([C[0] + Math.cos(wa) * Math.min(r, r1), C[1] + Math.sin(wa) * Math.min(r, r1)]);
+      const rg = ribbonUp(line, 0.6, 0, false), pp = rg.attributes.position;
+      for (let i = 0; i < pp.count; i++) pp.setY(i, gAt(pp.getX(i), pp.getZ(i)) + 0.62);
+      b.add(rg, joint);
+    }
+  }
+  const circ = (r, n = 40) => Array.from({ length: n }, (_, i) => [C[0] + Math.cos((i / n) * Math.PI * 2) * r, C[1] + Math.sin((i / n) * Math.PI * 2) * r]);
+  b.add(smoothPatch(circ(24.5), 4, 0.66), terracotta);
+  b.add(smoothPatch(circ(16), 4, 0.7), pale);
+  b.add(smoothPatch(circ(6), 3, 0.74), terracotta);
+  const m = b.mesh('stone-flower');
+  m.userData.seated = true; m.castShadow = false;
+  g.add(m);
+  addSurface(world, (x, z) => gAt(x, z) + 0.42);
+  return { group: g, colliders: [], pois: [{ id: 'stone_flower', name: 'The Stone Flower', x: C[0], z: C[1] }] };
+}
+
+// ---------------------------------------------------------------------------
+// Round 8: Haberfeld Stadium. See HABERFELD above for sources. Local frame: origin at the middle of
+// the outline, x east, z south; y 0 is the plateau the builder seats on, the playing surface sits 0.3
+// above it. Stands and banks are solid; the only way in is the gap in the south bank (the players'
+// entrance), which leads onto the track and the pitch.
+// ---------------------------------------------------------------------------
+function buildHaberfeld(flags) {
+  const { f, world } = HABERFELD;
+  const g = placeGroup(f);
+  const out = toLocal(f, world);
+  const BASE = _flagBase ?? 0; // world height of the plateau this group is seated on
+  const Y0 = 0.3;
+  const HX = 40.8, HZ = 63, TW = 7, TX = HX + TW, TZ = HZ + TW; // pitch half sizes, track width
+  const SD = 21.8, ROWS = 14, TREAD = SD / ROWS, RISE = 0.5, FRONT = TX + 4.2, REAR = FRONT + SD;
+  const concrete = 0xbdbab2, concreteDk = 0xa7a49d, apronC = 0xb5b3ac, steelBlue = 0x1f4fa3, yellow = 0xf2c230, dark = 0x2a2f38, white = 0xf4f4ee;
+  const RED = 0xd2352f, BLUE = 0x2b58b8, MOSAIC_WHITE = 0xf1efe8;
+  const b = new Batch(), colliders = [], worldColliders = [];
+  const cube = (w, h, d, c, x, y, z, ry = 0) => b.add(G.cube(w, h, d), c, M(x, Y0 + y, z, 0, ry));
+  // Concourse apron over the whole outline.
+  b.add(slab(out, Y0, 0.05), apronC, M(0, 0, 0), capTop(concrete, Y0, apronC));
+  // Pitch with mowing stripes, the red-pink track around it.
+  const STRIPES = 12;
+  for (let i = 0; i < STRIPES; i++) b.add(G.cube(HX * 2, 0.08, (HZ * 2) / STRIPES), i % 2 ? 0x5aa846 : 0x66b44f, M(0, Y0 + 0.04, -HZ + ((i + 0.5) * HZ * 2) / STRIPES));
+  const trackY = Y0 + 0.04, trackC = 0xc66a62;
+  b.add(G.cube(TX * 2, 0.08, TW), trackC, M(0, trackY, -HZ - TW / 2)); b.add(G.cube(TX * 2, 0.08, TW), trackC, M(0, trackY, HZ + TW / 2));
+  b.add(G.cube(TW, 0.08, HZ * 2), trackC, M(-HX - TW / 2, trackY, 0)); b.add(G.cube(TW, 0.08, HZ * 2), trackC, M(HX + TW / 2, trackY, 0));
+  // Markings (FIFA 105 x 68 m, drawn at 1.2 units per metre).
+  const LY = Y0 + 0.15, LW = 0.4;
+  const rect = (x0, z0, x1, z1) => b.add(ribbonUp([[x0, z0], [x1, z0], [x1, z1], [x0, z1]], LW, LY, true), white);
+  rect(-HX, -HZ, HX, HZ);
+  b.add(ribbonUp([[-HX, 0], [HX, 0]], LW, LY, false), white);
+  b.add(ribbonUp(Array.from({ length: 28 }, (_, i) => [Math.cos((i / 28) * Math.PI * 2) * 11, Math.sin((i / 28) * Math.PI * 2) * 11]), LW, LY, true), white);
+  b.add(G.cyl(0.5, 0.5, 0.06, 8), white, M(0, LY + 0.02, 0));
+  for (const sz of [-1, 1]) {
+    rect(-24.2, sz * HZ, 24.2, sz * (HZ - 19.8)); rect(-11, sz * HZ, 11, sz * (HZ - 6.6));
+    b.add(G.cyl(0.5, 0.5, 0.06, 8), white, M(0, LY + 0.02, sz * (HZ - 13.2)));
+    // Goal: posts, bar and a back frame (no netting).
+    for (const sx of [-4.4, 4.4]) { b.add(G.cyl(0.14, 0.14, 2.9, 6), white, M(sx, Y0 + 1.5, sz * HZ)); b.add(G.cyl(0.1, 0.1, 4.4, 6), white, M(sx, Y0 + 1.5, sz * (HZ + 1.7), -sz * 0.88, 0, 0)); }
+    b.add(G.cyl(0.14, 0.14, 8.8, 6), white, M(0, Y0 + 2.9, sz * HZ, 0, 0, Math.PI / 2));
+    b.add(G.cyl(0.08, 0.08, 8.8, 6), white, M(0, Y0 + 0.1, sz * (HZ + 3.4), 0, 0, Math.PI / 2));
+  }
+  // The two long stands: solid terraces whose seat rows carry a mosaic (red and blue bands, a star
+  // at the middle and two rings), decided per 1.5-unit cell from the triangle centre.
+  const triIn = (px, py, ax, ay, bx, by, cx, cy) => {
+    const d = (bx - ax) * (cy - ay) - (cx - ax) * (by - ay);
+    const u = ((px - ax) * (cy - ay) - (cx - ax) * (py - ay)) / d, v = ((bx - ax) * (py - ay) - (px - ax) * (by - ay)) / d;
+    return u >= 0 && v >= 0 && u + v <= 1;
+  };
+  const mosaic = (u, v) => {
+    const du = u, dv = v - SD / 2, R = 8.6, k = 0.866 * R;
+    if (triIn(du, dv, 0, R, -k, -R / 2, k, -R / 2) || triIn(du, dv, 0, -R, -k, R / 2, k, R / 2)) return MOSAIC_WHITE;
+    for (const cu of [-31.5, 31.5]) if (Math.abs(Math.hypot(u - cu, v - SD / 2) - 4.2) < 0.9) return MOSAIC_WHITE;
+    return Math.floor((u + HZ) / 10.5) % 2 ? BLUE : RED;
+  };
+  for (const sd of [-1, 1]) {
+    for (let i = 0; i < ROWS; i++) {
+      const h = (i + 1) * RISE, v = i * TREAD + TREAD / 2;
+      b.add(new THREE.BoxGeometry(TREAD, h, HZ * 2, 1, 1, 84), concreteDk, M(sd * (FRONT + i * TREAD + TREAD / 2), Y0 + h / 2, 0), (cx, cy, cz) => (cy > h / 2 - 1e-3 ? mosaic(cz, v) : concreteDk));
+    }
+    cube(1.4, 9.4, HZ * 2 + 1.4, concrete, sd * (REAR + 0.7), 4.7, 0);
+    colliders.push([[sd * FRONT, -HZ - 0.7], [sd * (REAR + 1.4), -HZ - 0.7], [sd * (REAR + 1.4), HZ + 0.7], [sd * FRONT, HZ + 0.7]]);
+    // Yellow steel masts along the rear wall (the photos show yellow steelwork).
+    for (const z of [-HZ + 4, -HZ / 2, 0, HZ / 2, HZ - 4]) { b.add(G.cyl(0.25, 0.3, 12, 6), yellow, M(sd * (REAR + 2), Y0 + 6, z)); b.add(G.cube(0.2, 1.4, 2.4), RED, M(sd * (REAR + 2), Y0 + 11, z + 1.3)); }
+  }
+  // Press box on top of the west stand, at the middle.
+  cube(4.6, 3.2, 26, 0xd7d3c8, -(REAR - 2.7), 7 + 1.6, 0); cube(4.7, 1.5, 24.4, 0x34506e, -(REAR - 2.7) + 0.06, 7 + 1.9, 0); cube(5.2, 0.35, 27, concreteDk, -(REAR - 2.7), 7 + 3.4, 0);
+  // Gates: dark openings with blue (gold for number 2) steel frames and numbers above.
+  const gates = [[-1, -40, '1'], [-1, 0, '2'], [-1, 40, '3'], [1, -24, '4'], [1, 24, '5']];
+  const signs = [];
+  for (const [sd, z, n] of gates) {
+    const gold = n === '2', fr = gold ? 0xd9a21b : steelBlue, x = sd * (REAR + 1.5);
+    cube(0.3, 5.2, 7, dark, x, 2.6, z);
+    for (const s2 of [-1, 1]) cube(0.9, 6.2, 0.9, fr, x, 3.1, z + s2 * 4);
+    cube(1.1, 0.9, 9, fr, x, 6.4, z);
+    const sg = gold ? signMesh(['GOLD GATE'], 5.4, 1.5, { key: 'haberfeld_gate2', bg: '#17171c', fg: '#f2c230', outline: '#17171c', sub: 'VIP', subColor: '#ffffff' }) : signMesh([n], 2.4, 1.8, { bg: '#1f4fa3', fg: '#ffffff', outline: '#1f4fa3' });
+    sg.position.set(sd * (REAR + 2.2), Y0 + 8.2, z); sg.rotation.y = sd > 0 ? Math.PI / 2 : -Math.PI / 2; sg.userData.seated = true; g.add(sg);
+  }
+  // Stadium name on a banner frame over the main (west) entrance.
+  { const sg = signMesh(['HABERFELD STADIUM'], 28, 3.8, { key: 'haberfeld', bg: '#16336b', fg: '#ffffff', outline: '#16336b', sub: 'HAPOEL RISHON LEZION', subColor: '#ffd23f' });
+    sg.position.set(-(REAR + 2.3), Y0 + 12.4, 0); sg.rotation.y = -Math.PI / 2; g.add(sg);
+    for (const z of [-13, 13]) cube(0.5, 12.4, 0.5, steelBlue, -(REAR + 2.1), 6.2, z); }
+  // Banks behind both goals: a curved concrete wall around the track end and a grass slope rising
+  // away from it. The south bank is open for the players' entrance.
+  const A1 = FRONT, B1 = 9, A2 = REAR + 14, B2 = 39, ZC = TZ + 3, N_ARC = 72, GAP = 5.1;
+  const gapAt = (tm) => Math.abs(tm - Math.PI / 2) < (GAP * Math.PI) / 180;
+  const bankGeo = (sz) => {
+    const pos = [];
+    for (let k = 0; k < N_ARC; k++) {
+      const t0 = (k / N_ARC) * Math.PI, t1 = ((k + 1) / N_ARC) * Math.PI;
+      if (sz > 0 && gapAt((t0 + t1) / 2)) continue;
+      const P4 = (t, a, bb, y) => [Math.cos(t) * a, Y0 + y, sz * (ZC + Math.sin(t) * bb)];
+      const i0 = P4(t0, A1, B1, 1.5), i1 = P4(t1, A1, B1, 1.5), o0 = P4(t0, A2, B2, 7), o1 = P4(t1, A2, B2, 7);
+      for (const tri of [[i0, o0, i1], [i1, o0, o1]]) {
+        const [a, c, d] = tri;
+        const ny = (c[2] - a[2]) * (d[0] - a[0]) - (c[0] - a[0]) * (d[2] - a[2]);
+        pos.push(...a, ...(ny >= 0 ? [...c, ...d] : [...d, ...c]));
+      }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.computeVertexNormals();
+    return geo;
+  };
+  for (const sz of [-1, 1]) {
+    b.add(bankGeo(sz), 0x62b04c, null, (x, y, z) => (Math.floor((Math.abs(z) - ZC) / 4.5) % 2 ? 0x5da948 : 0x6bb955));
+    for (let k = 0; k < N_ARC; k++) {
+      const t0 = (k / N_ARC) * Math.PI, t1 = ((k + 1) / N_ARC) * Math.PI;
+      if (sz > 0 && gapAt((t0 + t1) / 2)) continue;
+      const x0 = Math.cos(t0) * A1, z0 = sz * (ZC + Math.sin(t0) * B1), x1 = Math.cos(t1) * A1, z1 = sz * (ZC + Math.sin(t1) * B1);
+      b.add(G.cube(Math.hypot(x1 - x0, z1 - z0) + 0.2, 1.9, 0.7), concrete, M((x0 + x1) / 2, Y0 + 0.95, (z0 + z1) / 2, 0, Math.atan2(x1 - x0, z1 - z0) + Math.PI / 2));
+    }
+    // Solid parts of the bank (outer ellipse minus the gap).
+    const arc = (tA, tB) => {
+      const pts = [];
+      for (let k = 0; k <= 12; k++) { const t = tA + ((tB - tA) * k) / 12; pts.push([Math.cos(t) * A2, sz * (ZC + Math.sin(t) * B2)]); }
+      for (let k = 12; k >= 0; k--) { const t = tA + ((tB - tA) * k) / 12; pts.push([Math.cos(t) * A1, sz * (ZC + Math.sin(t) * B1)]); }
+      return pts;
+    };
+    const gp = (GAP * Math.PI) / 180;
+    if (sz < 0) colliders.push(arc(0, Math.PI)); else colliders.push(arc(0, Math.PI / 2 - gp), arc(Math.PI / 2 + gp, Math.PI));
+  }
+  // Gate posts at the players' entrance.
+  for (const s2 of [-1, 1]) { const x = s2 * (Math.cos(Math.PI / 2 - (GAP * Math.PI) / 180) * A1 + 0.1); b.add(G.cyl(0.35, 0.35, 5, 8), yellow, M(x, Y0 + 2.5, ZC + B1 - 0.2)); }
+  // Ad boards round the track (invented brands), instanced per brand.
+  const brands = [['ZIPZAP', '#ff7a1a', '#ffffff'], ['CITRO COLA', '#d7263d', '#ffffff'], ['RUNBAR SHOES', '#ffd23f', '#1d1d24'], ['JEANIA', '#2ec4b6', '#ffffff']];
+  const boardPos = [];
+  const BL = 6;
+  for (let z = -TZ + BL / 2; z < TZ; z += BL) for (const sd of [-1, 1]) boardPos.push([sd * (TX + 0.5), z, sd > 0 ? -Math.PI / 2 : Math.PI / 2]);
+  for (let x = -TX + BL * 1.5; x < TX - BL; x += BL) for (const sz of [-1, 1]) { if (sz > 0 && Math.abs(x) < 14) continue; boardPos.push([x, sz * (TZ + 0.5), sz > 0 ? Math.PI : 0]); }
+  boardPos.forEach(([x, z, ry]) => b.add(G.cube(ry % Math.PI === 0 ? BL - 0.2 : 0.3, 1.0, ry % Math.PI === 0 ? 0.3 : BL - 0.2), 0x23415f, M(x, Y0 + 0.5, z)));
+  const ads = brands.map(([name, bg, fg]) => signMesh([name], BL - 0.5, 0.8, { bg, fg, outline: bg }));
+  const adIm = ads.map((sg, k) => { const n = boardPos.filter((_, i) => i % 4 === k).length, im = new THREE.InstancedMesh(sg.geometry, sg.material, n); im.frustumCulled = false; im.name = 'ad-boards'; return im; });
+  const adN = [0, 0, 0, 0], tmp = new THREE.Matrix4();
+  boardPos.forEach(([x, z, ry], i) => { const k = i % 4; adIm[k].setMatrixAt(adN[k]++, tmp.compose(new THREE.Vector3(x + Math.sin(ry) * 0.18, Y0 + 0.55, z + Math.cos(ry) * 0.18), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, ry, 0)), new THREE.Vector3(1, 1, 1))); });
+  // Floodlight masts at the four corners.
+  for (const [x, z] of [[-70, -78], [70, -78], [-70, 78], [70, 78]]) {
+    const ry = Math.atan2(-x, -z); // the lamp bank faces the pitch
+    b.add(G.cyl(0.35, 0.6, 38, 8), 0x8d939b, M(x, Y0 + 19, z));
+    b.add(G.cube(9, 5, 1.2), 0x3d4148, M(x, Y0 + 38, z, 0, ry));
+    b.add(G.cube(8.2, 4.2, 0.2), 0xf6f1c8, M(x + Math.sin(ry) * 0.7, Y0 + 38, z + Math.cos(ry) * 0.7, 0, ry));
+    worldColliders.push(frame(...f.w(x, z)).circle(0, 0, 1.2, 8));
+  }
+  // A ramp from the street up to the plateau through the players' entrance (the plateau stands up to
+  // 1.2 u above the ground on this side); walkers follow it as a landmark surface.
+  { const X0 = -7, X1 = 7, Z0 = 119, Z1 = 134, rampWorld = [[X0, Z0], [X1, Z0], [X1, Z1], [X0, Z1]].map(([x, z]) => f.w(x, z));
+    const yAt = (lx, lz) => { const [wx, wz] = f.w(lx, lz), t = Math.max(0, Math.min(1, (Z1 - lz) / (Z1 - Z0))); return gAt(wx, wz) * (1 - t) + (BASE + Y0) * t; };
+    for (let i = 0; i < X1 - X0; i++) for (let j = 0; j < Z1 - Z0; j++) {
+      const x = X0 + i, z = Z0 + j, v = [[x, z], [x + 1, z], [x + 1, z + 1], [x, z + 1]].map(([px, pz]) => [px, yAt(px, pz) - BASE + 0.06, pz]);
+      const q = new THREE.BufferGeometry();
+      q.setAttribute('position', new THREE.Float32BufferAttribute([...v[0], ...v[3], ...v[1], ...v[1], ...v[3], ...v[2]], 3));
+      q.computeVertexNormals();
+      b.add(q, apronC);
+    }
+    addSurface(rampWorld, (wx, wz) => yAt(wx - f.x, wz - f.z) + 0.06); }
+  const m = b.mesh('haberfeld-stadium');
+  m.userData.seated = true;
+  g.add(m);
+  adIm.forEach((im) => { im.count = adN[adIm.indexOf(im)]; im.instanceMatrix.needsUpdate = true; g.add(im); });
+  const W = (poly) => poly.map(([x, z]) => f.w(x, z));
+  const [ex, ez] = f.w(-(REAR + 14), 0);
+  return { group: g, colliders: [...colliders.map(W), ...worldColliders], pois: [{ id: 'haberfeld_stadium', name: 'Haberfeld Stadium', x: f.x, z: f.z }, { id: 'haberfeld_entrance', name: 'Haberfeld Stadium entrance', x: ex, z: ez }] };
+}
+
+// ---------------------------------------------------------------------------
+// Round 8: monuments, sculptures and city symbols (docs/RESEARCH_MONUMENTS.md, all positions are
+// OSM nodes read 2026-10-22). Looks marked VERIFIED come from Commons photos; the rest is ASSUMED
+// (no picture found) and said so beside each piece.
+// ---------------------------------------------------------------------------
+// A bar from a to b (3D, local), for limbs and masts.
+function limbMat(a, c, w) {
+  const d = new THREE.Vector3(c[0] - a[0], c[1] - a[1], c[2] - a[2]), len = d.length() || 1e-3;
+  const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize());
+  return { m: new THREE.Matrix4().compose(new THREE.Vector3((a[0] + c[0]) / 2, (a[1] + c[1]) / 2, (a[2] + c[2]) / 2), q, new THREE.Vector3(1, 1, 1)), len };
+}
+function buildMonuments(flags) {
+  const g = new THREE.Group();
+  g.name = 'monuments';
+  const colliders = [], pois = [], movers = [];
+  const concrete = 0xbdbab2, plinth = 0xa9a69e, stone = 0xd8d2c4;
+  const at = (id) => MONUMENT_WORLD[id];
+  // The Israeli flag (white, two blue bands) and the city flag (VERIFIED, Commons 85010: orange cloth
+  // with a grey-green shield-oval in the middle); bands and oval sit just off the cloth on both sides.
+  const israelFlag = (x, y, z, w = 2.8, h = 1.9) => {
+    const ph = Math.random() * 6;
+    flags.add(x, y, z, w, h, C.white, ph);
+    for (const sg of [-0.05, 0.05]) { flags.add(x, y - h * 0.1, z + sg, w, h * 0.13, 0x1f4fa3, ph); flags.add(x, y - h * 0.77, z + sg, w, h * 0.13, 0x1f4fa3, ph); flags.add(x + w * 0.4, y - h * 0.33, z + sg, w * 0.2, h * 0.34, 0x1f4fa3, ph, { w, u0: 0.4 }); }
+  };
+  const cityFlag = (x, y, z, w = 2.8, h = 1.9) => {
+    const ph = Math.random() * 6;
+    flags.add(x, y, z, w, h, C.orange, ph);
+    for (const sg of [-0.05, 0.05]) flags.add(x + w * 0.33, y - h * 0.22, z + sg, w * 0.34, h * 0.56, 0x8fa89a, ph, { w, u0: 0.33 });
+  };
+  // Three masts at local (lx, lz..) with the given flags (null leaves a bare mast).
+  const masts = (b, F, lx, lz0, step, list, h = 13) => list.forEach((kind, i) => {
+    const lz = lz0 + i * step, [fx, fz] = F.w(lx, lz);
+    b.add(G.cyl(0.14, 0.14, h, 6), 0xc9ced4, M(lx, h / 2, lz));
+    if (kind === 'israel') israelFlag(fx, h, fz); else if (kind === 'city') cityFlag(fx, h, fz);
+  });
+  // One merged mesh per monument, standing at its node; settle() puts it on the ground.
+  const mono = (id, ry, fn, { r = 3.5, name = null, poiName = null, lift = 0 } = {}) => {
+    const [x, z] = at(id), b = new Batch();
+    const cube = (w, h, d, col, px, py, pz, ey = 0, ex = 0, ez = 0) => b.add(G.cube(w, h, d), col, M(px, py, pz, ex, ey, ez));
+    const bar = (a, c, w, col) => { const { m, len } = limbMat(a, c, w); b.add(G.cube(w, len, w), col, m); };
+    fn(b, { cube, bar });
+    const m = b.mesh(id); m.position.set(x, lift, z); m.rotation.y = ry; g.add(m);
+    const coll = frame(x, z).circle(0, 0, r, 10), poi = { id, name: poiName || name || id, x, z };
+    colliders.push(coll); pois.push(poi); movers.push({ m, poi, coll, r, extra: [] });
+  };
+  // A sign standing with a monument (ry as the monument's); it follows if the monument is moved.
+  const monoSign = (id, ry, lx, ly, lz, sg, lift = 0, dry = 0) => {
+    const [x, z] = at(id), [wx, wz] = frame(x, z, ry).w(lx, lz);
+    sg.position.set(wx, ly + lift, wz); sg.rotation.y = ry + dry; g.add(sg);
+    movers.find((v) => v.poi.id === id).extra.push(sg);
+  };
+  const foot = (b, rad, h = 0.7, col = plinth) => { b.add(G.cyl(rad, rad + 0.2, h, 20), col, M(0, h / 2, 0)); b.add(G.cyl(rad + 0.2, rad + 0.2, 1.6, 20), 0x8f8b82, M(0, -0.8, 0)); };
+
+  // The kid on a scooter (VERIFIED, Commons 132497 and the David Gabrieli category): a geometric
+  // dark-blue steel figure built from angular tubes, about twice a person high, on a low round base,
+  // with three masts behind it (two Israeli flags and an orange one).
+  mono('scooter_kid', 0.6, (b, { cube, bar }) => {
+    const navy = 0x1c3a78, steel = 0x2d57a8, y0 = 0.7;
+    foot(b, 3.8);
+    for (const x of [-2.5, 2.5]) b.add(G.cyl(1.05, 1.05, 0.4, 14), navy, M(x, y0 + 1.05, 0, Math.PI / 2, 0, 0));
+    cube(5.6, 0.3, 1.2, navy, 0, y0 + 1.3, 0);
+    bar([2.7, y0 + 1.3, 0], [2.2, y0 + 5.9, 0], 0.35, steel);
+    cube(0.3, 0.3, 1.9, navy, 2.2, y0 + 5.9, 0);
+    const hip = [0.0, y0 + 4.9, 0], sh = [0.8, y0 + 7.7, 0];
+    bar([1.2, y0 + 1.5, 0], [1.5, y0 + 3.3, 0.0], 0.8, steel); bar([1.5, y0 + 3.3, 0], hip, 0.8, steel);
+    bar([-1.3, y0 + 1.5, 0], [-0.7, y0 + 3.2, 0], 0.8, steel); bar([-0.7, y0 + 3.2, 0], hip, 0.8, steel);
+    bar(hip, sh, 1.5, navy);
+    for (const s of [-1, 1]) { bar([sh[0], sh[1] - 0.2, s * 0.85], [1.45, y0 + 6.6, s * 0.9], 0.55, steel); bar([1.45, y0 + 6.6, s * 0.9], [2.2, y0 + 5.9, s * 0.8], 0.5, steel); }
+    cube(1.5, 1.5, 1.5, navy, 1.0, y0 + 8.9, 0);
+    b.add(G.torus(2.3, 0.16, 6, 18, Math.PI), steel, M(-0.5, y0 + 6.4, 0, 0, 0, 0.5));
+    masts(b, frame(...at('scooter_kid'), 0.6), -5.4, -2.8, 2.8, ['israel', 'israel', 'city']);
+  }, { r: 4, poiName: 'Scooter Kid Statue' });
+
+  // The two roundabout trees: ASSUMED look (nothing published): a stylised metal tree, twisted dark
+  // trunk, limbs and a round crown of coloured metal discs (after the metal tree on Yelidei Tehran,
+  // Commons 106486). Knowledge carries red and orange fruit, Life green leaves and gold.
+  const treeSculpture = (id, palette, ry) => mono(id, ry, (b, { cube, bar }) => {
+    foot(b, 3.1);
+    const trunk = [[0, 0.7, 0], [0.5, 3.2, 0.3], [-0.3, 5.6, -0.2], [0.2, 7.4, 0.1]];
+    for (let i = 0; i < 3; i++) bar(trunk[i], trunk[i + 1], 1.5 - i * 0.3, 0x3a2b24);
+    for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; bar(trunk[2], [Math.cos(a) * 3.4, 8.4 + (k % 2) * 1.2, Math.sin(a) * 3.4], 0.5, 0x3a2b24); }
+    for (let k = 0; k < 26; k++) {
+      const a = k * 2.399, rr = 1.2 + ((k * 37) % 10) * 0.33, h = 8.2 + ((k * 53) % 10) * 0.45;
+      b.add(G.cyl(0.9, 0.9, 0.16, 10), palette[k % palette.length], M(Math.cos(a) * rr, h, Math.sin(a) * rr, 0.5 + (k % 3) * 0.4, k, 0.3));
+    }
+  }, { r: 2.6, lift: 1.62 }); // the roundabout islands stand 1.6 u above the road
+  treeSculpture('tree_of_knowledge', [0xd7263d, 0xf28c28, 0xe8b730, 0x4f9d4a], 0.4);
+  treeSculpture('tree_of_life', [0x3fa34d, 0x7ac74f, 0xf2c230, 0x2c7a3f], 1.1);
+
+  // Choshen stones (ASSUMED): a breastplate of twelve coloured stones in three rows of four.
+  mono('choshen_stones', 0.3, (b, { cube }) => {
+    cube(10, 0.8, 5, plinth, 0, 0.4, 0); cube(8.6, 6.8, 0.6, 0x4d4a45, 0, 4.2, 0);
+    const cols = [0xc0392b, 0xf39c12, 0x27ae60, 0x2e86de, 0x8e44ad, 0xe84393, 0x16a085, 0xd35400, 0xecf0f1, 0x2c3e50, 0xf1c40f, 0x7f8c8d];
+    cols.forEach((c, i) => cube(1.7, 1.7, 0.7, c, -3.1 + (i % 4) * 2.07, 6.3 - Math.floor(i / 4) * 2.1, 0.5));
+  }, { r: 5.2, lift: 1.62 });
+
+  // Mother and Child (ASSUMED): two smooth pale-stone figures on a round plinth.
+  mono('mother_and_child', 0.5, (b, { bar }) => {
+    foot(b, 3, 0.9, 0x8f8b82);
+    const y0 = 0.9;
+    b.add(G.sph(1, 14, 10), stone, M(0, y0 + 1.1, 0, 0, 0, 0, 2.0, 1.1, 1.4));            // seated lap
+    b.add(G.sph(1, 14, 10), stone, M(0, y0 + 3.2, -0.3, -0.25, 0, 0, 1.1, 1.9, 0.95));     // torso leaning forward
+    b.add(G.sph(0.78, 12, 9), stone, M(0, y0 + 5.4, 0.1)); b.add(G.sph(0.42, 8, 6), stone, M(0, y0 + 6.0, -0.45)); // head and bun
+    b.add(G.sph(1, 12, 9), stone, M(0.2, y0 + 1.7, 1.7, 0.1, 0, 0, 0.55, 1.0, 0.5)); b.add(G.sph(0.42, 10, 8), stone, M(0.2, y0 + 2.95, 1.75));
+    bar([0.7, y0 + 4.2, 0.4], [0.3, y0 + 2.4, 1.6], 0.45, stone); bar([-0.7, y0 + 4.2, 0.4], [-0.1, y0 + 2.3, 1.6], 0.45, stone); // arms round the child
+  }, { r: 3.3 });
+
+  // Olei HaGardom obelisk (tags: memorial=obelisk; height ASSUMED).
+  mono('olei_hagardom', 0, (b, { cube }) => {
+    for (let i = 0; i < 3; i++) cube(6 - i * 0.9, 0.55, 6 - i * 0.9, plinth, 0, 0.28 + i * 0.55, 0, 0);
+    b.add(G.cyl(1.0, 1.7, 10, 4), 0xd6d0c0, M(0, 1.65 + 5, 0, 0, Math.PI / 4, 0)); b.add(G.cone(1.0, 1.5, 4), 0xd6d0c0, M(0, 1.65 + 10.75, 0, 0, Math.PI / 4, 0));
+    cube(2.2, 1.2, 0.2, 0x3b3f46, 0, 3.0, 1.45);
+  }, { r: 3.4 });
+
+  // "Off the Lip" on the north beach (ASSUMED look: a surfer riding a curling wave).
+  mono('off_the_lip', -0.5, (b, { cube, bar }) => {
+    cube(8, 0.7, 3.6, 0xa8a18e, 0, 0.35, 0);
+    b.add(G.torus(4.2, 0.5, 8, 28, Math.PI * 1.15), 0x2b7bb9, M(0, 0.7 + 0.2, 0, 0, 0, -0.15, 1, 1, 5));
+    b.add(G.torus(4.2, 0.2, 6, 28, Math.PI * 0.35), 0xf2f6fa, M(0, 0.7 + 0.2, 0, 0, 0, Math.PI * 0.8 - 0.15, 1, 1, 5));
+    const bx = -1.2, by = 0.7 + 4.45;
+    cube(2.4, 0.18, 0.7, 0xf2c230, bx, by, 0, 0, 0, 0.3);
+    bar([bx - 0.4, by + 0.1, 0], [bx - 0.5, by + 1.5, 0], 0.4, 0x1c2a3a); bar([bx + 0.4, by + 0.2, 0], [bx + 0.3, by + 1.5, 0], 0.4, 0x1c2a3a);
+    bar([bx - 0.1, by + 1.5, 0], [bx + 0.1, by + 3.0, 0], 0.7, 0x1c2a3a); b.add(G.sph(0.4, 8, 6), 0x1c2a3a, M(bx + 0.1, by + 3.4, 0));
+    bar([bx, by + 2.8, 0], [bx - 1.1, by + 2.2, 0.2], 0.25, 0x1c2a3a); bar([bx, by + 2.8, 0], [bx + 1.1, by + 3.0, 0.2], 0.25, 0x1c2a3a);
+  }, { r: 4.2 });
+
+  // Memorial garden. The Open Doors monument is VERIFIED from Commons 133502: tall angled blades
+  // of white concrete with rusty steel gate frames between them. Kept spare and without people.
+  mono('memorial_doors', 0.2, (b, { cube }) => {
+    const heights = [16, 12, 14, 9, 11];
+    heights.forEach((h, i) => cube(0.9, h, 3.0, 0xe9e7e0, -6 + i * 3, h / 2, (i % 2 ? 1 : -1) * 0.8, (i - 2) * 0.12, 0, (i % 2 ? 1 : -1) * 0.05));
+    for (const x of [-4.5, 1.5, 7.5]) { cube(0.4, 6.5, 0.4, 0x8a4b2a, x - 1, 3.2, 0); cube(0.4, 6.5, 0.4, 0x8a4b2a, x + 1, 3.2, 0); cube(2.4, 0.4, 0.4, 0x8a4b2a, x, 6.6, 0); }
+    cube(15, 0.4, 5, plinth, 0, 0.2, 0);
+  }, { r: 8, poiName: 'Open Doors Monument' });
+  // Tekuma memorial and the fighters' memorial (ASSUMED: a stone wall with a flame, a stone slab).
+  mono('memorial_tekuma', 0.3, (b, { cube }) => { cube(9, 3.4, 0.9, 0xb7ab94, 0, 1.7, 0); cube(10, 0.4, 2.2, plinth, 0, 0.2, 0.3); b.add(G.cone(0.6, 1.8, 6), 0xf28c28, M(0, 4.3, 0)); b.add(G.cyl(0.7, 0.9, 1.0, 8), 0x6f6a61, M(0, 3.9, 0)); }, { r: 5.4 });
+  mono('memorial_fighters', -0.2, (b, { cube }) => { cube(3.6, 4.8, 0.7, 0xb7ab94, 0, 2.4, 0); cube(5, 0.35, 2, plinth, 0, 0.18, 0.3); }, { r: 3 });
+  // The garden's sign, where its bus stop is.
+  { const [x, z] = at('memorial_sign'), sb = new Batch();
+    for (const s2 of [-2.1, 2.1]) sb.add(G.cube(0.14, HEADROOM + 0.4, 0.14), 0x6f7880, M(s2, (HEADROOM + 0.4) / 2, 0));
+    const mm = sb.mesh('memorial-sign-posts'); mm.position.set(x, 0, z); mm.rotation.y = 2.3; g.add(mm);
+    const sg = signMesh(['MEMORIAL GARDEN'], 4.2, 1.2, { key: 'memorial_garden', bg: '#3d4a52', fg: '#ffffff', outline: '#3d4a52' });
+    sg.position.set(x + Math.sin(2.3) * 0.1, HEADROOM - 0.2, z + Math.cos(2.3) * 0.1); sg.rotation.y = 2.3; g.add(sg); }
+
+  // Ethiopian Jews' memorial (VERIFIED, Commons 133443): cream limestone gates, openings stacked in
+  // two tiers, on a stone plaza.
+  mono('memorial_ethiopia', 0.1, (b, { cube }) => {
+    const c = 0xe4dcc3;
+    cube(13, 0.35, 7, plinth, 0, 0.18, 0);
+    for (const x of [-4.5, -1.5, 1.5, 4.5]) cube(1.2, 5.2, 1.4, c, x, 2.95, 0);
+    for (const x of [-3, 0, 3]) cube(1.8, 0.9, 1.4, c, x, 5.8, 0);
+    for (const x of [-3, 0, 3]) cube(1.2, 3.4, 1.4, c, x, 7.95, 0);
+    for (const x of [-1.5, 1.5]) cube(1.8, 0.8, 1.4, c, x, 10.0, 0);
+    cube(14, 0.5, 1.6, c, 0, 0.6, 0.5);
+  }, { r: 7, poiName: 'Monument to the Ethiopian Jews' });
+  // The Tekuma beacon (ASSUMED look: a lantern on a concrete column).
+  mono('memorial_beacon', 0, (b, { cube }) => { cube(3.2, 0.5, 3.2, plinth, 0, 0.25, 0); cube(1.2, 4.2, 1.2, 0xb9b3a6, 0, 2.6, 0); cube(1.9, 1.5, 1.9, 0xffe7a3, 0, 5.7, 0); cube(2.3, 0.35, 2.3, 0x4d4a45, 0, 6.6, 0); b.add(G.cone(0.7, 1.0, 4), 0x4d4a45, M(0, 7.2, 0, 0, Math.PI / 4, 0)); }, { r: 2.4, poiName: 'Tekuma Beacon' });
+
+  // Kikar HaShoter, police officers' pillar (VERIFIED, Commons 85010): a stylised blue-grey steel
+  // pillar of pentagonal section with diamond cuts, about 6 m, on the roundabout's round island, with
+  // three masts behind it (two Israeli flags and the orange city flag).
+  mono('memorial_police', 0.3, (b) => {
+    foot(b, 3.4);
+    b.add(G.cyl(0.95, 1.2, 7.4, 5), 0x5f7a96, M(0, 0.7 + 3.7, 0, 0, 0.3, 0));
+    for (let k = 0; k < 5; k++) { const a = 0.3 + (k / 5) * Math.PI * 2 + 0.63; for (const y of [2.6, 4.6, 6.4]) b.add(G.cube(0.6, 0.6, 0.14), 0x2b3a4d, M(Math.sin(a) * 1.05, 0.7 + y, Math.cos(a) * 1.05, 0, a, Math.PI / 4)); }
+    b.add(G.cone(0.95, 1.3, 5), 0x4a627c, M(0, 0.7 + 8.05, 0, 0, 0.3, 0));
+    masts(b, frame(...at('memorial_police'), 0.3), -5.2, -2.6, 2.6, ['israel', 'city', 'israel'], 12);
+  }, { r: 2.6, lift: 1.62, poiName: "Police Officers' Memorial" });
+
+  // Memorial to the victims of terrorism (VERIFIED, Commons 85381): a square light-stone casing with
+  // the title across its top and a grid of gold name plates, on an angular black base, white gravel
+  // and a round grass island with a stone rim.
+  mono('memorial_terror', 0.4, (b, { cube }) => {
+    b.add(G.cyl(8, 8.4, 0.5, 28), 0xcfc8b8, M(0, 0.25, 0)); b.add(G.cyl(7.5, 7.5, 0.58, 28), 0x6bb553, M(0, 0.29, 0)); b.add(G.cyl(5.2, 5.2, 0.62, 24), 0xe8e6e0, M(0, 0.31, 0));
+    cube(6.4, 0.7, 6.4, 0x1d1f24, 0, 0.95, 0);
+    cube(5.6, 6.0, 0.9, 0xd9d2bf, 0, 4.3, 0);
+    for (let c = 0; c < 6; c++) for (let r = 0; r < 5; r++) cube(0.55, 0.38, 0.1, 0xd9a21b, -1.9 + c * 0.76, 2.6 + r * 0.62, 0.5);
+  }, { r: 4.4, poiName: 'Memorial to the Victims of Terrorism' });
+  monoSign('memorial_terror', 0.4, 0, 6.7, 0.5, signMesh(['VICTIMS OF TERRORISM'], 5.2, 0.9, { key: 'memorial_terror', bg: '#e9e3d0', fg: '#1d1f24', outline: '#e9e3d0' }));
+
+  // Shayetet 13 memorial on the promenade (VERIFIED, Commons "Shayetet Promenade 13"): a round sandy
+  // stone plaza with steel slabs of different heights around a low glass dome, two tall masts
+  // (Israeli flag and the city flag).
+  mono('memorial_shayetet', 0.2, (b, { cube }) => {
+    b.add(G.cyl(9, 9.4, 0.5, 28), 0xe0cfa6, M(0, 0.25, 0));
+    [[-3.2, 0.0, 8.4, 0.1], [-1.0, 2.2, 6.6, -0.2], [1.8, 1.4, 5.2, 0.3], [3.6, -1.4, 4.0, -0.1]].forEach(([x, z, h, ry]) => cube(1.1, h, 3.4, 0x6c7682, x, 0.5 + h / 2, z, ry));
+    b.add(G.sph(1.7, 14, 10), 0x9fd3e6, M(0.4, 0.5 + 0.2, -0.4, 0, 0, 0, 1, 0.75, 1));
+    masts(b, frame(...at('memorial_shayetet'), 0.2), 6.8, -1.6, 3.2, ['israel', 'city'], 14);
+  }, { r: 5, poiName: 'Shayetet 13 Memorial' });
+
+  // Yad Lanadiv (VERIFIED, Commons 133210): a square cream limestone column about 4 m with engraved
+  // panels and a plaque, on three stone steps, ringed by cypresses.
+  mono('memorial_yad_lanadiv', 0, (b, { cube }) => {
+    for (let i = 0; i < 3; i++) cube(5.8 - i * 0.9, 0.42, 5.8 - i * 0.9, 0xcfc8b8, 0, 0.21 + i * 0.42, 0);
+    cube(2.5, 5.0, 2.5, 0xe6dcc0, 0, 1.26 + 2.5, 0); cube(1.7, 2.6, 0.14, 0xcdbf9d, 0, 3.9, 1.3); cube(1.1, 0.7, 0.12, 0x3b3f46, 0, 2.2, 1.31); cube(2.9, 0.4, 2.9, 0xd9cfae, 0, 1.26 + 5.2, 0);
+    for (const [x, z] of [[-4.6, -3.2], [4.6, -3.2], [-4.6, 3.2], [4.6, 3.2]]) b.add(G.cone(0.9, 7, 8), 0x2c6b3a, M(x, 3.5, z));
+  }, { r: 4, poiName: 'Yad Lanadiv' });
+
+  // Memorial to the victims of the Egyptian bombing, 1948 (VERIFIED, Hebrew Wikipedia, built 1996): a
+  // round platform with two stone pillars and three bombs falling nose-down above them.
+  mono('memorial_egypt', 0.2, (b, { cube }) => {
+    b.add(G.cyl(5.2, 5.4, 0.5, 24), 0xcfc8b8, M(0, 0.25, 0));
+    for (const x of [-2.4, 2.4]) cube(1.3, 6.8, 1.3, 0xb8b1a1, x, 0.5 + 3.4, 0);
+    for (const x of [-2.4, 0, 2.4]) { b.add(G.cyl(0.5, 0.5, 2.2, 8), 0x3c3f45, M(x, 9.6, 0)); b.add(G.cone(0.5, 0.9, 8), 0x3c3f45, M(x, 8.05, 0, Math.PI, 0, 0)); }
+    cube(3.2, 1.6, 0.25, 0x3b3f46, 0, 1.8, 0);
+  }, { r: 4.2, poiName: 'Memorial to the Egyptian Bombing Victims' });
+
+  // Chess sculpture in Naot Shikma park (VERIFIED, Commons 88584): white limestone, a stylised
+  // knight (horse head) facing a crowned king with a round chess table between, on red gravel.
+  mono('chess_sculpture', 0.6, (b, { cube, bar }) => {
+    const w = 0xe9e5da;
+    b.add(G.cyl(6, 6.2, 0.14, 22), 0xa8452e, M(0, 0.07, 0));
+    b.add(G.cyl(0.3, 0.3, 2.2, 8), w, M(0, 1.2, 0)); b.add(G.cyl(1.5, 1.5, 0.18, 18), 0xf2eddf, M(0, 2.3, 0));
+    cube(1.9, 2.6, 1.9, w, -3.6, 1.45, 0); bar([-3.6, 2.7, 0], [-3.3, 5.0, 0], 1.4, w);
+    cube(1.0, 1.2, 2.4, w, -3.3, 5.6, 0.8, 0, -0.5); cube(0.3, 0.7, 0.3, w, -3.6, 6.4, 0); cube(0.3, 0.7, 0.3, w, -3.0, 6.4, 0);
+    cube(2.1, 3.4, 2.1, w, 3.6, 1.9, 0); cube(1.5, 2.4, 1.5, w, 3.6, 4.8, 0);
+    for (const [x, z] of [[-0.55, -0.55], [0.55, -0.55], [-0.55, 0.55], [0.55, 0.55]]) cube(0.4, 0.9, 0.4, w, 3.6 + x, 6.4, z);
+    cube(0.3, 1.1, 0.3, w, 3.6, 6.7, 0); cube(0.9, 0.3, 0.3, w, 3.6, 6.8, 0);
+  }, { r: 5, poiName: 'Chess Sculpture' });
+
+  // Memorial to the sons and daughters of Ramat Eliyahu (VERIFIED, Commons "Avney Moreshet"): a low
+  // stone plaza walled on three sides, a white wall with an inscription plate, masts.
+  mono('memorial_ramat_eliyahu', 0, (b, { cube }) => {
+    cube(15, 0.3, 11, 0xcfc8b8, 0, 0.15, 0);
+    cube(15, 1.1, 0.7, 0x9c8f78, 0, 0.85, -5.4); cube(0.7, 1.1, 10, 0x9c8f78, -7.2, 0.85, 0); cube(0.7, 1.1, 10, 0x9c8f78, 7.2, 0.85, 0);
+    cube(9, 3.6, 0.6, 0xf3f1ea, 0, 2.1, -2.6); cube(7.8, 1.2, 0.1, 0x3b3f46, 0, 2.4, -2.28);
+    masts(b, frame(...at('memorial_ramat_eliyahu'), 0), -9, -2.2, 3.2, ['israel', 'city'], 13);
+  }, { r: 7.8, poiName: 'Ramat Eliyahu Memorial' });
+
+  // The sea lookout (ASSUMED: nothing but the OSM viewpoint node): a timber deck on the dune with
+  // a rail on the sea (west) side, a bench, steps up from the east and a sign.
+  mono('sea_lookout', 0, (b, { cube }) => {
+    const wood = 0xa8692f, woodDk = 0x7a4a22;
+    cube(10, 0.4, 7, wood, 0, 1.8, 0);
+    for (const x of [-4.5, 4.5]) for (const z of [-3, 3]) cube(0.5, 3, 0.5, woodDk, x, 0.4, z);
+    cube(0.15, 0.15, 7, woodDk, -4.9, 3.0, 0); cube(10, 0.15, 0.15, woodDk, 0, 3.0, -3.4); cube(10, 0.15, 0.15, woodDk, 0, 3.0, 3.4);
+    for (const x of [-4.9]) for (const z of [-3.4, 0, 3.4]) cube(0.15, 1.1, 0.15, woodDk, x, 2.5, z);
+    cube(3, 0.35, 0.9, woodDk, -2.4, 2.4, 2.4); cube(3, 0.7, 0.2, woodDk, -2.4, 2.8, 2.8);
+    for (let i = 0; i < 4; i++) cube(1.4, 0.4, 7, wood, 5.7 + i * 1.3, 1.6 - i * 0.45, 0);
+    cube(0.14, 4.6, 0.14, 0x6f7880, 3.2, 4.0, -3.2);
+  }, { r: 6.4, poiName: 'Sea Lookout' });
+  monoSign('sea_lookout', 0, 3.3, 5.4, -3.2, signMesh(['SEA LOOKOUT'], 4.2, 1.2, { key: 'sea_lookout', bg: '#ffffff', fg: '#1f4fa3', outline: '#ffffff' }), 0, Math.PI / 2);
+
+  // Yad LaBanim and the Baron's stables: the OSM buildings already stand; only the points.
+  for (const [id, nm] of [['yad_labanim', 'Yad LaBanim'], ['baron_stables', "The Baron's Stables"]]) { const [x, z] = at(id); pois.push({ id, name: nm, x, z }); }
+  // A sculpture whose OSM node falls on a carriageway (the obelisk sits at a junction, where the
+  // game's wider roads cover the node) moves to the nearest spot clear of road and buildings, before
+  // the collision grid is built from these colliders.
+  _aligners.push((city) => {
+    if (!city || !city.onCarriage) return;
+    const bld = (city.colliders || []).filter((c) => c && c.points && c.points.length > 2 && (c.kind || 'building') === 'building');
+    for (const mv of movers) {
+      const { x: x0, z: z0 } = mv.poi;
+      const near = bld.filter((c) => c.points.some(([px, pz]) => Math.abs(px - x0) < 90 && Math.abs(pz - z0) < 90));
+      const blocked = (x, z) => {
+        for (let k = 0; k < 9; k++) {
+          const a = (k * Math.PI) / 4, rr = k ? mv.r + 1 : 0, px = x + Math.cos(a) * rr, pz = z + Math.sin(a) * rr;
+          if (city.onCarriage(px, pz) || near.some((c) => pointInPoly(px, pz, c.points))) return true;
+        }
+        return false;
+      };
+      if (!blocked(x0, z0)) continue;
+      let spot = null;
+      for (let rad = 1.5; rad <= 60 && !spot; rad += 1.5) for (let k = 0; k < 24 && !spot; k++) { const x = x0 + Math.cos((k / 24) * Math.PI * 2) * rad, z = z0 + Math.sin((k / 24) * Math.PI * 2) * rad; if (!blocked(x, z)) spot = [x, z]; }
+      if (!spot) { console.warn('[landmarks] no clear spot for', mv.poi.id); continue; }
+      const dx = spot[0] - x0, dz = spot[1] - z0;
+      mv.m.position.x += dx; mv.m.position.z += dz; mv.m.position.y += gAt(spot[0], spot[1]) - gAt(x0, z0);
+      for (const e of mv.extra) { e.position.x += dx; e.position.z += dz; e.position.y += gAt(spot[0], spot[1]) - gAt(x0, z0); }
+      mv.poi.x += dx; mv.poi.z += dz;
+      for (const q of mv.coll) { q[0] += dx; q[1] += dz; }
+    }
+  });
+  return { group: g, colliders, pois };
 }
 
 // ActiviPark kart track in Neot Shikma park (sources at SHIKMA_KART): an asphalt loop with a
@@ -4809,6 +5610,109 @@ function buildHaRova(flags) {
 }
 
 // ---------------------------------------------------------------------------
+
+// Lago Events entrances (see LAGO). Pedestrians come in from the grass side through a stone gate on
+// the east fence and a path to the paved back-yard patio; a driveway leaves the parking aisle,
+// passes a vehicle gate in the north fence and ends at a forecourt with a drop-off bay and a
+// canopy; a guest walkway links the forecourt to the patio along the east side of the halls.
+// Everything is ground-following paving (walkable surfaces) plus a few solid gate pillars.
+function buildLagoHall(flags) {
+  const L0 = LAGO, g = new THREE.Group();
+  g.name = 'lago-hall';
+  const b = new Batch(), pb = new Batch(), colliders = [];
+  const asphalt = 0x4a4d55, paver = 0xe2cfa0, plaza = 0xeadfc6;
+  const checker = (a, c) => (x, y, z) => ((Math.floor(x / 2.2) + Math.floor(z / 2.2)) % 2 ? a : c);
+  // Paving: forecourt, drive, east path, guest walkway, patio.
+  groundPatch(b, L0.apron, 0.14, asphalt, null, 2);
+  for (const q of stripQuads(L0.drive, 9)) groundPatch(b, q, 0.14, asphalt, null, 2);
+  for (const q of stripQuads(L0.pathE, 4.6)) groundPatch(b, q, 0.17, paver, checker(0xe2cfa0, 0xd8c392), 1.5);
+  for (const q of stripQuads(L0.walk, 4.6)) groundPatch(b, q, 0.17, paver, checker(0xe2cfa0, 0xd8c392), 1.5);
+  groundPatch(b, L0.patio, 0.2, plaza, checker(0xeadfc6, 0xdfd2b4), 1.5);
+  // Drop-off bay: a pale lay-by along the hall front with a red-and-white kerb line.
+  const court = L0.court;
+  groundPatch(b, court.rect(3, -3.6, 18, 3.4), 0.2, 0xf1ead8, checker(0xf1ead8, 0xe6dcc3), 1.2);
+  const kerb = court.rect(3, -5.45, 18, 0.5);
+  groundPatch(b, kerb, 0.22, 0xf4f2ec, (x, y, z) => (Math.floor((x + z) / 1.6) % 2 ? 0xf4f2ec : 0xd42a2a), 0.5);
+  // Red carpet from the canopy to the bay.
+  groundPatch(b, court.rect(5, -2.6, 3.4, 5), 0.24, 0xc72a35, null, 1);
+  // Entrance canopy on the hall's north wall: four columns, a flat roof 7.2 u up (people are tall).
+  {
+    const cy = (x, z) => gAt(x, z), top = 7.4;
+    const [cx, cz] = court.w(5, -3.2), ry = court.ry;
+    const [fx, fz] = court.w(5, -5.6);
+    pb.add(G.box(15, 0.7, 6, 0.15), 0xf3ead2, M(cx, cy(cx, cz) + top, cz, 0, ry));
+    pb.add(G.cube(15.2, 1.1, 0.4), 0x27407a, M(fx, cy(fx, fz) + top, fz, 0, ry));
+    for (const [lx, lz] of [[-1.6, -5.6], [11.6, -5.6], [-1.6, -0.6], [11.6, -0.6]]) {
+      const [x, z] = court.w(lx, lz);
+      pb.add(G.cyl(0.45, 0.5, top, 10), 0xf3ead2, M(x, cy(x, z) + top / 2, z));
+      colliders.push(frame(x, z).circle(0, 0, 0.6, 8));
+    }
+    const sg = signMesh(['LAGOONA EVENTS'], 9.4, 1.0, { key: 'lago_gate', bg: '#27407a', fg: '#fff1d6', outline: '#27407a' });
+    sg.position.set(fx + Math.sin(ry) * -0.25, cy(fx, fz) + top, fz + Math.cos(ry) * -0.25);
+    sg.rotation.y = ry + Math.PI; sg.userData.seated = true; g.add(sg);
+  }
+  // Gate pillars with an arch and a sign: east pedestrian gate, north vehicle gate.
+  const gate = (cx, cz, dx, dz, half, h, label, key) => {
+    const ry = Math.atan2(dx, dz), nx = -dz, nz = dx, y = gAt(cx, cz);
+    for (const s of [-1, 1]) {
+      const x = cx + nx * half * s, z = cz + nz * half * s;
+      const yy = gAt(x, z);
+      pb.add(G.cube(1.4, h, 1.4), 0xe9dcc0, M(x, yy + h / 2, z, 0, ry));
+      pb.add(G.cube(1.9, 0.5, 1.9), C.gold, M(x, yy + h + 0.25, z, 0, ry));
+      colliders.push(frame(x, z, ry).rect(0, 0, 1.4, 1.4));
+    }
+    pb.add(G.cube(half * 2 + 1.4, 0.9, 0.9), 0xe9dcc0, M(cx, y + h + 0.45, cz, 0, ry));
+    for (const back of [false, true]) {
+      const o = back ? -0.55 : 0.55;
+      const sg = signMesh([label], 7, 1.5, { key, bg: '#27407a', fg: '#fff1d6', outline: '#27407a' });
+      sg.position.set(cx + dx * o, y + h + 1.7, cz + dz * o);
+      sg.rotation.y = ry + (back ? Math.PI : 0); sg.userData.seated = true; g.add(sg);
+    }
+  };
+  gate(L0.gE[0], L0.gE[1], -L0.dirE[0], -L0.dirE[1], 4.2, 7.6, 'LAGOONA GARDEN', 'lago_garden_gate'); // sign reads from the grass side
+  {
+    const [x, z] = L0.gateN, dx = Math.sin(court.ry), dz = Math.cos(court.ry);
+    gate(x, z, -dx, -dz, 6.0, 7.6, 'LAGOONA PARKING', 'lago_parking');
+    // The sliding leaf, pulled open against the fence beside the east pillar.
+    const lx = court.w(L0.driveX + 8.5, -22);
+    pb.add(G.cube(5.2, 3.0, 0.2), 0x4f5d4c, M(lx[0], gAt(lx[0], lx[1]) + 1.7, lx[1], 0, court.ry));
+  }
+  // Drop-off sign post on the bay.
+  {
+    const [x, z] = court.w(-7.5, -4), y = gAt(x, z);
+    pb.add(G.cyl(0.14, 0.14, 4.6, 6), 0x1d1d24, M(x, y + 2.3, z));
+    const sg = signMesh(['PASSENGER DROP-OFF'], 4.2, 1.4, { key: 'lago_dropoff', bg: '#2f6b3a', fg: '#fff1d6', outline: '#2f6b3a' });
+    sg.position.set(x, y + 5.3, z + 0.18); sg.rotation.y = court.ry; sg.userData.seated = true; g.add(sg);
+    const sg2 = sg.clone(); sg2.position.set(x, y + 5.3, z - 0.18); sg2.rotation.y = court.ry + Math.PI; g.add(sg2);
+    colliders.push(frame(x, z).circle(0, 0, 0.3, 6));
+  }
+  // Garden: string-light posts round the patio, planters along its south edge.
+  const yard = L0.yard;
+  for (const [lx, lz] of [[-13.2, 4.8], [-4.4, 4.8], [4.4, 4.8], [13.2, 4.8], [-13.2, 19.2], [-4.4, 19.2], [4.4, 19.2], [13.2, 19.2]]) {
+    const [x, z] = yard.w(lx, lz), y = gAt(x, z);
+    pb.add(G.cyl(0.12, 0.16, 6.6, 6), 0x1d1d24, M(x, y + 3.3, z));
+    pb.add(G.sph(0.42, 8, 6), 0xfff3d6, M(x, y + 6.7, z));
+    colliders.push(frame(x, z).circle(0, 0, 0.3, 6));
+  }
+  for (let lx = -13; lx <= 13; lx += 2.6) {
+    const [x, z] = yard.w(lx, 20.8), y = gAt(x, z);
+    pb.add(G.sph(1.0, 8, 6), (Math.abs(lx) % 5 < 2.6) ? 0x3fa34d : 0x2c7a3f, M(x, y + 0.9, z, 0, 0, 0, 1.1, 0.9, 1.1));
+  }
+  const m = b.mesh('lago-paving'); m.userData.seated = true; m.castShadow = false; g.add(m);
+  const pm = pb.mesh('lago-props'); pm.userData.seated = true; g.add(pm);
+  return {
+    group: g,
+    colliders,
+    pois: [
+      { id: 'lago_events', name: 'Lagoona Events', x: L0.events[0], z: L0.events[1] },
+      { id: 'lago_dropoff', name: 'Lagoona Events drop-off', x: L0.dropoff[0], z: L0.dropoff[1] },
+      { id: 'lago_parking', name: 'Lagoona Events parking', x: L0.parking[0], z: L0.parking[1] },
+      { id: 'lago_garden_gate', name: 'Lagoona Events garden gate', x: L0.gE[0], z: L0.gE[1] },
+      { id: 'lago_garden', name: 'Lagoona Events garden', x: L0.garden[0], z: L0.garden[1] },
+    ],
+  };
+}
+
 export function buildLandmarks(scene) {
   _anims = [];
   _time = 0;
@@ -4835,18 +5739,23 @@ export function buildLandmarks(scene) {
     [() => buildWaterTower(flags), L.tower.f.rect(0, 0, 10, 10), 'plaza'], [() => buildFoundersWell(flags), L.well.world, 'plaza'], [() => buildWinery(flags), L.winery.world, 'mid'],
     [() => buildMosheDayan(flags), 'parts'], [() => buildHaRishonim(flags), 'parts'],
     [() => buildBeach(flags), 'parts'],
-    [() => buildCityHall(flags), L.cityHall.world, 'mid'], [() => buildCityHallPlaza(flags), 'parts'], [() => buildGanHaIr(flags), 'parts'], [() => buildHeichal(flags), L.heichal.seat, 'mid'],
+    [() => buildCityHall(flags), L.cityHall.world, 'mid'], [() => buildCityHallPlaza(flags), 'parts'], [() => buildGanHaIr(flags), 'parts'], [() => buildHeichal(flags), L.heichal.parts, 'mid'],
     [() => buildAzrieli(flags), L5.azrieli.lowerW, 'mid'], [() => buildCliffLookout(flags), 'parts'], [() => buildMuseum(flags), 'parts'],
     ...L5.fuel.map((st) => [() => buildFuelStation(st), 'parts']),
-    [() => buildShikmaSkate(flags), 'parts'], [() => buildShikmaKarting(flags), 'parts'],
-    [() => buildEcoGarden(flags), 'parts'], ...L5.clubs.map((c) => [() => buildCountryClub(c), 'parts']), [() => buildHaRova(flags), 'parts'],
+    [() => buildShikmaSkate(flags), 'parts'], [() => buildShikmaKarting(flags), 'parts'], [() => buildStoneFlower(flags), 'parts'], [() => buildMonuments(flags), 'parts'], [() => buildHaberfeld(flags), HABERFELD.world, 'plaza'],
+    [() => buildEcoGarden(flags), 'parts'], ...L5.clubs.map((c) => [() => buildCountryClub(c), 'parts']), [() => buildHaRova(flags), 'parts'], [() => buildLagoHall(flags), 'parts'],
     [() => buildSkatePark(flags), L.skate.seat, 'plaza'], [() => buildBeachNorth(flags), 'parts'], [() => buildBeachComplex(flags), L.beachComplex.world, 'mid'], [() => buildSurfClub(flags), 'parts'], [() => buildWelcomeSign(flags), L.welcome.f.rect(0, 0, 54, 12), 'plaza'],
   ];
   for (const [build, seat, mode, skirtColor] of builders) {
     try {
       let base = null, range = null;
+      // A list of polygons (several separate pieces on one level, e.g. the Heichal) seats on the
+      // range over all of them and gets one foundation skirt per piece instead of one over the
+      // gaps (streets) between them.
+      const multi = Array.isArray(seat) && Array.isArray(seat[0]) && Array.isArray(seat[0][0]) ? seat : null;
       if (seat !== 'parts') {
-        range = groundRange(seat);
+        const rs = (multi || [seat]).map(groundRange);
+        range = { min: Math.min(...rs.map((r) => r.min)), max: Math.max(...rs.map((r) => r.max)) };
         base = mode === 'plaza' ? range.max : mode === 'low' ? range.min : (range.min + range.max) / 2;
       }
       _flagBase = base;
@@ -4855,7 +5764,7 @@ export function buildLandmarks(scene) {
       if (seat === 'parts') settle(r.group);
       else {
         r.group.position.y += base;
-        if (mode !== 'low' && range.max - range.min > 0.3) root.add(skirt(seat, range.min - 0.6, base + 0.05, skirtColor));
+        if (mode !== 'low' && range.max - range.min > 0.3) for (const piece of multi || [seat]) root.add(skirt(piece, range.min - 0.6, base + 0.05, skirtColor));
         if (mode === 'plaza') {
           const xs = seat.map((q) => q[0]), zs = seat.map((q) => q[1]);
           _plazas.push({ poly: seat, y: base + 0.3, bb: [Math.min(...xs), Math.min(...zs), Math.max(...xs), Math.max(...zs)] });

@@ -1,0 +1,86 @@
+{
+  "id": "sm07_band",
+  "act": 5,
+  "mode": "hero",
+  "requires": [
+    "sm06_chase"
+  ],
+  "giver": "haviav",
+  "npcs": {
+    "haviav": {
+      "archetype": "haviav",
+      "fallback": "office_worker",
+      "at": {
+        "poi": "teder",
+        "dx": 24,
+        "dz": 50,
+        "street": true
+      }
+    },
+    "dekel": {
+      "archetype": "dekel",
+      "fallback": "dati_leumi_man",
+      "at": {
+        "poi": "cliff_lookout",
+        "dx": 10,
+        "dz": -1
+      }
+    },
+    "dudi": {
+      "archetype": "dudi",
+      "fallback": "kid",
+      "at": {
+        "poi": "teder",
+        "dx": 30,
+        "dz": 52,
+        "street": true
+      }
+    }
+  },
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "dekel",
+      "obj": "obj.dekel",
+      "dialogue": "d.dekel"
+    },
+    {
+      "type": "choice",
+      "npc": "haviav",
+      "obj": "obj.haviav",
+      "dialogue": "d.haviav",
+      "options": [
+        {
+          "text": "c.listen",
+          "reply": "d.rListen",
+          "effects": {
+            "rel": {
+              "havi": 3
+            },
+            "heroFlag": "havi_heard"
+          }
+        },
+        {
+          "text": "c.solo",
+          "reply": "d.rSolo",
+          "effects": {
+            "rel": {
+              "havi": 1
+            }
+          }
+        },
+        {
+          "text": "c.blame",
+          "reply": "d.rBlame",
+          "effects": {
+            "rel": {
+              "havi": -2
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "after": "page"
+}

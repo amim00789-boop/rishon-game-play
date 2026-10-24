@@ -555,9 +555,8 @@
     "obj": {
       "pickup": "Pick up the trays from Orit at the yellow fuel station",
       "run": "Get the catering to the hall before it goes cold!",
-      "meet": "Go to Savta Rachel at the bus stop",
-      "walk": "Walk Savta Rachel to the hall, at her pace",
-      "wait": "Savta stopped. Go back to her",
+      "meet": "Pick up Savta Rachel from her home, by car",
+      "walk": "Drive Savta Rachel to the hall, no hard braking",
       "ask": "Now the music: talk to Moshiko the DJ",
       "retry": "Moshiko is offended. Go back and try again",
       "back": "Back to Avi. Everyone is in the hall"
@@ -568,8 +567,7 @@
       "o3": "He loves Carlebach. What about a remix? Carlebach with bass."
     },
     "t": {
-      "go": "Savta: \"Nu, come on. I don't wait for anyone.\"",
-      "wait": "Savta stopped: \"What, I'm supposed to wait for you?\""
+      "late": "Savta: \"By the time you get here the wedding will be a bris.\" Back to her, try again."
     },
     "d": {
       "offer": [
@@ -579,7 +577,7 @@
         ],
         [
           "avi",
-          "Then Savta Rachel. She's at the bus stop down the street. Walk with her, at her pace. Don't offer her your arm, she gets offended."
+          "Then Savta Rachel. She's at her own home on Chispin Street. Pick her up by car and bring her to the hall gently. Don't offer her an arm when she gets in, she gets offended."
         ],
         [
           "player",
@@ -639,13 +637,13 @@
         ],
         [
           "avi",
-          "Now Savta Rachel. She's at the bus stop on this street. Go to her."
+          "Now Savta Rachel. She's waiting at her home on Chispin Street. Take a car and go to her."
         ]
       ],
       "arrived": [
         [
           "savta",
-          "We're here. See? Not even out of breath. You, on the other hand..."
+          "We're here. See? Not even out of breath. You, on the other hand, braked like there's no grandmother in the car."
         ],
         [
           "savta",

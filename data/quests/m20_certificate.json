@@ -2,7 +2,7 @@
   "id": "m20_certificate",
   "act": 4,
   "requires": [
-    "m19_tour"
+    "m18_mayor"
   ],
   "npcs": {
     "mayor": {
@@ -10,8 +10,8 @@
       "fallback": "office_worker",
       "at": {
         "poi": "city_hall_plaza",
-        "dx": -18,
-        "dz": -8
+        "dx": 21.6,
+        "dz": -33.8
       }
     },
     "malul": {
@@ -19,8 +19,8 @@
       "fallback": "beach_guy",
       "at": {
         "poi": "city_hall_plaza",
-        "dx": -27,
-        "dz": -14
+        "dx": 10,
+        "dz": -24
       }
     },
     "dekel": {
@@ -28,8 +28,8 @@
       "fallback": "dati_leumi_man",
       "at": {
         "poi": "city_hall_plaza",
-        "dx": -29,
-        "dz": -9
+        "dx": 8,
+        "dz": -21
       }
     },
     "ofir": {
@@ -37,8 +37,8 @@
       "fallback": "mizrahi_street_guy",
       "at": {
         "poi": "city_hall_plaza",
-        "dx": -29,
-        "dz": -4
+        "dx": 10,
+        "dz": -18
       }
     },
     "adir": {
@@ -46,16 +46,24 @@
       "fallback": "beach_guy",
       "at": {
         "poi": "city_hall_plaza",
-        "dx": -27,
-        "dz": 1
+        "dx": 8,
+        "dz": -15
       }
     },
     "savta": {
       "archetype": "savta",
       "at": {
         "poi": "city_hall_plaza",
-        "dx": -33,
-        "dz": -8
+        "dx": 12,
+        "dz": -27
+      }
+    },
+    "pnina": {
+      "archetype": "older_woman",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": 70,
+        "dz": 60
       }
     }
   },
@@ -67,8 +75,8 @@
       "id": "podium",
       "at": {
         "npc": "mayor",
-        "dx": 0.4,
-        "dz": -2.8
+        "dx": 0,
+        "dz": 1.8
       }
     },
     {
@@ -186,9 +194,10 @@
       "id": "podium",
       "at": {
         "npc": "mayor",
-        "dx": 0.4,
-        "dz": -2.8
+        "dx": 0,
+        "dz": 1.8
       }
     }
-  ]
+  ],
+  "onStage": true
 }

@@ -1,0 +1,16 @@
+{
+  "items": {
+    "challah": { "icon": "🍞", "key": "Digit1", "cap": "1" },
+    "burekas": { "icon": "🥐", "key": "Digit2", "cap": "2" },
+    "pita": { "icon": "🥙", "key": "Digit3", "cap": "3" },
+    "rugelach": { "icon": "🍪", "key": "Digit4", "cap": "4" }
+  },
+  "orders": [
+    [["challah", 1], ["burekas", 1]],
+    [["pita", 2], ["rugelach", 1]],
+    [["burekas", 2], ["challah", 1]],
+    [["rugelach", 2], ["pita", 1]],
+    [["challah", 2], ["rugelach", 1]]
+  ],
+  "faces": ["🙂", "😀", "🧐", "😎", "🥱"]
+}

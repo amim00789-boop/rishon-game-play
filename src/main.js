@@ -407,6 +407,10 @@ async function boot() {
     // Mini-games (rhythm, race, calm ride, photo, parking...) and their story ledger, after audio
     // for the rhythm clock. Optional: index.json names the module once it exists, and missing games
     // play as stubs.
+    await stage('herostory', async () => {
+      if (!quests) return;
+      try { const hs = await tryImport('./engine/herostory.js', 'herostory'); if (hs) { quests.heroLedger = hs.createHeroLedger({ reset: params.get('quests') === 'reset' }); } } catch (e) { console.warn('[main] hero ledger failed', e); }
+    });
     await stage('minigames', async () => {
       if (!quests?.minigamesPath) return;
       const mgm = await tryImport(quests.minigamesPath, 'minigames');
@@ -415,6 +419,9 @@ async function boot() {
       const story = mgm.createStory ? mgm.createStory({ reset: params.get('quests') === 'reset' }) : null;
       quests.setMinigames(mgm.createMinigames({ scene, camera, chase, renderer, sky, player, city, t, hud, audio, traffic, crowd, collision, surface, makeAvatar }), story);
     });
+
+    // Job start points: a marker and a talking NPC per job in data/jobs/jobs.json (docs/JOBS.md).
+    await stage('jobspots', async () => { (await tryImport('./world/jobspots.js', 'jobspots'))?.createJobSpots?.({ scene, player, collision, city, hud, t, quests, surface, makeAvatar }); });
 
     // Full-screen map (M or minimap click). Optional: the game runs without it.
     await stage('bigmap', async () => {
@@ -468,9 +475,31 @@ async function boot() {
   }
   // One simulation step. Exposed as __game.tick so automated playtests can advance the game
   // when the tab is hidden and rAF is paused; `draw` is skipped there to keep ticks cheap.
+  // Second story mode (docs/SUPER_MALUL.md): after the mayor's speech (m20) V swaps the player
+  // between the regular Rishoni and Super Malul. The choice is its own save key.
+  const HERO_KEY = 'rishon.hero.v1';
+  // Super Malul on foot: a jump about 2.9x as high (apex ~8 units, the normal one ~3) and a 1.55x sprint.
+  const HERO_POWERS = { jump: 1.7, run: 1.55 };
+  let hero = 'player_rishoni';
+  try { hero = localStorage.getItem(HERO_KEY) || hero; } catch (_) { /* storage blocked */ }
+  const setHero = (id) => {
+    if (!makeAvatar) return false;
+    try {
+      if (!player.swapAvatar(makeAvatar(id), id === 'super_malul' ? HERO_POWERS : null)) return false;
+      hero = id; try { localStorage.setItem(HERO_KEY, id); } catch (_) { /* storage blocked */ }
+      if (quests && quests.setHeroMode) quests.setHeroMode(id === 'super_malul');
+      return true;
+    } catch (e) { console.warn('[main] hero swap failed', e); return false; }
+  };
+  let heroApplied = false;
   function step(dt, draw) {
     time += dt;
     if (input.wasPressed('KeyP') && post) usePost = !usePost;
+    if (!heroApplied && quests && quests.setHeroMode) { heroApplied = true; if (hero === 'super_malul') setHero(hero); }
+    if (input.wasPressed('KeyV') && !(quests && quests.blocking) && !(bigmap && bigmap.isOpen)) {
+      setHero(hero === 'super_malul' ? 'player_rishoni' : 'super_malul');
+      hud.toastMsg(t(hero === 'super_malul' ? 'hero.on' : 'hero.off'));
+    }
 
     // While a dialogue is open the player stands still; the camera can still be dragged.
     const mapOpen = !!(bigmap && bigmap.isOpen);
@@ -511,7 +540,7 @@ async function boot() {
   // `streamed` resolves once parking, trees, furniture, shops, traffic, quests, audio and the big
   // map are in (tools and playtests await it before reading __game.quests).
   const streamed = streamWorld();
-  window.__game = { THREE, scene, camera, renderer, player, chase, input, crowd, hud, collision, city, landmarks, water, stats, sky, post, profiles,
+  window.__game = { get heroLedger() { return quests && quests.heroLedger; }, setHero, get hero() { return hero; }, THREE, scene, camera, renderer, player, chase, input, crowd, hud, collision, city, landmarks, water, stats, sky, post, profiles,
     get quests() { return quests; }, get bigmap() { return bigmap; }, get audio() { return audio; }, get traffic() { return traffic; },
     get storefronts() { return storefronts; }, get details() { return details; }, streamed,
     tick: (dt = 1 / 60, draw = false) => step(dt, draw),

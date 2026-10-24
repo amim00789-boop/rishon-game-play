@@ -9,7 +9,7 @@
 //     start: { x, z, heading? },              // retry point (e.g. the salon); omitted = no teleport
 //     limit: 240,                             // optional clock in seconds (the chuppah)
 //     passenger: { archetype: 'bride', seed: 3 }, name: 'quest.npc.hodaya',
-//     calm: { start: 80, brake: -4, bump: -10, honk: -6, kerb: -5, offroad: -3, smooth: 1.2, waitCrossing: 3 },
+//     calm: { start: 80, brake: -4, bump: -10, honk: -6, kerb: -5, offroad: -3, smooth: 1.2, waitCrossing: 3, redLight: -8 },
 //     waitSpots: [{ id: 'zebra_family', at: {x,z}, radius: 14, seconds: 3, effects: { scale: 1, trust: { haredi: 1 } },
 //                   honkEffects: { scale: -1 } }],
 //   });
@@ -26,7 +26,7 @@ const CSS = `
 .mg-pass .mg-bar > i { transition: width 0.25s, background 0.4s; }
 .mg-pass .ps-face { font-weight: 900; font-size: 14px; }
 `;
-const DEF = { start: 80, max: 100, brake: -4, bump: -10, honk: -6, kerb: -5, offroad: -3, smooth: 1.2, waitCrossing: 3 };
+const DEF = { start: 80, max: 100, brake: -4, bump: -10, honk: -6, kerb: -5, offroad: -3, smooth: 1.2, waitCrossing: 3, redLight: -8 };
 
 export function createPassenger(deps = {}) {
   const t = textFn(deps.t);
@@ -49,6 +49,8 @@ export function createPassenger(deps = {}) {
       const drop = beamMarker(0xffcb3d, 4, 60);
       drop.position.set(config.at.x, groundY(surface, config.at.x, config.at.z), config.at.z);
       root.add(drop);
+      // Running a red (traffic.js onRedRun) costs calm: the bride is nervous enough already.
+      if (deps.traffic) deps.traffic.onRedRun = () => { if (S && S.phase === 'drive') event('redlight', S.calmCfg.redLight, 3); };
       S = { cfg: config, calmCfg: calm, ov, root, drop, resolve, tries: 0, gps: getGps(deps), toast: toaster(ov.root), offKeys: keyListener(onKey) };
       seatPassenger(S);
       reset();
@@ -252,6 +254,7 @@ export function createPassenger(deps = {}) {
     const s = S;
     if (!s) return;
     S = null;
+    if (deps.traffic) deps.traffic.onRedRun = null;
     if (s.closeCard) s.closeCard();
     s.offKeys();
     s.gps.clear();

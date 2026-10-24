@@ -1,0 +1,182 @@
+{
+  "id": "sm08_practice",
+  "act": 5,
+  "mode": "hero",
+  "requires": [
+    "sm07_band"
+  ],
+  "giver": "dudi",
+  "npcs": {
+    "dudi": {
+      "archetype": "dudi",
+      "fallback": "kid",
+      "at": {
+        "poi": "cliff_lookout",
+        "dx": 6,
+        "dz": 4
+      }
+    },
+    "adir": {
+      "archetype": "adir",
+      "fallback": "beach_guy",
+      "at": {
+        "poi": "cliff_lookout",
+        "dx": 9,
+        "dz": -5
+      }
+    },
+    "ofir": {
+      "archetype": "ofir",
+      "fallback": "mizrahi_street_guy",
+      "at": {
+        "poi": "cliff_lookout",
+        "dx": 12,
+        "dz": -3
+      }
+    },
+    "orit": {
+      "archetype": "dati_leumi_woman",
+      "at": {
+        "poi": "cliff_lookout",
+        "dx": -4,
+        "dz": 6
+      }
+    }
+  },
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "minigame",
+      "game": "rhythm",
+      "npc": "adir",
+      "intro": "d.practice",
+      "params": {
+        "chart": {
+          "id": "sm_practice",
+          "title": "quest.sm08_practice.title",
+          "bpm": 104,
+          "offset": 0,
+          "countIn": 4,
+          "lengthBeats": 20,
+          "kit": "beach",
+          "lanes": 4,
+          "pass": 0,
+          "notes": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              1
+            ],
+            [
+              2,
+              2
+            ],
+            [
+              3,
+              3
+            ],
+            [
+              4,
+              0
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              7,
+              3
+            ],
+            [
+              8,
+              0
+            ],
+            [
+              8,
+              2
+            ],
+            [
+              10,
+              1
+            ],
+            [
+              10,
+              3
+            ],
+            [
+              12,
+              0
+            ],
+            [
+              13,
+              1
+            ],
+            [
+              14,
+              2
+            ],
+            [
+              15,
+              3
+            ],
+            [
+              16,
+              0
+            ],
+            [
+              16,
+              2
+            ],
+            [
+              18,
+              1
+            ],
+            [
+              19,
+              3
+            ]
+          ]
+        },
+        "pass": 0
+      },
+      "cheer": "cheer",
+      "obj": "obj.practice",
+      "dialogue": "d.practiced"
+    },
+    {
+      "type": "choice",
+      "npc": "orit",
+      "obj": "obj.orit",
+      "dialogue": "d.orit",
+      "options": [
+        {
+          "text": "c.stage",
+          "reply": "d.rStage",
+          "effects": {
+            "rel": {
+              "orit": 2
+            }
+          }
+        },
+        {
+          "text": "c.fans",
+          "reply": "d.rFans",
+          "effects": {
+            "rel": {
+              "orit": 1,
+              "dudi": 1
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "after": "page"
+}

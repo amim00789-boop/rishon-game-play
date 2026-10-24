@@ -26,10 +26,10 @@ const SHOP_AMENITY = /restaurant|cafe|fast_food|bank|pharmacy|ice_cream|pub|bar|
 
 // Draw distance per prop type (world units). Beyond this the chunk's mesh for that type is hidden.
 const DRAW = {
-  lamp: 750, lamp2: 750, promLamp: 600, shelter: 700, busSign: 450, trafficLight: 600,
+  lamp: 750, lamp2: 750, promLamp: 600, shelter: 700, busSign: 450, trafficLight: 600, trafficLightPed: 600,
   bench: 320, bin: 260, bikeRack: 260, pergola: 700,
 };
-const SHADOW = new Set(['lamp', 'lamp2', 'promLamp', 'shelter', 'pergola', 'trafficLight']);
+const SHADOW = new Set(['lamp', 'lamp2', 'promLamp', 'shelter', 'pergola', 'trafficLight', 'trafficLightPed']);
 
 const hash = (n) => { n = (n ^ 61) ^ (n >>> 16); n = (n + (n << 3)) >>> 0; n ^= n >>> 4; n = Math.imul(n, 0x27d4eb2d) >>> 0; n ^= n >>> 15; return (n >>> 0) / 4294967296; };
 const hxz = (x, z, s = 0) => hash((Math.round(x * 7) * 73856093) ^ (Math.round(z * 7) * 19349663) ^ (s * 83492791));
@@ -127,16 +127,17 @@ function busSignTemplate() {
   ]);
 }
 
-function trafficLightTemplate() {
-  // Pole with a three-aspect head facing +z (oncoming traffic) and a pedestrian head facing +x.
-  return merge([
+function trafficLightTemplate(ped) {
+  // Pole with a three-aspect head facing +z (oncoming traffic) and, with `ped`, a pedestrian head
+  // facing -x (across the road). The lamps themselves are drawn by signalheads.js, so the housings
+  // here are dark.
+  const parts = [
     cyl(0.28, 0.32, 0.5, 0, 0.25, 0, 0x3b444c), cyl(0.15, 0.15, 7.4, 0, 3.7, 0, 0x606a73),
     box(1.5, 3.0, 0.08, 0, 5.8, 0.18, 0xf2c84b),
     box(0.95, 2.7, 0.7, 0, 5.8, 0.55, 0x1e2226),
-    box(0.55, 0.55, 0.06, 0, 6.65, 0.92, 0xe23b2e), box(0.55, 0.55, 0.06, 0, 5.8, 0.92, 0xf2b233), box(0.55, 0.55, 0.06, 0, 4.95, 0.92, 0x3bc46a),
-    box(0.6, 1.4, 0.6, 0.45, 3.2, 0, 0x1e2226),
-    box(0.06, 0.45, 0.4, 0.78, 3.5, 0, 0xe23b2e), box(0.06, 0.45, 0.4, 0.78, 2.9, 0, 0x3bc46a),
-  ]);
+  ];
+  if (ped) parts.push(box(0.6, 1.4, 0.6, -0.45, 3.2, 0, 0x1e2226));
+  return merge(parts);
 }
 
 function pergolaTemplate() {
@@ -466,59 +467,53 @@ export async function buildDressing(scene, city, opts = {}) {
     }
   }
 
-  // ================= 2. traffic lights at signal-controlled junctions =================
-  // Round 6 (founder: "a roundabout with traffic lights inside cannot be"): lights stand only at
-  // junctions OSM maps as signalled (a highway=traffic_signals or crossing=traffic_signals node
-  // within reach of the junction), never at a node of a roundabout ring, nor on a mini roundabout.
-  const sig = Array.isArray(city && city.signals) ? city.signals : null;
-  const SIG_CELL = 64, sigGrid = new Map();
-  if (sig) for (const sg of sig) {
-    const k = `${Math.floor(sg.x / SIG_CELL)},${Math.floor(sg.z / SIG_CELL)}`;
-    if (!sigGrid.has(k)) sigGrid.set(k, []);
-    sigGrid.get(k).push(sg);
+  // ================= 2. traffic lights from the signal plan =================
+  // Round 8 (signals): lights stand only where the plan of src/world/signals.js has a site, that is
+  // where OSM maps a signal node (or crossing signals on two arms of a junction) and the junction is
+  // not a roundabout or on a deck. One pole per approach, on the driver's right at the stop line,
+  // with a pedestrian head where the arm has a zebra. The lamps change with the controller.
+  let plan = (city && city.signalPlan) || null;
+  if (!plan && city && Array.isArray(city.signals)) {
+    try {
+      const nm = await import('../vehicles/network.js');
+      const sm = await import('./signals.js');
+      nm.setGround((x, z) => city.heightAt(x, z, -Infinity));
+      plan = sm.buildSignalPlan(city, nm.buildNetwork(city, { light: true }), { ground: (x, z) => city.heightAt(x, z, -Infinity) });
+      city.signalPlan = plan;
+      // Mid-block crossings the plan adds join the zebras, so cars and people treat them like the rest.
+      if (Array.isArray(city.crossings)) city.crossings.push(...plan.newCrossings);
+    } catch (e) { console.warn('[dressing] no signal plan', e); }
   }
-  const signalNear = (x, z, r) => {
-    let lit = false;
-    for (let i = Math.floor((x - r) / SIG_CELL); i <= Math.floor((x + r) / SIG_CELL); i++)
-      for (let j = Math.floor((z - r) / SIG_CELL); j <= Math.floor((z + r) / SIG_CELL); j++)
-        for (const sg of sigGrid.get(`${i},${j}`) || []) {
-          if (Math.hypot(sg.x - x, sg.z - z) > r) continue;
-          if (sg.kind === 'mini') return false;
-          lit = true;
-        }
-    return lit;
-  };
-  const nodes = new Map();
-  roads.forEach((rd, ri) => {
-    if (!BIG.test(rd.kind || '') || !rd.points || rd.tunnel || rd.bridge) return;
-    const p = rd.points;
-    for (let j = 0; j < p.length; j++) {
-      const k = `${Math.round(p[j][0] * 4)},${Math.round(p[j][1] * 4)}`;
-      let n = nodes.get(k);
-      if (!n) nodes.set(k, (n = { x: p[j][0], z: p[j][1], arms: [], roads: new Set() }));
-      n.roads.add(ri);
-      if (rd.roundabout) n.ring = true;
-      for (const o of [j - 1, j + 1]) {
-        if (o < 0 || o >= p.length) continue;
-        const dx = p[o][0] - p[j][0], dz = p[o][1] - p[j][1], l = Math.hypot(dx, dz);
-        if (l > 1e-3) n.arms.push({ ax: dx / l, az: dz / l, hw: rd.width / 2 });
-      }
-    }
-  });
   let junctions = 0;
-  for (const n of nodes.values()) {
-    if (n.arms.length < 3 || n.roads.size < 2 || n.ring) continue;
-    const hwMax = Math.max(...n.arms.map((a) => a.hw));
-    // Without signal data (old bakes) every junction of bigger roads keeps its lights.
-    if (sig && !signalNear(n.x, n.z, hwMax + 30 * SCALE)) continue;
-    junctions++;
-    for (const a of n.arms) {
-      // Drivers approach along -a and keep right; the pole stands on their right, before the junction.
-      const d = hwMax + 2.2, s = a.hw + 0.9;
-      const x = n.x + a.ax * d + a.az * s, z = n.z + a.az * d - a.ax * s;
-      if (tryPut('trafficLight', x, z, face(a.ax, a.az), 0.45, { claimR: 3 }) && !hops.junction)
-        hops.junction = { x: n.x + a.ax * (d + 26) + a.az * (s + 2), z: n.z + a.az * (d + 26) - a.ax * (s + 2), lx: n.x, lz: n.z };
+  const lit = [], noRoom = [], heads = []; // noRoom: approaches where no pole found a free spot
+  const PT = { x: 0, z: 0, tx: 0, tz: 1 };
+  if (plan) for (const site of plan.sites) {
+    let placed = 0;
+    for (const arm of site.arms) {
+      if (!arm.stop) continue;
+      const type = arm.ped ? 'trafficLightPed' : 'trafficLight';
+      // Behind the stop line on the driver's right; when that spot is taken or off the sidewalk,
+      // slide back along the road and further out.
+      let ok = false;
+      // Right kerb first, sliding back and out. Last resorts: the median on the driver's left, then a
+      // wider search where carriageways overlap (the widened dual carriageways of the big avenues).
+      const cands = [[1.2, 0.9, 1], [1.2, 2.0, 1], [0.2, 0.9, 1], [3, 0.9, 1], [3, 2.0, 1], [5, 2.0, 1], [5, 3.2, 1], [8, 3.2, 1], [11, 4.4, 1], [14, 4.4, 1],
+        [1.2, 0.9, -1], [3, 0.9, -1], [3, 2.0, -1], [6, 2.0, -1], [9, 3.2, -1], [12, 3.2, -1]];
+      for (const side of [1, -1]) for (const dd of [1.2, 4, 8, 13, 19]) for (const ds of [0.9, 2.2, 3.8, 5.6, 8, 11]) cands.push([dd, ds, side]);
+      for (const [dd, ds, side] of cands) {
+        plan.armPoint(arm, dd, side * (arm.e.hw + ds), PT);
+        if (plan.nearRing(PT.x, PT.z)) continue; // roundabouts and their entries never get lights
+        const rot = face(-PT.tx, -PT.tz);
+        if (!tryPut(type, PT.x, PT.z, rot, 0.45, { claimR: 3 })) continue;
+        arm.poles.push({ x: PT.x, z: PT.z, rot });
+        heads.push({ site, arm, x: PT.x, y: ground(PT.x, PT.z), z: PT.z, rot });
+        if (!hops.junction && site.kind === 'junction') hops.junction = { x: PT.x - PT.tx * 26 + PT.tz * 2, z: PT.z - PT.tz * 26 - PT.tx * 2, lx: site.x, lz: site.z };
+        ok = true;
+        break;
+      }
+      if (ok) placed++; else noRoom.push([Math.round(site.x), Math.round(site.z), arm.idx]);
     }
+    if (placed) { junctions++; lit.push([site.x, site.z]); }
   }
 
   // ================= 3. boulevard medians: double-arm lamps =================
@@ -657,7 +652,7 @@ export async function buildDressing(scene, city, opts = {}) {
   const tpl = {
     lamp: lampTemplate(false), lamp2: lampTemplate(true), promLamp: promLampTemplate(),
     bench: merge(benchTemplate()), bin: binTemplate(), bikeRack: bikeRackTemplate(),
-    shelter: shelterTemplate(), busSign: busSignTemplate(), trafficLight: trafficLightTemplate(),
+    shelter: shelterTemplate(), busSign: busSignTemplate(), trafficLight: trafficLightTemplate(false), trafficLightPed: trafficLightTemplate(true),
     pergola: pergolaTemplate(),
   };
   const cull = [];
@@ -684,8 +679,17 @@ export async function buildDressing(scene, city, opts = {}) {
     for (const e of cull) { const dx = e.cx - p.x, dz = e.cz - p.z; e.im.visible = dx * dx + dz * dz < e.r2; }
   };
 
-  root.userData.stats = { ...stats, junctions, chunks: chunks.size, meshes: cull.length, colliders: colliders.length, sidewalks: walksReal ? 'city' : 'derived', busStops: stopsReal ? 'city' : 'derived', ms: Math.round(performance.now() - t0) };
+  let signalMeshes = null;
+  if (plan && heads.length) {
+    try {
+      const hm = await import('./signalheads.js');
+      signalMeshes = hm.buildSignalMeshes(scene, plan, heads, { ground });
+    } catch (e) { console.warn('[dressing] signal lamps failed', e); }
+  }
+
+  root.userData.stats = { ...stats, junctions, signals: plan ? { ...plan.stats, heads: heads.length, ...(signalMeshes ? signalMeshes.stats : {}) } : null, chunks: chunks.size, meshes: cull.length, colliders: colliders.length, sidewalks: walksReal ? 'city' : 'derived', busStops: stopsReal ? 'city' : 'derived', ms: Math.round(performance.now() - t0) };
   root.userData.hops = hops;
+  root.userData.lightsNoRoom = noRoom;
   root.userData.droppedStops = dropped;
   root.userData.debug = { offRoad, inSolid };
   return { colliders, group: root };

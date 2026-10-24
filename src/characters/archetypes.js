@@ -749,6 +749,64 @@ export const ARCHETYPES = {
     crowd: { zones: {}, named: true },
   },
 
+  // ---- Super Malul mode (docs/SUPER_MALUL.md): the second story's cast ----
+  // Malul in costume: black mask band, red cape (stole), gold-trimmed blue suit.
+  super_malul: {
+    label: 'Super Malul',
+    skin: '#d39a6e',
+    face: { mouth: 'grin', brows: 'up', sunglasses: '#141414', sunFrame: '#141414' },
+    hair: { style: 'ponytail', color: '#1a1210', tie: '#e8364f' },
+    beard: { style: 'goatee', color: '#1a1210' },
+    body: { width: 1.14 },
+    shirt: { color: '#1f4fa8', neck: 'crew', sleeves: 'long', print: 'star', printColor: '#ffcb3d' },
+    pants: { kind: 'long', color: '#1f4fa8' },
+    shoes: { kind: 'boots', color: '#e8364f' },
+    accessories: [{ type: 'stole', color: '#e8364f' }],
+    props: { scooter: '#e8364f', bike: '#1f4fa8' },
+    style: { stride: 1.1, swagger: 0.5 },
+    crowd: { zones: {} },
+  },
+  // Haviav, the villain: a fussy event organiser in a grey suit, once in Malul's band.
+  haviav: {
+    label: 'Haviav',
+    skin: '#e6b994',
+    face: { mouth: 'smirk', brows: 'down', glasses: '#2b2b33' },
+    hair: { style: 'quiff', color: '#8a8a92' },
+    beard: { style: 'trim', color: '#8a8a92' },
+    shirt: { color: '#6d6f7a', neck: 'collar', collarColor: '#ffffff', sleeves: 'long' },
+    pants: { kind: 'long', color: '#3a3a46' },
+    shoes: { kind: 'shoes', color: '#141414' },
+    accessories: [{ type: 'lanyard', color: '#e8364f' }],
+    style: { stride: 0.95, swagger: 0.2 },
+    crowd: { zones: {} },
+  },
+  // Noa, the young reporter of "Rishon Without a Filter": camera, notebook-bag, denim jacket.
+  noa: {
+    label: 'Noa (reporter)',
+    skin: '#e6b994',
+    face: { lashes: true, mouth: 'smile', brows: 'up' },
+    hair: { style: 'bob', color: '#4a2c1a' },
+    shirt: { color: '#4a7fb8', neck: 'crew', sleeves: 'long' },
+    pants: { kind: 'long', color: '#2b2b33' },
+    shoes: { kind: 'sneakers', color: '#ffffff', stripe: '#e8364f' },
+    accessories: [{ type: 'camera' }, { type: 'toteBag', color: '#ffcb3d' }],
+    crowd: { zones: {} },
+  },
+  // Dudi, 14, Super Malul's sidekick, in a homemade cape.
+  dudi: {
+    label: 'Dudi (sidekick)',
+    skin: '#d9a27a',
+    face: { mouth: 'grin', bigEyes: true },
+    hair: { style: 'spiky', color: '#2a1a12' },
+    body: { scale: 0.8, head: 1.1 },
+    shirt: { color: '#ffcb3d', neck: 'crew', sleeves: 'short', print: 'star', printColor: '#e8364f' },
+    pants: { kind: 'shorts', color: '#2f4f7a' },
+    shoes: { kind: 'sneakers', color: '#e8364f', stripe: '#ffffff' },
+    accessories: [{ type: 'stole', color: '#2ec4b6' }],
+    style: { stride: 1.0, bounce: 0.5 },
+    crowd: { zones: {} },
+  },
+
   // skate park regulars (spawned only at the skate park)
   skater_kid: {
     label: 'Skater kid',

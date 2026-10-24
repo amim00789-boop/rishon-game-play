@@ -14,6 +14,8 @@ import * as THREE from 'three';
 import { KINDS, pickPaint, createFleet } from './models.js';
 import { buildNetwork, setGround, ground } from './network.js';
 import { buildParked } from './parked.js';
+import { aspect as sigAspect, MID_STOP } from '../world/signals.js';
+import { t as tr } from '../i18n.js';
 
 const NEAR_R = 110, MID_R = 300, FAR_R = 520;
 const SPAWN_MIN = 210, SPAWN_R = 440, DESPAWN_R = 530;
@@ -64,6 +66,43 @@ export function createTraffic({ scene, city, lots = [], collision = null, camera
     : (typeof window !== 'undefined' && window.__game && window.__game.details && typeof window.__game.details.restrictedAt === 'function' ? window.__game.details.restrictedAt : null);
   const net = buildNetwork(city || { roads: [] }, { restrictedAt: inZone });
   const tNet = performance.now() - t0;
+  // Signal plan (src/world/signals.js), built by dressing.js. Without it nothing is signalled.
+  const plan = (city && city.signalPlan) || null;
+  const sigTmp = [0, 0];
+  const sigStats = { stopped: 0, red: 0, amber: 0, blocked: 0, leftYield: 0 };
+  // The signal a vehicle meets at the node ahead of edge e (end 1 = the b end): { site, arm } or null.
+  // Arms are matched by road and end, since the plan keeps its own graph; the travel direction
+  // decides when one road meets the node twice.
+  function sigOf(e, end) {
+    if (!plan) return null;
+    const c = e.sg || (e.sg = [undefined, undefined]);
+    if (c[end] !== undefined) return c[end];
+    let r = null;
+    const node = end === 1 ? e.b : e.a;
+    const site = plan.siteAtNode(node.x, node.z);
+    if (site) {
+      let arm = null;
+      for (const a of site.arms) if (a.approach && a.stop && a.e.road === e.road && a.end === end && Math.abs(a.e.L - e.L) < 0.05) { arm = a; break; }
+      if (!arm) {
+        endTangent(e, end === 1 ? 1 : -1, sigTmp);
+        const a = plan.armFor(site, sigTmp[0], sigTmp[1]);
+        if (a && a.stop) arm = a;
+      }
+      if (arm) r = { site, arm };
+    }
+    c[end] = r;
+    return r;
+  }
+  // Mid-block crossing signals on an edge: e.mids = [{ site, s, arms: { 1: arm, -1: arm } }].
+  if (plan) for (const site of plan.sites) {
+    if (site.kind !== 'mid') continue;
+    const road = site.arms[0].e.road;
+    const hit = net.nearest(site.x, site.z, 5, (ee) => ee.road === road);
+    if (!hit) continue;
+    const m = { site, s: hit.s, arms: {} };
+    for (const a of site.arms) if (a.stop) m.arms[a.tdir] = a;
+    (hit.e.mids || (hit.e.mids = [])).push(m);
+  }
   let parked = null;
   try { parked = buildParked({ scene, city, lots, collision, net, rnd, restrictedAt: inZone }); } catch (e) { console.warn('[traffic] parked cars failed', e); }
 
@@ -327,12 +366,94 @@ export function createTraffic({ scene, city, lots = [], collision = null, camera
   };
 
   // Is v held by other traffic only (a waiting cycle), rather than by a person, a zebra or a bus stop?
-  const PATIENT = new Set(['player', 'person', 'zebra', 'zebra2', 'dwell', 'bump', 'busstop']);
+  const PATIENT = new Set(['player', 'person', 'zebra', 'zebra2', 'dwell', 'bump', 'busstop', 'signal']);
   function heldByTraffic(v) {
     const seen = new Set();
     let u = v;
     while (u && u.why === 'follow' && u.lead && !seen.has(u)) { seen.add(u); u = u.lead; }
     return !(u && !seen.has(u) && PATIENT.has(u.why));
+  }
+
+  // ---- signals ----
+  // Speed cap that stops the front of v at the stop line `dist` ahead. Red stops, amber stops unless
+  // the vehicle could not (stopping distance at comfortable braking, plus a reaction margin), green
+  // goes unless the box beyond is full or a left turn must give way to oncoming traffic.
+  function signalLimit(v, target, dist, asp, sg, dt) {
+    if (dist < -0.8) { v.sigWait = 0; return target; }
+    const stopCap = Math.sqrt(2 * DEC * Math.max(0, dist - 0.4));
+    if (asp === 'R') { sigStats.red++; return lim(v, target, stopCap, 'signal'); }
+    if (asp === 'A') {
+      const need = (v.v * v.v) / (2 * DEC * 1.2) + v.v * 0.3;
+      if (dist >= need) { sigStats.amber++; return lim(v, target, stopCap, 'signal'); }
+      return target;
+    }
+    if (sg && dist < 14) {
+      if (holdAtGreen(v, sg, dt)) return lim(v, target, stopCap, 'signal');
+    }
+    return target;
+  }
+  // A green is not an invitation into a full junction: wait while the first stretch of the road
+  // beyond is blocked by stopped vehicles, and give way on a left turn to cars coming the other
+  // way. Both give up after a few seconds, so nothing waits for ever.
+  function holdAtGreen(v, sg, dt) {
+    const nx = v.next;
+    if (!nx || nx.uturn) return false;
+    const K = v.K, ne = nx.e, nd = nx.dir;
+    if (v.sigWait > 7) return false;
+    for (const u of vehicles) {
+      if (u === v || u.hidden) continue;
+      if (!u.turn && u.e === ne) {
+        const du = nd > 0 ? u.s : ne.L - u.s;
+        if (du < K.L + 7 && u.v < 1.5) { v.sigWait = (v.sigWait || 0) + dt; sigStats.blocked++; return true; }
+      }
+    }
+    if (nx.cos < 0.5) {
+      const e = v.e, node = v.dir > 0 ? e.b : e.a;
+      endTangent(e, v.dir, T0);
+      startTangent(ne, nd, T1);
+      if (T0[0] * T1[1] - T0[1] * T1[0] < -0.35 && nx.cos > -0.5) {
+        for (const u of vehicles) {
+          if (u === v || u.hidden || u.v < 1) continue;
+          if (u.turn) continue;
+          const unode = u.dir > 0 ? u.e.b : u.e.a;
+          if (unode !== node || u.e === e) continue;
+          const du = u.dir > 0 ? u.e.L - u.s : u.s;
+          if (du > 20) continue;
+          if (Math.cos(u.yaw - v.yaw) < -0.7) { v.sigWait = (v.sigWait || 0) + dt; sigStats.leftYield++; return true; }
+        }
+      }
+    }
+    return false;
+  }
+
+  // ---- the player and the signals ----
+  // Driving (car, bike, scooter) across a stop line against a red that is at least 1.5 s old counts
+  // as running it: a toast, a count in stats(), and the cars of the green group already brake for
+  // the player (control(): 'player'). Walking is never checked; zebras are for people.
+  let redRuns = 0, redToastAt = -99, pLastX = NaN, pLastZ = NaN;
+  function playerRedLight(player, px, pz) {
+    const drive = player && player.mode && player.mode !== 'walk' && player.mode !== 'idle';
+    const lx = pLastX, lz = pLastZ;
+    pLastX = px; pLastZ = pz;
+    if (!drive || !(lx === lx) || Math.hypot(px - lx, pz - lz) > 6) return;
+    for (const site of plan.sites) {
+      if (Math.abs(site.x - px) > 70 || Math.abs(site.z - pz) > 70) continue;
+      for (const arm of site.arms) {
+        if (!arm.stop) continue;
+        const L = arm.line || (arm.line = (() => { const o = {}; plan.armPoint(arm, 0, (arm.inner + arm.outer) / 2, o); return o; })());
+        const d0 = (lx - L.x) * L.tx + (lz - L.z) * L.tz, d1 = (px - L.x) * L.tx + (pz - L.z) * L.tz;
+        if (!(d0 < 0 && d1 >= 0) || Math.abs((px - L.x) * L.tz - (pz - L.z) * L.tx) > arm.e.hw) continue;
+        if (sigAspect(site, arm.group, plan.t) !== 'R' || sigAspect(site, arm.group, plan.t - 1.5) !== 'R') continue;
+        redRuns++;
+        if (api.onRedRun) { try { api.onRedRun({ site, arm, t: plan.t }); } catch (e) { console.warn('[traffic] onRedRun failed', e); } }
+        if (plan.t - redToastAt > 6) {
+          redToastAt = plan.t;
+          const hud = typeof window !== 'undefined' && window.__game && window.__game.hud;
+          if (hud && hud.toastMsg) hud.toastMsg(tr('hud.redLight'));
+        }
+        return;
+      }
+    }
   }
 
   // ---- per-vehicle control ----
@@ -368,7 +489,8 @@ export function createTraffic({ scene, city, lots = [], collision = null, camera
         if (v.next.uturn) vt = 3;
         target = lim(v, target, Math.sqrt(vt * vt + 2 * DEC * Math.max(0, dEnd - J)), 'turn');
         // Give way: coming from the smaller road into a junction someone is crossing.
-        if (!(v.ghost > 0) && node.deg >= 3 && e.rank < node.maxRank && node.busy >= frame - 1 && node.busyBy !== v && dEnd < J + 14 && v.wait < 3.5) {
+        const sg = plan ? sigOf(e, v.dir > 0 ? 1 : 0) : null;
+        if (!(v.ghost > 0) && !sg && node.deg >= 3 && e.rank < node.maxRank && node.busy >= frame - 1 && node.busyBy !== v && dEnd < J + 14 && v.wait < 3.5) {
           target = lim(v, target, Math.sqrt(2 * DEC * Math.max(0, dEnd - J - 2)), 'yield');
           if (v.v < 1) v.wait += dt;
         } else if (v.v > 2) v.wait = 0;
@@ -389,6 +511,30 @@ export function createTraffic({ scene, city, lots = [], collision = null, camera
           const dc = dEnd + (v.next.dir > 0 ? c.s : ne.L - c.s);
           if (dc > 40) continue;
           if (crossingBusy(c, people, px, pz, walkerNear, v)) target = lim(v, target, Math.sqrt(2 * DEC * Math.max(0, dc - K.L * 0.5 - 3)), 'zebra2');
+        }
+      }
+      // Signals: the stop line of the node ahead, then mid-block crossing signals on this edge.
+      if (plan) {
+        const sg = sigOf(e, v.dir > 0 ? 1 : 0);
+        if (sg) {
+          const dist = dEnd - sg.arm.stopD - K.L / 2;
+          if (dist < 90) target = signalLimit(v, target, dist, sigAspect(sg.site, sg.arm.group, plan.t), sg, dt);
+        }
+        // A short link between two junctions of one cluster: the next node's line is only a few
+        // metres past this one, too late to start braking when the car reaches the link.
+        if (v.next && !v.next.uturn) {
+          const ne = v.next.e, sg2 = sigOf(ne, v.next.dir > 0 ? 1 : 0);
+          if (sg2 && ne.L - sg2.arm.stopD < 32) {
+            const dist2 = dEnd + ne.L - sg2.arm.stopD - K.L / 2;
+            if (dist2 < 90) target = signalLimit(v, target, dist2, sigAspect(sg2.site, sg2.arm.group, plan.t), null, dt);
+          }
+        }
+        if (e.mids) for (const m of e.mids) {
+          const arm = m.arms[v.dir];
+          if (!arm) continue;
+          const dist = (m.s - v.dir * MID_STOP - v.s) * v.dir - K.L / 2;
+          if (dist < -0.8 || dist > 90) continue;
+          target = signalLimit(v, target, dist, sigAspect(m.site, 0, plan.t), null, dt);
         }
       }
       // Buses: pull in to the kerb and stop at the shelter.
@@ -412,6 +558,15 @@ export function createTraffic({ scene, city, lots = [], collision = null, camera
       const c = v.next ? v.next.cos : 1;
       const vt = v.next && v.next.uturn ? 3 : 4 + (vLim - 4) * Math.pow((1 + c) / 2, 2);
       target = lim(v, target, Math.max(vt, T.node.deg <= 2 && c > 0.9 ? vLim : vt), 'inturn');
+      // The line of the next junction can lie inside this turn's zone (a short link): keep obeying it.
+      if (plan) {
+        const ne = T.ne, sg2 = sigOf(ne, T.nd > 0 ? 1 : 0);
+        if (sg2) {
+          const lineS = T.nd > 0 ? ne.L - sg2.arm.stopD : sg2.arm.stopD;
+          const dist2 = T.len - T.u + (T.nd > 0 ? lineS - T.s2 : T.s2 - lineS) - K.L / 2;
+          if (dist2 > -0.8 && dist2 < 60) target = signalLimit(v, target, dist2, sigAspect(sg2.site, sg2.arm.group, plan.t), null, dt);
+        }
+      }
     }
 
     // Car following: the nearest vehicle ahead in roughly the same lane, and the player.
@@ -673,6 +828,8 @@ export function createTraffic({ scene, city, lots = [], collision = null, camera
     const px = player && player.pos ? player.pos.x : 0, pz = player && player.pos ? player.pos.z : 0;
     const py = player ? player.y || 0 : 0;
     if (parked) parked.update(px, pz);
+    if (plan) plan.advance(dt, px, pz);
+    if (plan) playerRedLight(player, px, pz);
 
     // A teleport (spawn, quest skip, map jump) refills the ring at once instead of waiting for traffic to arrive.
     if (Math.hypot(px - lastPX, pz - lastPZ) > 150) { filled = false; cand = null; }
@@ -732,6 +889,7 @@ export function createTraffic({ scene, city, lots = [], collision = null, camera
       riders: vehicles.filter((v) => v.rider).length, avatarsBuilt: riderCount,
       drawCalls: fleet.drawCalls() + (parked ? parked.stats().drawCalls : 0),
       updateMs: +perf.avg.toFixed(3), updateMaxMs: +(perf.lastMax || 0).toFixed(2),
+      signals: plan ? { sites: plan.sites.length, playerRedRuns: redRuns, atRed: vehicles.filter((v) => v.why === 'signal').length, ...sigStats } : null,
       spawned, despawned, bumps, waitingAtJunction: vehicles.filter((v) => v.wait > 0).length,
       busesDwelling: vehicles.filter((v) => v.dwell > 0).length,
       network: { edges: net.edges.length, nodes: net.nodes.length, stops: net.edges.reduce((a, e) => a + e.stops.length, 0), crossings: net.edges.reduce((a, e) => a + e.crossings.length, 0), restrictedRoads: net.restrictedRoads || 0, zoneCheck: !!inZone, buildMs: Math.round(tNet) },
@@ -749,7 +907,9 @@ export function createTraffic({ scene, city, lots = [], collision = null, camera
   }
 
   const buildMs = performance.now() - t0;
-  return { update, stats, vehicles, colliders, parked, net, fleet };
+  // onRedRun: set by a quest that wants to penalise running a red ({ site, arm, t }); null in free play.
+  const api = { update, stats, vehicles, colliders, parked, net, fleet, onRedRun: null };
+  return api;
 }
 
 function mulberry(a) {

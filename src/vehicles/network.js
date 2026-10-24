@@ -132,7 +132,9 @@ function entersZone(r, restrictedAt) {
   return false;
 }
 
-export function buildNetwork(city, { restrictedAt = null } = {}) {
+// `light` builds only the graph and its spatial index (no overhead clearance, zebras or bus stops):
+// enough for the signal plan, which dressing.js needs before traffic exists.
+export function buildNetwork(city, { restrictedAt = null, light = false } = {}) {
   const all = (city.roads || []).filter((r) => r && r.rank >= 2 && r.points && r.points.length >= 2 && !/^(rail|promenade)$/.test(r.kind));
   const roads = all.filter((r) => !entersZone(r, restrictedAt));
   const restrictedRoads = all.length - roads.length;
@@ -182,7 +184,7 @@ export function buildNetwork(city, { restrictedAt = null } = {}) {
     for (const n of [e.a, e.b]) { n.maxRank = Math.max(n.maxRank, e.rank); n.maxHw = Math.max(n.maxHw, e.hw); }
   });
   for (const n of nodes.values()) n.deg = n.edges.length;
-  overheadClearance(city, edges);
+  if (light) for (const e of edges) e.clear = Infinity; else overheadClearance(city, edges);
 
   const grid = new Grid(48);
   for (const e of edges) for (let i = 0; i < e.pts.length - 1; i++) grid.add(e.pts[i][0], e.pts[i][1], e.pts[i + 1][0], e.pts[i + 1][1], { e, i });
@@ -206,7 +208,7 @@ export function buildNetwork(city, { restrictedAt = null } = {}) {
   }
 
   // ---- crossings (zebras) and bus stops onto edges ----
-  for (const c of city.crossings || []) {
+  for (const c of light ? [] : city.crossings || []) {
     const hit = nearest(c.x, c.z, 3);
     if (!hit) continue;
     const a = hit.e.pts[hit.i], b = hit.e.pts[hit.i + 1], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
@@ -214,7 +216,7 @@ export function buildNetwork(city, { restrictedAt = null } = {}) {
     hit.e.crossings.push({ s: hit.s, x: c.x, z: c.z, tx: (b[0] - a[0]) / l, tz: (b[1] - a[1]) / l, hw: hit.e.hw, r: (c.width || 10) / 2 + 2.5 });
   }
   for (const e of edges) e.crossings.sort((p, q) => p.s - q.s);
-  (city.busStops || []).forEach((b, id) => {
+  (light ? [] : city.busStops || []).forEach((b, id) => {
     const hit = nearest(b.x, b.z, 18, (e) => e.rank >= 3);
     if (!hit) return;
     // The shelter stands on the sidewalk; buses travelling with it on their right stop there.

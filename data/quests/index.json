@@ -3,7 +3,8 @@
   "strings": [
     "strings.{lang}.json",
     "story.{lang}.json",
-    "cinema.{lang}.json"
+    "cinema.{lang}.json",
+    "skate_shikma.{lang}.json"
   ],
   "quests": [
     "m01_soundcheck",
@@ -26,8 +27,17 @@
     "m16_chairs",
     "m17_live",
     "m18_mayor",
-    "m19_tour",
-    "m20_certificate"
+    "m20_certificate",
+    "sm01_cape",
+    "sm02_patrol",
+    "sm03_fanclub",
+    "sm04_noa",
+    "sm05_haviav",
+    "sm06_chase",
+    "sm07_band",
+    "sm08_practice",
+    "sm09_key",
+    "sm10_tournament"
   ],
   "side": [
     "q1_speaker",
@@ -45,6 +55,7 @@
     "act_gal",
     "act_skate",
     "act_cinema_city",
-    "act_yes_planet"
+    "act_yes_planet",
+    "act_skate_shikma"
   ]
 }

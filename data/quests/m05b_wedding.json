@@ -8,29 +8,26 @@
     "avi": {
       "archetype": "dati_leumi_man",
       "at": {
-        "lat": 31.979198,
-        "lon": 34.74847,
-        "dx": 4,
-        "dz": 34
+        "poi": "lago_garden",
+        "dx": 2,
+        "dz": 0
       }
     },
     "hodaya": {
       "archetype": "hodaya_bride",
       "fallback": "dati_leumi_woman",
       "at": {
-        "lat": 31.979198,
-        "lon": 34.74847,
-        "dx": -4,
-        "dz": 32
+        "poi": "lago_garden",
+        "dx": -3,
+        "dz": 1
       }
     },
     "moshiko": {
       "archetype": "mizrahi_street_guy",
       "at": {
-        "lat": 31.979198,
-        "lon": 34.74847,
-        "dx": 10,
-        "dz": 30
+        "poi": "lago_garden",
+        "dx": 8,
+        "dz": -1
       }
     },
     "orit": {
@@ -44,12 +41,8 @@
     "savta": {
       "archetype": "savta",
       "at": {
-        "lat": 31.979198,
-        "lon": 34.74847,
-        "dx": -669,
-        "dz": 0,
-        "busStop": true,
-        "within": 200
+        "lat": 31.981815,
+        "lon": 34.757889
       }
     }
   },
@@ -65,10 +58,9 @@
         "dz": 10
       },
       "at": {
-        "lat": 31.979198,
-        "lon": 34.74847,
+        "poi": "lago_garden",
         "dx": 0,
-        "dz": 36
+        "dz": 1
       },
       "modes": [
         "scooter",
@@ -80,21 +72,18 @@
       "dialogue": "d.delivered"
     },
     {
-      "type": "escort",
+      "type": "drive",
       "npc": "savta",
       "at": {
-        "lat": 31.979198,
-        "lon": 34.74847,
-        "dx": -6,
-        "dz": 38
+        "poi": "lago_dropoff"
       },
-      "speed": 7,
-      "leash": 28,
+      "modes": [
+        "car"
+      ],
+      "limit": 240,
       "obj": "obj.meet",
-      "objWalk": "obj.walk",
-      "objWait": "obj.wait",
-      "start": "t.go",
-      "wait": "t.wait",
+      "objRun": "obj.walk",
+      "timeUp": "t.late",
       "dialogue": "d.arrived"
     },
     {

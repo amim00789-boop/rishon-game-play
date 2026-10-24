@@ -25,10 +25,9 @@
     "moshiko": {
       "archetype": "mizrahi_street_guy",
       "at": {
-        "lat": 31.979198,
-        "lon": 34.74847,
-        "dx": 10,
-        "dz": 30
+        "poi": "lago_garden",
+        "dx": 8,
+        "dz": -1
       }
     },
     "family": {
@@ -55,10 +54,7 @@
       "type": "drive",
       "npc": "hodaya",
       "at": {
-        "lat": 31.979198,
-        "lon": 34.74847,
-        "dx": 16,
-        "dz": 40
+        "poi": "lago_dropoff"
       },
       "modes": [
         "car"

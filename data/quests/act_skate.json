@@ -7,8 +7,31 @@
       "archetype": "skater_kid",
       "at": {
         "poi": "skate_bowl",
-        "dx": 4,
-        "dz": 1
+        "dx": -16,
+        "dz": 11
+      },
+      "look": {
+        "skin": "#c48a5c",
+        "hair": {
+          "style": "spiky",
+          "color": "#e8c77a"
+        },
+        "shirt": {
+          "color": "#8d99a6",
+          "neck": "crew",
+          "sleeves": "long",
+          "print": null
+        },
+        "pants": {
+          "kind": "long",
+          "color": "#2b2b33"
+        },
+        "accessories": [
+          {
+            "type": "beanie",
+            "color": "#2e9e57"
+          }
+        ]
       }
     }
   },

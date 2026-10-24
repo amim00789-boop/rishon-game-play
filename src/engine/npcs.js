@@ -463,6 +463,10 @@ export class Crowd {
 
   // A vehicle close to a zebra: wait at the kerb.
   carNear(c) {
+    // A zebra under a signal (src/world/signals.js): people cross on the walk phase and wait otherwise.
+    const plan = this.world && this.world.city && this.world.city.signalPlan;
+    const walk = plan ? plan.crossingWalk(c) : null;
+    if (walk !== null) return walk !== 1;
     const tr = typeof window !== 'undefined' && window.__game && window.__game.traffic;
     const vs = tr && tr.vehicles;
     if (!vs || !vs.length) return false;

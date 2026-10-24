@@ -18,7 +18,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { toonRamp } from '../engine/renderer.js';
+import { toonRamp, toonMat } from '../engine/renderer.js';
 
 // ---- palette -----------------------------------------------------------------------------------
 const C = {
@@ -489,4 +489,47 @@ export function createFleet(scene, kinds, { capacity = 256, farCapacity = 1024, 
 export function triangleCount(kind, lod = 0) {
   const g = buildKindGeometry(kind, lod);
   return g.attributes.position.count / 3;
+}
+
+// The player's bus (docs/JOBS.md, bus driver): the traffic bus body as one mesh, plus two door
+// panels on the kerb side (local -x; the driver sits on the left, Israel drives on the right) that
+// slide open over a dark doorway. `setDoors(0..1)` opens or closes them. Origin at the centre of the
+// footprint on the ground, front is +z, like the player's car group.
+export function buildPlayerBus(colorHex = 0x2e6db4) {
+  const k = KINDS.bus, s = k.s;
+  const group = new THREE.Group();
+  group.name = 'player-bus';
+  group.add(buildVehicleMesh('bus', colorHex));
+  const L = k.L / s, Wd = k.W / s;
+  const frameMat = toonMat(0x1d2433), panelMat = toonMat(0x8fd3ee), doorway = toonMat(0x0c1018);
+  const doors = [];
+  for (const zc of [L / 2 - 1.6, -0.6]) {
+    const hole = new THREE.Mesh(new THREE.BoxGeometry(0.12, 4.6, 1.8), doorway);
+    hole.position.set(-Wd / 2 - 0.05, 3.2, zc);
+    const panelA = new THREE.Mesh(new THREE.BoxGeometry(0.1, 4.55, 0.9), panelMat);
+    const panelB = panelA.clone();
+    panelA.position.set(-Wd / 2 - 0.12, 3.2, zc - 0.45); panelB.position.set(-Wd / 2 - 0.12, 3.2, zc + 0.45);
+    const rim = new THREE.Mesh(new THREE.BoxGeometry(0.06, 4.8, 2.05), frameMat);
+    rim.position.set(-Wd / 2 - 0.03, 3.25, zc);
+    const g = new THREE.Group();
+    g.add(rim, hole, panelA, panelB);
+    g.scale.setScalar(s);
+    g.position.set(0, 0, 0);
+    group.add(g);
+    doors.push({ hole, panelA, panelB, zc });
+  }
+  let open = 0;
+  const setDoors = (v) => {
+    open = Math.max(0, Math.min(1, v));
+    for (const d of doors) {
+      d.hole.visible = open > 0.05;
+      d.panelA.position.z = d.zc - 0.45 - open * 0.8;
+      d.panelB.position.z = d.zc + 0.45 + open * 0.8;
+      d.panelA.visible = d.panelB.visible = true;
+    }
+  };
+  setDoors(0);
+  // where a boarding passenger walks to: kerb side, at the front door, in the group's frame
+  const doorAt = { x: -(Wd / 2) * s, z: (L / 2 - 1.6) * s };
+  return { group, setDoors, get open() { return open; }, doorAt, length: L * s, width: Wd * s };
 }

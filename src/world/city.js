@@ -15,6 +15,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { SCALE, project } from '../geo.js';
+import { createMosheDayanBridge } from './bridge_moshe_dayan.js';
 
 export const ATTRIBUTION = '© OpenStreetMap contributors (ODbL)';
 
@@ -56,6 +57,14 @@ const ATTACH_MAX = 3;     // an end this close in height to the street it lands 
 const ATTACH_FADE = 40;   // ...fading back over this length
 const ATTACH_MAX_RAMP = 5; // a long slip road may climb this far to the road it lands on (DECK is 9.5)
 const MAX_FORCED = 0.1;   // steepest grade a ramp may take to touch down on the road it joins
+// Nodes where a ramp lands on a road that must not be pinned to the ground there: the descent
+// carries on over the way beyond at ramp grade (the ground rises 7 % east of the Moshe Dayan deck,
+// so touching down at the 63 u node needed 15 %). Keys are keyOf() of the node.
+const SOFT_LANDINGS = new Set(['-1886.6,-1597.5', '-2276.8,-659.6']);
+// Vertices where two carriageways cross at one shared vertex and one of them is still settling
+// towards the ground (a sag tail), so the other sat 0.4-0.5 u below it: a step for every car that
+// crosses (Ayalon west slip roads at Sderot HaAtid). Both take the higher height there, faded over NODE_FADE.
+const NODE_MEETS = new Set(['-2345.7,-1450.7']);
 const HUMP_R = 12;
 const MAX_FORCED_PATH = 0.7; // footbridge approaches may be steep: past STAIR_GRADE they are drawn as stairs
 const STAIR_GRADE = 0.2;
@@ -64,6 +73,7 @@ const BANK_FADE = 3;      // a raised way banks with the ground below this heigh
 // car speed; at 1.2 a car on a slip road jumped onto the parallel ramp a metre above it.
 const STEP_UP = 0.6;
 const SNAP_BAND = 1.0; // heightAt keeps a walker on a surface up to this far below its feet
+const LEDGE_MAX = 1.3; // heightAt lifts a walker on a structure onto a deck up to this far above its feet when nothing else is underfoot
 const RCHUNK = 600; // road chunk size; small enough for frustum culling, big enough for few draw calls
 const BALLAST_HW = U(1.9);
 const BALLAST_H = 0.45;
@@ -105,10 +115,6 @@ const PLAT_H = 1.0;       // station platform top above the ground on its centre
 const STAIR_W = U(2.2);   // station stair flight width
 const STAIR_GRADE_STEEP = 0.6; // station stairs: rise per unit of run (about 31 degrees)
 const DECK_KERB = 0.25; // bridge sidewalks stand this far above the deck asphalt
-// World box [x0, z0, x1, z1] that gets street-name signs: Neve Yam (place node 547.8, -1431.2)
-// with its gem streets (Topaz, Yahalom, Leshem, Shoham, Inbar, Bareket, Even Hen, Granit, Shenhav)
-// to the north and the sea streets to the south.
-const STREET_SIGN_AREA = [-150, -2050, 1350, -650];
 const JOIN_GAP = 6.5;   // parallel decks closer than this share one deck with a barrier between them
 
 const PALETTE = {
@@ -661,62 +667,78 @@ function buildNeighbourhoodSigns(places, carRoads, blocked, K, toon) {
 // ---------- street-name signs ----------
 
 // Israeli municipal street sign: a white board with a blue frame on a grey post, the local name
-// big and the English one small, one atlas slot per street name, all signs in two draw calls.
+// big and the English one small. One atlas for the whole city (a cell per street name, cell 0 is
+// the post's grey), signs merged per 800 u map cell so frustum culling drops the far ones: one
+// draw call per visible cell, not 4000 signs every frame.
 const SSIGN_W = 7, SSIGN_H = 1.8, SSIGN_LIFT = 3.4;
+const SSIGN_CELL = 800, SSIGN_COLS = 16, SSIGN_PX_W = 256, SSIGN_PX_H = 64, SSIGN_MAX_ROWS = 128;
 function buildStreetSigns(signs, toon) {
   if (!signs.length) return null;
-  const names = [...new Map(signs.map((s) => [s.name, s.nameEn])).entries()];
-  const slot = new Map(names.map(([n], i) => [n, i]));
-  const cols = 4, sw = 512, sh = 128, rows = Math.ceil(names.length / cols);
+  const cap = SSIGN_COLS * SSIGN_MAX_ROWS - 1; // slot 0 stays grey for the posts
+  const names = [...new Map(signs.map((s) => [s.name, s.nameEn])).entries()].slice(0, cap);
+  const slot = new Map(names.map(([n], i) => [n, i + 1]));
+  const cols = SSIGN_COLS, sw = SSIGN_PX_W, sh = SSIGN_PX_H, rows = Math.ceil((names.length + 1) / cols);
   const cv = document.createElement('canvas');
   cv.width = cols * sw; cv.height = rows * sh;
   const g = cv.getContext('2d');
   g.textAlign = 'center'; g.textBaseline = 'middle';
-  names.forEach(([name, nameEn], i) => {
+  g.fillStyle = '#8f979e'; g.fillRect(0, 0, sw, sh);
+  names.forEach(([name, nameEn], k) => {
+    const i = k + 1;
     const x0 = (i % cols) * sw, y0 = Math.floor(i / cols) * sh;
     g.fillStyle = '#ffffff'; g.fillRect(x0, y0, sw, sh);
-    g.strokeStyle = '#1f4e8c'; g.lineWidth = 10; g.strokeRect(x0 + 8, y0 + 8, sw - 16, sh - 16);
+    g.strokeStyle = '#1f4e8c'; g.lineWidth = 5; g.strokeRect(x0 + 5, y0 + 5, sw - 10, sh - 10);
     g.fillStyle = '#1f4e8c';
     g.direction = 'rtl';
-    let size = 62;
+    let size = 31;
     const font = (px) => `bold ${px}px "Arial Hebrew", "Noto Sans Hebrew", Arial, sans-serif`;
     g.font = font(size);
-    while (g.measureText(name).width > sw - 60 && size > 26) { size -= 4; g.font = font(size); }
+    while (g.measureText(name).width > sw - 30 && size > 13) { size -= 2; g.font = font(size); }
     g.fillText(name, x0 + sw / 2, y0 + sh * (nameEn ? 0.42 : 0.5));
     if (nameEn) {
       g.direction = 'ltr';
-      g.font = '24px Arial, sans-serif';
+      g.font = '12px Arial, sans-serif';
       g.fillText(nameEn, x0 + sw / 2, y0 + sh * 0.8);
     }
   });
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 8;
-  const boards = [], posts = [];
+  tex.anisotropy = 4;
+  const W = cv.width, H = cv.height;
+  const cells = new Map();
   for (const s of signs) {
     const i = slot.get(s.name);
+    if (!i) continue;
     const u0 = (i % cols) / cols, u1 = u0 + 1 / cols;
     const v1 = 1 - Math.floor(i / cols) / rows, v0 = v1 - 1 / rows;
     const board = new THREE.BoxGeometry(SSIGN_W, SSIGN_H, 0.18);
     const uv = board.attributes.uv;
+    const eu = ((i % cols) * sw + 2) / W, ev = 1 - (Math.floor(i / cols) * sh + 2) / H; // white margin texel
     for (let k = 0; k < uv.count; k++) {
       const face = Math.floor(k / 4), su = uv.getX(k), sv = uv.getY(k);
       if (face === 4 || face === 5) uv.setXY(k, u0 + su * (u1 - u0), v0 + sv * (v1 - v0));
-      else uv.setXY(k, u0 + 0.002, v0 + 0.01);
+      else uv.setXY(k, eu, ev);
     }
     const gy = groundAt(s.x, s.z);
     board.translate(0, SSIGN_LIFT + SSIGN_H / 2, 0).rotateY(s.rot).translate(s.x, gy, s.z);
-    boards.push(board);
-    const p = new THREE.CylinderGeometry(0.16, 0.16, SSIGN_LIFT + SSIGN_H + 0.6, 6);
+    const p = new THREE.CylinderGeometry(0.16, 0.16, SSIGN_LIFT + SSIGN_H + 0.6, 6, 1, true);
+    const pu = p.attributes.uv;
+    for (let k = 0; k < pu.count; k++) pu.setXY(k, 0.5 / W, 1 - 0.5 / H);
     p.translate(0, (SSIGN_LIFT + SSIGN_H + 0.6) / 2 - 0.3, 0).rotateY(s.rot).translate(s.x, gy, s.z);
-    posts.push(paint(p, 0x8f979e));
+    const key = Math.floor(s.x / SSIGN_CELL) + ',' + Math.floor(s.z / SSIGN_CELL);
+    let c = cells.get(key);
+    if (!c) cells.set(key, c = []);
+    c.push(board, p);
   }
   const group = new THREE.Group();
   group.name = 'street-signs';
-  const bm = new THREE.Mesh(mergeGeometries(boards), toon({ map: tex }));
-  const pm = new THREE.Mesh(mergeGeometries(posts), toon({ vertexColors: true }));
-  bm.castShadow = pm.castShadow = true;
-  group.add(bm, pm);
+  const mat = toon({ map: tex });
+  for (const parts of cells.values()) {
+    const m = new THREE.Mesh(mergeGeometries(parts), mat);
+    // No shadow caster: a 1.8 u board throws nothing worth a second pass over every visible cell.
+    group.add(m);
+  }
+  group.userData.stats = { signs: signs.length, names: names.length, cells: cells.size, atlas: [W, H] };
   return group;
 }
 
@@ -992,6 +1014,46 @@ function buildNetwork(data, ctx) {
       const lift = groupLift.get(grp);
       if (lift > 0) for (const w of grp) if (w.P) w.P = w.P.map((y) => y + lift);
     }
+    harmonizeTwinDecks();
+  };
+  // The two carriageways of one bridge are separate OSM ways, each with its own deck profile, so
+  // they differed by 0.3-0.9 u across the median: a step for every walker crossing the Moshe
+  // Dayan deck. Where two free-standing decks of opposite direction run side by side (centre lines
+  // within TWIN_DECK_GAP), each takes the mean of the two heights across from it.
+  const TWIN_DECK_GAP = 42;
+  const TWIN_DECK_AT = [[-2013, -1637, 100]]; // [x, z, radius]: both decks must lie wholly inside
+  const harmonizeTwinDecks = () => {
+    // Only the Moshe Dayan deck so far: applied to every pair of twin decks in the city it kinked
+    // 60 other ramps (kinkRaised 45 -> 109) where the two profiles meet connected ramps differently.
+    const decks = all.filter((w) => w.cls && w.level > 0 && w.P && !w.tunnel && TWIN_DECK_AT.some(([cx, cz, r]) => w.pts.every((p) => Math.hypot(p[0] - cx, p[1] - cz) < r)));
+    const nearest = (b, x, z) => {
+      let best = Infinity, y = 0, ux = 0, uz = 0;
+      for (let i = 0; i < b.pts.length - 1; i++) {
+        const s = mkSeg(b.pts[i], b.pts[i + 1], {});
+        const d = segDist(s, x, z);
+        if (d < best) { best = d; y = b.P[i] + (b.P[i + 1] - b.P[i]) * segT; ux = s.ux; uz = s.uz; }
+      }
+      return { d: best, y, ux, uz };
+    };
+    const target = new Map();
+    const box = (w) => w.pts.reduce((q, p) => [Math.min(q[0], p[0]), Math.min(q[1], p[1]), Math.max(q[2], p[0]), Math.max(q[3], p[1])], [1e9, 1e9, -1e9, -1e9]);
+    for (const d of decks) d.tbox = box(d);
+    for (const a of decks) {
+      const ta = a.P.slice();
+      const mates = decks.filter((b) => b !== a && b.oneway && a.oneway && b.tbox[0] < a.tbox[2] + TWIN_DECK_GAP && b.tbox[2] > a.tbox[0] - TWIN_DECK_GAP && b.tbox[1] < a.tbox[3] + TWIN_DECK_GAP && b.tbox[3] > a.tbox[1] - TWIN_DECK_GAP);
+      if (!mates.length) { target.set(a, ta); continue; }
+      for (let i = 0; i < a.pts.length; i++) {
+        const j = Math.min(i + 1, a.pts.length - 1), h = Math.max(i - 1, 0);
+        const dx = a.pts[j][0] - a.pts[h][0], dz = a.pts[j][1] - a.pts[h][1], dl = Math.hypot(dx, dz) || 1;
+        for (const b of mates) {
+          const n = nearest(b, a.pts[i][0], a.pts[i][1]);
+          if (n.d > TWIN_DECK_GAP || (dx / dl) * n.ux + (dz / dl) * n.uz > -0.6) continue;
+          ta[i] = (a.P[i] + n.y) / 2; // the mean of both (symmetric, smooth); a max would kink where the two profiles cross
+        }
+      }
+      target.set(a, ta);
+    }
+    for (const [a, ta] of target) a.P = ta;
   };
 
   // Node topology of a list, built once: densifying a way later keeps its original vertices.
@@ -1095,7 +1157,10 @@ function buildNetwork(data, ctx) {
           // A footbridge approach that ends on the middle of another path touches down there too
           // (stairs-steep if it must); the end-attach pass below used to drag it down instead and
           // left a step at the deck.
-          const pinned = (mids.has(farKey) || dead.has(farKey) || (fo && (carEnds.has(farKey) || inner.has(farKey)))) && !w.P;
+          const soft = SOFT_LANDINGS.has(farKey);
+          const pinned = !soft && (mids.has(farKey) || dead.has(farKey) || (fo && (carEnds.has(farKey) || inner.has(farKey)))) && !w.P;
+          // A soft landing does not touch down, but a road crossing the node still rises to meet it.
+          if (soft && !w.P) for (const host of inner.get(farKey) || []) if (host !== w && !host.P) midPush(host, farKey, h - w.len * slope, w);
           if (pinned && h - w.len * slope > w.g[far] - SAG_K) {
             const need = (h - w.g[far] + SAG_K) / w.len;
             const cap = w.rail ? slope * 1.4 : w.cls ? MAX_FORCED : MAX_FORCED_PATH;
@@ -1187,7 +1252,7 @@ function buildNetwork(data, ctx) {
   // Decks, then ramps; then check clearance again against the final profiles (a ramp can pass
   // under a deck) and lift any structure that still comes short.
   let rampStats = null;
-  for (let pass = 0; pass < 2; pass++) {
+  for (let pass = 0; pass < 4; pass++) {
     setPlateaus();
     const a = ramps(ways, RAMP_SLOPE), b = ramps(rails, RAIL_SLOPE);
     rampStats = { forced: a.forced + b.forced, humps: a.humps + b.humps, passes: pass + 1 };
@@ -1233,7 +1298,7 @@ function buildNetwork(data, ctx) {
         const hy = h.ya ? h.ya[sgm.i] + (h.ya[sgm.i + 1] - h.ya[sgm.i]) * segT : groundAt(p[0], p[1]);
         if (!best || d < best.d) best = { d, hy };
       }
-      if (!best) continue;
+      if (!best || SOFT_LANDINGS.has(k)) continue;
       for (const w of movable) {
         const diff = best.hy - yAt(w);
         const n = w.pts.length, end = keyOf(w.pts[0]) === k ? 0 : 1, L = w.cum[n - 1];
@@ -1286,12 +1351,105 @@ function buildNetwork(data, ctx) {
     }
     if (rampStats) rampStats.attached = attached;
   }
+  for (const k of NODE_MEETS) {
+    const hit = [];
+    for (const w of all) {
+      if (w.tunnel || !w.cls) continue;
+      // Nearest vertex within 2.5 u: OSM does not always share the node (a link crossing a deck end).
+      const [kx, kz] = k.split(',').map(Number);
+      let i = -1, bd = 2.5;
+      w.pts.forEach((p, m) => { const d = Math.hypot(p[0] - kx, p[1] - kz); if (d < bd) { bd = d; i = m; } });
+      if (i >= 0) hit.push({ w, i, y: w.ya ? w.ya[i] : w.g[i] });
+    }
+    const top = Math.max(...hit.map((h) => h.y));
+    for (const { w, i, y } of hit) {
+      const d = top - y;
+      if (d < 0.01) continue;
+      if (!w.ya) w.ya = w.g.slice();
+      for (let j = 0; j < w.pts.length; j++) {
+        const u = Math.min(1, Math.abs(w.cum[j] - w.cum[i]) / NODE_FADE);
+        w.ya[j] += d * (1 - u * u * (3 - 2 * u));
+      }
+      w.ys = w.ya.map((v, m) => Math.max(0, v - w.g[m]));
+      if (!w.ys.some((v) => v > 0.05)) { w.ya = null; w.ys = null; }
+    }
+  }
   const yOf = (w, i) => (w.ys ? w.ys[i] : 0);
   const isUp = (w) => !!w.ys && w.ys.some((y) => y > 0.05);
 
+  const cars = ways.filter((w) => w.cls && !w.tunnel);
+  lap('dual carriageways');
+  // ---- dual carriageways: find the opposite-direction twin of each one-way road ----
+  // Highways are paired by road number first (Ayalon North and South are two names for route 20,
+  // Route 1 changes name between its carriageways); unnamed secondary one-ways pair with their
+  // opposite number. Round 8 9.4.
+  const twinKey = (w) => (w.rank >= 8 && w.ref ? 'ref:' + w.ref : w.name || w.ref || (w.rank >= 8 ? w.hw : w.rank >= 6 ? 'hw:' + w.hw : ''));
+  // Residential one-way pairs are twins too (Rothschild / Kikar HaMeyasdim by the Great Synagogue:
+  // two 2-lane one-ways 9-15 u apart drew overlapping carriageways with kerbed sidewalks down the
+  // middle), but only when close: same-named back streets 40-80 u apart are separate streets.
+  const TWIN_RANK = 3, twinReach = (rank) => (rank >= 4 ? 80 : 24);
+  let owGrid;
+  const buildOwGrid = () => {
+    owGrid = new SegGrid(40);
+    for (const w of cars) {
+      if (w.oneway && !w.roundabout && w.tkey && w.rank >= TWIN_RANK) for (let i = 0; i < w.pts.length - 1; i++) owGrid.add(mkSeg(w.pts[i], w.pts[i + 1], { ri: w.idx, tkey: w.tkey, hw: w.hw2 }), 80);
+    }
+  };
+  for (const w of cars) w.tkey = twinKey(w);
+  buildOwGrid();
+  function twinAt(w, x, z, dx, dz, side) {
+    const list = owGrid.at(x, z);
+    if (!list) return null;
+    let best = null;
+    for (const s of list) {
+      if (s.ri === w.idx || s.tkey !== w.tkey || dx * s.ux + dz * s.uz > -0.75) continue;
+      const d = segDist(s, x, z);
+      if (d > twinReach(w.rank)) continue;
+      const qx = s.ax + s.ux * s.len * segT, qz = s.az + s.uz * s.len * segT;
+      if (Math.sign((qx - x) * -dz + (qz - z) * dx) !== side) continue;
+      if (!best || d < best.d) best = { d, hw: s.hw, ri: s.ri };
+    }
+    return best;
+  }
+  for (const w of cars) {
+    w.twinSide = 0;
+    if (!w.oneway || w.roundabout || !w.tkey || w.rank < TWIN_RANK) continue;
+    let n = 0, l = 0, r = 0;
+    const probe = (x, z, dx, dz) => { n++; if (twinAt(w, x, z, dx, dz, -1)) l++; if (twinAt(w, x, z, dx, dz, 1)) r++; };
+    for (const [x, z, dx, dz] of along(w.pts, 12, 6)) probe(x, z, dx, dz);
+    if (!n) {
+      const p = w.pts[0], q = w.pts[w.pts.length - 1], L = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1;
+      probe((p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (q[0] - p[0]) / L, (q[1] - p[1]) / L);
+    }
+    if (Math.max(l, r) >= 0.4 * n) w.twinSide = l >= r ? -1 : 1;
+  }
+
+  // ---- squeeze twin carriageways apart (round 8 9.4) ----
+  // The roads are drawn 1.4x wider than OSM spaces them, so most dual carriageways overlap or touch
+  // and no planted median fits between them (gap measured -2 to -7 u on Herzl, Route 4, Jabotinsky).
+  // Where trimming at most 22% off each carriageway's half width leaves a 2.5 u strip, trim it; the
+  // centre lines (and so every car path) stay exactly where OSM has them.
+  {
+    const MIN_GAP = 2.5, MAX_TRIM = 0.22;
+    const trim = new Map();
+    for (const w of cars) {
+      if (!w.twinSide || w.elevated || w.layer > 0 || w.rank < 4) continue;
+      const gaps = [];
+      for (const [x, z, dx, dz] of along(w.pts, 10, 5)) {
+        const tw = twinAt(w, x, z, dx, dz, w.twinSide);
+        if (tw) gaps.push(tw.d - tw.hw - w.hw2);
+      }
+      if (gaps.length < 2) continue;
+      gaps.sort((p, q) => p - q);
+      const need = MIN_GAP - gaps[Math.floor(gaps.length * 0.25)];
+      if (need > 0 && need / 2 <= MAX_TRIM * w.hw2) trim.set(w, need / 2);
+    }
+    for (const [w, t] of trim) { w.hw2 -= t; w.w = w.hw2 * 2; }
+    if (trim.size) buildOwGrid(); // the median section reads the trimmed half widths from it
+  }
+
   lap('spatial indexes');
   // ---- spatial indexes ----
-  const cars = ways.filter((w) => w.cls && !w.tunnel);
   const cgrid = new SegGrid(25);
   for (const w of cars) for (let i = 0; i < w.pts.length - 1; i++) cgrid.add(mkSeg(w.pts[i], w.pts[i + 1], { ri: w.idx, i, hw: w.hw2, rank: w.rank, h0: yOf(w, i), h1: yOf(w, i + 1) }), w.hw2 + 9);
   const railGrid = new SegGrid(25);
@@ -1343,44 +1501,6 @@ function buildNetwork(data, ctx) {
     return false;
   }
 
-  lap('dual carriageways');
-  // ---- dual carriageways: find the opposite-direction twin of each one-way road ----
-  const twinKey = (w) => w.name || w.ref || (w.rank >= 8 ? w.hw : '');
-  // Residential one-way pairs are twins too (Rothschild / Kikar HaMeyasdim by the Great Synagogue:
-  // two 2-lane one-ways 9-15 u apart drew overlapping carriageways with kerbed sidewalks down the
-  // middle), but only when close: same-named back streets 40-80 u apart are separate streets.
-  const TWIN_RANK = 3, twinReach = (rank) => (rank >= 4 ? 80 : 24);
-  const owGrid = new SegGrid(40);
-  for (const w of cars) {
-    w.tkey = twinKey(w);
-    if (w.oneway && !w.roundabout && w.tkey && w.rank >= TWIN_RANK) for (let i = 0; i < w.pts.length - 1; i++) owGrid.add(mkSeg(w.pts[i], w.pts[i + 1], { ri: w.idx, tkey: w.tkey, hw: w.hw2 }), 80);
-  }
-  function twinAt(w, x, z, dx, dz, side) {
-    const list = owGrid.at(x, z);
-    if (!list) return null;
-    let best = null;
-    for (const s of list) {
-      if (s.ri === w.idx || s.tkey !== w.tkey || dx * s.ux + dz * s.uz > -0.75) continue;
-      const d = segDist(s, x, z);
-      if (d > twinReach(w.rank)) continue;
-      const qx = s.ax + s.ux * s.len * segT, qz = s.az + s.uz * s.len * segT;
-      if (Math.sign((qx - x) * -dz + (qz - z) * dx) !== side) continue;
-      if (!best || d < best.d) best = { d, hw: s.hw };
-    }
-    return best;
-  }
-  for (const w of cars) {
-    w.twinSide = 0;
-    if (!w.oneway || w.roundabout || !w.tkey || w.rank < TWIN_RANK) continue;
-    let n = 0, l = 0, r = 0;
-    const probe = (x, z, dx, dz) => { n++; if (twinAt(w, x, z, dx, dz, -1)) l++; if (twinAt(w, x, z, dx, dz, 1)) r++; };
-    for (const [x, z, dx, dz] of along(w.pts, 12, 6)) probe(x, z, dx, dz);
-    if (!n) {
-      const p = w.pts[0], q = w.pts[w.pts.length - 1], L = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1;
-      probe((p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (q[0] - p[0]) / L, (q[1] - p[1]) / L);
-    }
-    if (Math.max(l, r) >= 0.4 * n) w.twinSide = l >= r ? -1 : 1;
-  }
   // Roundabouts: the island is on the side of the ring's curvature centre.
   for (const w of cars) {
     if (!w.roundabout) continue;
@@ -1471,9 +1591,16 @@ function buildNetwork(data, ctx) {
   const concrete = C(PALETTE.concrete), underside = C(PALETTE.underside), parapetTop = C(PALETTE.parapetTop), pillarC = C(PALETTE.pillar);
   const swTopC = C(PALETTE.sidewalk), kerbSideC = C(PALETTE.kerb), barrierC2 = C(PALETTE.barrier);
   const parapetGaps = []; // { x, z, r }: stair tops on a deck edge
+  const slotFilled = []; // { x, z, r }: slot between twin decks decked over by the owner way
+  const filledAt = (x, z) => slotFilled.some((f) => Math.hypot(x - f.x, z - f.z) < f.r);
+  // The two decks of the Moshe Dayan crossing are drawn by src/world/bridge_moshe_dayan.js; their
+  // walkable surface and road data stay with this file.
+  const mdBridge = createMosheDayanBridge();
   // Deck, walls, parapets and pillars under every raised part of a way.
   function structure(w, hwDeck, lift, parapets = true) {
     if (!isUp(w)) return;
+    const modelled = mdBridge.claims(w);
+    if (modelled) mdBridge.add(w, lift);
     const pts = w.pts, ys = w.ys, n = pts.length, N = vnormals(pts);
     let i = 0;
     while (i < n - 1) {
@@ -1512,13 +1639,17 @@ function buildNetwork(data, ctx) {
         }
         return 0;
       }));
-      absolute(() => {
+      absolute(modelled ? () => {} : () => {
         const shut = (o) => (k) => !o[k] && !o[k + 1];
         const both = (m) => (k) => !!join[m][k] && !!join[m][k + 1];
+        // Segments whose slot this way decks over (it is the lower-indexed of the pair).
+        const ownSeg = [[], []];
         for (const [m, s] of [[0, -1], [1, 1]]) {
           const jn = join[m];
           if (!jn.some((j) => j && j.owner)) continue;
-          const own = (k) => both(m)(k) && jn[k].owner && jn[k + 1].owner && shut(open[m])(k);
+          // One owner end is enough: the owner flag follows whichever carriageway is hit first, and
+          // an end that hit a slip road instead left the slot half decked over and walkers dropped in.
+          const own = (k) => both(m)(k) && (jn[k].owner || jn[k + 1].owner) && shut(open[m])(k);
           const a = rp.map((_, k) => s * (hs(s) - 0.3)), b = rp.map((_, k) => s * (hs(s) + (jn[k] ? jn[k].gap : 0) + 0.3));
           const mid = rp.map((_, k) => s * (hs(s) + (jn[k] ? jn[k].gap / 2 : 0)));
           const lo = (arr1, arr2) => arr1.map((v, k) => Math.min(v, arr2[k])), hi = (arr1, arr2) => arr1.map((v, k) => Math.max(v, arr2[k]));
@@ -1526,6 +1657,12 @@ function buildNetwork(data, ctx) {
           slab(layers.solid, rp, top, mid.map((v) => v - 0.35), mid.map((v) => v + 0.35), top.map((y) => y + 1.0), barrierC2, barrierC2, { N: RN, caps: false, segIf: own });
           for (let k = 0; k < rp.length - 1; k++) {
             if (!own(k)) continue;
+            ownSeg[m][k] = true;
+            // The decked-over slot is walkable up to the barrier (it was only the lanes, so a walker
+            // stepping off one deck's asphalt edge fell through the gap between the decks).
+            const q0 = ep(rp, RN, k, mid[k], 0), q1 = ep(rp, RN, k + 1, mid[k + 1], 0);
+            addDeck([[q0[0], q0[2]], [q1[0], q1[2]]], [ry[k], ry[k + 1]], [ra[k], ra[k + 1]], lift, (Math.abs(b[k] - a[k]) + Math.abs(b[k + 1] - a[k + 1])) / 4 + 0.5); // overlaps both decks: a 0.1 sliver between them dropped a walker
+            slotFilled.push({ x: (q0[0] + q1[0]) / 2, z: (q0[2] + q1[2]) / 2, r: Math.hypot(q1[0] - q0[0], q1[2] - q0[2]) / 2 + 2.5 });
             const pa = ep(rp, RN, k, mid[k] - 0.35, 0), pb = ep(rp, RN, k + 1, mid[k + 1] - 0.35, 0), pc = ep(rp, RN, k + 1, mid[k + 1] + 0.35, 0), pd = ep(rp, RN, k, mid[k] + 0.35, 0);
             colliders.push({ kind: 'wall', height: 1.0, y0: Math.min(top[k], top[k + 1]) - 0.6, y1: Math.max(top[k], top[k + 1]) + 1.0, points: [[pa[0], pa[2]], [pb[0], pb[2]], [pc[0], pc[2]], [pd[0], pd[2]]] });
           }
@@ -1539,7 +1676,67 @@ function buildNetwork(data, ctx) {
           return !parapetGaps.some((g) => Math.hypot(x - g.x, z - g.z) < g.r);
         };
         if (parapets) {
-          [-1, 1].forEach((s, m) => slab(layers.solid, rp, top, s * (hs(s) - 0.5), s * hs(s), top.map((y) => y + 1.1), parapetTop, concrete, { N: RN, caps: false, segIf: (k) => shut(open[m])(k) && !both(m)(k) && gap(k, s) && gap(k + 1, s) }));
+          [-1, 1].forEach((s, m) => {
+            // A segment is cut when a stair top lies on it (the old test looked at the two ends
+            // only, so a stair in the middle of a 12 u segment had a parapet across it).
+            const hasCut = (k) => {
+              const A = ep(rp, RN, k, s * hs(s), 0), B = ep(rp, RN, k + 1, s * hs(s), 0), L2 = (B[0] - A[0]) ** 2 + (B[2] - A[2]) ** 2 || 1;
+              return parapetGaps.some((g) => {
+                const t = Math.max(0, Math.min(1, ((g.x - A[0]) * (B[0] - A[0]) + (g.z - A[2]) * (B[2] - A[2])) / L2));
+                return Math.hypot(A[0] + (B[0] - A[0]) * t - g.x, A[2] + (B[2] - A[2]) * t - g.z) < 3.5;
+              });
+            };
+            // An edge facing a twin deck is bare only where the owner decked the slot over; anywhere
+            // else it keeps its parapet (the old test dropped it wherever a twin was near, owner or not).
+            const edgeShut = (k) => {
+              if (!shut(open[m])(k)) return false;
+              if (!both(m)(k)) return true;
+              if (ownSeg[m][k]) return false;
+              const A = ep(rp, RN, k, s * hs(s), 0), B = ep(rp, RN, k + 1, s * hs(s), 0);
+              return !filledAt((A[0] + B[0]) / 2, (A[2] + B[2]) / 2);
+            };
+            const drawn = (k) => edgeShut(k) && gap(k, s) && gap(k + 1, s) && !hasCut(k);
+            slab(layers.solid, rp, top, s * (hs(s) - 0.5), s * hs(s), top.map((y) => y + 1.1), parapetTop, concrete, { N: RN, caps: false, segIf: drawn });
+            // The parapet is solid for walkers on a free-standing deck: it used to be only drawn,
+            // so anyone walking at the edge of the Moshe Dayan bridge dropped 11 u to the road.
+            // Tall (jump-proof) and only for movers at deck height, so nothing below is blocked.
+            const wallPiece = (k, t0, t1) => {
+              const lerpY = (t) => top[k] + (top[k + 1] - top[k]) * t;
+              const P0 = (o, t) => { const u = ep(rp, RN, k, o, 0), v = ep(rp, RN, k + 1, o, 0); return [u[0] + (v[0] - u[0]) * t, u[2] + (v[2] - u[2]) * t]; };
+              const a = P0(s * (hs(s) - 0.5), t0), b = P0(s * (hs(s) - 0.5), t1), b2 = P0(s * hs(s), t1), a2 = P0(s * hs(s), t0);
+              colliders.push({ kind: 'wall', height: 2.2, y0: Math.min(lerpY(t0), lerpY(t1)) - 0.6, y1: Math.max(lerpY(t0), lerpY(t1)) + 2.2, points: [a, b, b2, a2] });
+            };
+            for (let k = 0; k < rp.length - 1; k++) {
+              if ((ry[k] + ry[k + 1]) / 2 < DECK * 0.7) continue;
+              if (drawn(k)) { wallPiece(k, 0, 1); continue; }
+              if (!edgeShut(k)) continue;
+              // A segment cut for a stair top: the stair is 3.7 wide but the cut is a whole
+              // segment (up to 12 u), so walkers dropped off the deck beside the stair. The rest
+              // of the segment gets its parapet back, and is solid.
+              const A = ep(rp, RN, k, s * hs(s), 0), B = ep(rp, RN, k + 1, s * hs(s), 0), L = Math.hypot(B[0] - A[0], B[2] - A[2]) || 1;
+              const cuts = [];
+              for (const g of parapetGaps) {
+                const t = ((g.x - A[0]) * (B[0] - A[0]) + (g.z - A[2]) * (B[2] - A[2])) / (L * L);
+                const dx = A[0] + (B[0] - A[0]) * Math.max(0, Math.min(1, t)) - g.x, dz = A[2] + (B[2] - A[2]) * Math.max(0, Math.min(1, t)) - g.z;
+                if (Math.hypot(dx, dz) > 3.5) continue;
+                const hw = (STAIR_W / 2 + 0.3) / L;
+                cuts.push([Math.max(0, t - hw), Math.min(1, t + hw)]);
+              }
+              cuts.sort((p, q) => p[0] - q[0]);
+              let at = 0;
+              const keep = [];
+              for (const [c0, c1] of cuts) { if (c0 > at) keep.push([at, c0]); at = Math.max(at, c1); }
+              if (at < 1) keep.push([at, 1]);
+              for (const [t0, t1] of keep) {
+                if ((t1 - t0) * L < 0.3) continue;
+                wallPiece(k, t0, t1);
+                const yA = top[k] + (top[k + 1] - top[k]) * t0, yB = top[k] + (top[k + 1] - top[k]) * t1;
+                const q0 = ep(rp, RN, k, 0, 0), q1 = ep(rp, RN, k + 1, 0, 0);
+                const pt = (t) => [q0[0] + (q1[0] - q0[0]) * t, q0[2] + (q1[2] - q0[2]) * t];
+                slab(layers.solid, [pt(t0), pt(t1)], [yA, yB], s * (hs(s) - 0.5), s * hs(s), [yA + 1.1, yB + 1.1], parapetTop, concrete, { N: [RN[k], RN[k + 1]], caps: false });
+              }
+            }
+          });
         }
         // Deck sidewalks: kerbed slab from the lane edge to the parapet, walkable at kerb height.
         [-1, 1].forEach((s, m) => {
@@ -1867,13 +2064,24 @@ function buildNetwork(data, ctx) {
       for (const s of [-1, 1]) slab(layers.solid, w.pts, y, s * (w.hw2 + 0.1), s * (w.hw2 + 0.6), y + 1.1, parapetTop, concrete, { N });
     }
   }
+  // The modelled Moshe Dayan bridge: needs both decks and the stair gaps, so it comes last.
+  if (mdBridge.complete) {
+    absolute(() => {
+      prof.mosheDayanBridge = mdBridge.emit({
+        at: (x, z) => layers.solid.at(x, z), groundAt, colliders, gaps: parapetGaps, stairW: STAIR_W,
+        // Anything a pier or an abutment must keep off: ground-level roads, rails, paths, platforms.
+        blocked: (x, z, m) => inCarriage(x, z, -1, 0, 0, 0, 1, m + 1.0, 4) || inRail(x, z, 0, BALLAST_HW + m + 1) || platformAt(x, z) != null
+          || (pgrid.at(x, z) || []).some((s) => !(s.w.ys && Math.min(...s.w.ys) > 4) && segDist(s, x, z) <= s.w.hw2 + 1.6 + m),
+      });
+    });
+  }
 
   lap('lane markings');
   // ---- lane markings ----
   const markW = 0.32;
   function lineSet(w) {
     const c = w.cls;
-    if (!c || (w.rank < 4 && !c.link)) return []; // residential and smaller streets stay unpainted
+    if (!c || (w.rank < 4 && !c.link && (w.oneway || w.rank < 3))) return []; // one-way residential streets and smaller ways stay unpainted
     const out = [], n = w.lanes;
     const dash = w.rank >= 8 || w.hw === 'motorway_link' ? [5, 8] : [3, 4.5];
     if (w.oneway) {
@@ -1885,7 +2093,7 @@ function buildNetwork(data, ctx) {
     } else {
       const m = w.median / 2, per = Math.max(1, Math.floor(n / 2));
       if (m > 0) out.push({ off: m + 0.4, color: WHITE }, { off: -(m + 0.4), color: WHITE });
-      else if (w.rank >= 6) out.push({ off: 0.3, color: WHITE }, { off: -0.3, color: WHITE });
+      else if (w.rank >= 6 || w.rank === 3) out.push({ off: 0.3, color: WHITE }, { off: -0.3, color: WHITE });
       else out.push({ off: 0, dash: [3, 4.5], color: WHITE });
       for (let k = 1; k < per; k++) out.push({ off: m + k * LANE, dash, color: WHITE }, { off: -(m + k * LANE), dash, color: WHITE });
     }
@@ -1959,20 +2167,26 @@ function buildNetwork(data, ctx) {
       }
     }
   }
-  // ---- street-name signs (Neve Yam) ----
+  // ---- street-name signs ----
   // A municipal name sign at each corner where a named street leaves a junction, on its right
-  // side and facing along it, showing the OSM local name (and the English one small). Only the
-  // Neve Yam area for now (founder, round 5: organise Neve Yam's gem streets); STREET_SIGN_AREA.
+  // side and facing along it, showing the OSM local name (and the English one small). Whole city:
+  // every ground-level named street from living_street up to primary/trunk, except motorways and
+  // names that are only a road number ("431").
   const streetSigns = [];
   {
-    const [ax0, az0, ax1, az1] = STREET_SIGN_AREA;
-    const placed = [];
+    const placed = new Map();
+    const nearPlaced = (x, z) => {
+      const cx = Math.floor(x / 16), cz = Math.floor(z / 16);
+      for (let i = -1; i <= 1; i++) for (let k = -1; k <= 1; k++) {
+        for (const p of placed.get((cx + i) + ',' + (cz + k)) || []) if (Math.hypot(p[0] - x, p[1] - z) < 8) return true;
+      }
+      return false;
+    };
     for (const j of junctions) {
-      if (j.x < ax0 || j.x > ax1 || j.z < az0 || j.z > az1) continue;
       const seen = new Set();
       for (const arm of j.arms) {
         const w = arm.w;
-        if (!w.name || w.rank < 2 || w.rank > 6 || isUp(w) || seen.has(w.name)) continue;
+        if (!w.name || w.rank < 2 || w.rank > 8 || /^[\d\s-]+$/.test(w.name) || isUp(w) || seen.has(w.name)) continue;
         const others = j.arms.filter((a) => a.w.name !== w.name);
         if (!others.length) continue;
         seen.add(w.name);
@@ -1982,8 +2196,10 @@ function buildNetwork(data, ctx) {
         // Right-hand corner as seen walking out of the junction along the arm.
         const off = w.hw2 + (w.rank >= 3 ? SW * 0.7 : 1.6);
         const x = at.x - at.dz * off, z = at.z + at.dx * off;
-        if (inBuilding(x, z) || inCarriage(x, z, w.idx, 0, 0, 0, 1, 0.8) || placed.some((p) => Math.hypot(p[0] - x, p[1] - z) < 8)) continue;
-        placed.push([x, z]);
+        if (inBuilding(x, z) || inCarriage(x, z, w.idx, 0, 0, 0, 1, 0.8) || nearPlaced(x, z)) continue;
+        const pk = Math.floor(x / 16) + ',' + Math.floor(z / 16);
+        if (!placed.has(pk)) placed.set(pk, []);
+        placed.get(pk).push([x, z]);
         streetSigns.push({ x, z, rot: Math.atan2(-at.dz, at.dx), name: w.name, nameEn: w.nameEn || '' });
       }
     }
@@ -2167,9 +2383,119 @@ function buildNetwork(data, ctx) {
     }
   }
 
+  lap('centre dividers');
+  // ---- centre dividers (round 8, road bugs) ----
+  // Every two-way road and every dual carriageway keeps its directions apart:
+  //  - a two-way way on a bridge or ramp (raised more than 0.3 u) gets a New Jersey barrier down its
+  //    centre line, solid for walkers and drivers at deck level;
+  //  - twin one-way decks whose asphalt touches get the same barrier on the line midway between their
+  //    centre lines (structure() only fills a slot between decks that is not asphalt);
+  //  - twin one-way roads at grade that overlap too much for a planted median get a barrier there;
+  //  - two-way streets of tertiary rank and up at grade without a planted median get a low kerbed strip
+  //    (smaller streets keep a painted double line, see lineSet).
+  // Nothing is drawn across a junction mouth or a driveway: a divider stops where another
+  // carriageway covers its line.
+  const DIV_HW = 0.4, DIV_H = 1.0, DIV_KERB = 0.2, DIV_STEP = 3;
+  const deckTwinAt = (w, x, z, dx, dz, h, side) => {
+    const list = cgrid.at(x, z);
+    if (!list) return null;
+    let best = null;
+    for (const s of list) {
+      if (s.ri === w.idx || s.rank < 3 || dx * s.ux + dz * s.uz > -0.75) continue;
+      const d = segDist(s, x, z);
+      if (d > w.hw2 + s.hw + 0.3) continue;
+      if (Math.abs(s.h0 + (s.h1 - s.h0) * segT - h) > 2.5) continue;
+      const qx = s.ax + s.ux * s.len * segT, qz = s.az + s.uz * s.len * segT;
+      if (Math.sign((qx - x) * -dz + (qz - z) * dx) !== side) continue;
+      if (!best || d < best.d) best = { d, hw: s.hw, ri: s.ri };
+    }
+    return best;
+  };
+  const divStats = { walks: 0, up: 0, barrier: 0, kerb: 0, twoway: 0 };
+  const placeDivider = (pts, ys, raised, ground) => {
+    if (pts.length < 2 || polylineLength(pts) < 4) return;
+    divStats[raised ? 'up' : ground]++;
+    const N = vnormals(pts);
+    if (raised) {
+      absolute(() => slab(layers.solid, pts, ys.map((y) => y - 0.05), -DIV_HW, DIV_HW, ys.map((y) => y + DIV_H), barrierC, barrierC, { N }));
+      for (let k = 0; k < pts.length - 1; k++) {
+        const pa = ep(pts, N, k, -DIV_HW, 0), pb = ep(pts, N, k + 1, -DIV_HW, 0), pc = ep(pts, N, k + 1, DIV_HW, 0), pd = ep(pts, N, k, DIV_HW, 0);
+        colliders.push({ kind: 'wall', height: DIV_H, y0: Math.min(ys[k], ys[k + 1]) - 0.6, y1: Math.max(ys[k], ys[k + 1]) + DIV_H, points: [[pa[0], pa[2]], [pb[0], pb[2]], [pc[0], pc[2]], [pd[0], pd[2]]] });
+      }
+    } else if (ground === 'barrier') {
+      slab(layers.solid, pts, Y.road, -DIV_HW, DIV_HW, Y.road + 0.9, barrierC, barrierC, { N });
+    } else {
+      slab(layers.solid, pts, Y.road, -0.35, 0.35, Y.road + DIV_KERB, barrierC, kerbC, { N });
+    }
+  };
+  // Samples a way every DIV_STEP u; `at(x, z, dx, dz, h, i, t)` returns the offset of the divider
+  // line from the way's centre line and its mode, or null where there is none.
+  const dividerWalk = (w, at) => {
+    divStats.walks++;
+    let rp = [], ry = [], mode = null;
+    const flush = () => {
+      if (rp.length >= 2) {
+        const N = vnormals(rp);
+        placeDivider(rp.map((p, k) => [p[0] + N[k][0] * p[2], p[1] + N[k][1] * p[2]]), ry, mode === 'up', mode);
+      }
+      rp = []; ry = []; mode = null;
+    };
+    for (const [x, z, dx, dz, i, t] of along(w.pts, DIV_STEP, 0)) {
+      const h = yOf(w, i) + (yOf(w, i + 1) - yOf(w, i)) * t;
+      const r = at(x, z, dx, dz, h, i, t);
+      if (!r || (mode && r.mode !== mode)) flush();
+      if (!r) continue;
+      mode = r.mode;
+      rp.push([x, z, r.off]);
+      ry.push(w.ya ? w.ya[i] + (w.ya[i + 1] - w.ya[i]) * t + roadY(w.rank) : 0);
+    }
+    flush();
+  };
+  for (const w of cars) {
+    if (w.roundabout || w.cls.link || w.rank < 3) continue;
+    if (!w.oneway) {
+      divStats.twoway++;
+      dividerWalk(w, (x, z, dx, dz, h) => {
+        if (h > 0.3) return inCarriage(x, z, w.idx, h, dx, dz, 1, 1.2) ? null : { off: 0, mode: 'up' };
+        if (w.median > 0 || w.rank < 5) return null;
+        if (inCarriage(x, z, w.idx, 0, dx, dz, 1, 1.2) || nearJunction(x, z, w.idx, 1) || inCut(x, z) || inRail(x, z, 0, BALLAST_HW + 1)) return null;
+        return { off: 0, mode: 'kerb' };
+      });
+    } else if (isUp(w)) {
+      // Twin decks whose asphalt touches: the lower-indexed one draws the barrier between them.
+      for (const s of [-1, 1]) {
+        dividerWalk(w, (x, z, dx, dz, h) => {
+          if (h <= 0.3) return null;
+          const tw = deckTwinAt(w, x, z, dx, dz, h, s);
+          if (!tw || w.idx > tw.ri) return null;
+          const off = s * Math.max(0.1, (w.hw2 - tw.hw + tw.d) / 2), mx = x - dz * off, mz = z + dx * off;
+          if (inCarriage(mx, mz, w.idx, h, dx, dz, 1, 0.5)) return null;
+          return { off, mode: 'up' };
+        });
+      }
+    }
+  }
+  if (rampStats) rampStats.dividers = divStats;
+  // Twin one-way roads at grade where the planted median does not fit: a barrier on the line midway.
+  for (const w of cars) {
+    if (!w.twinSide || w.roundabout) continue;
+    const s = w.twinSide;
+    dividerWalk(w, (x, z, dx, dz, h) => {
+      if (h > 0.3) return null;
+      const tw = twinAt(w, x, z, dx, dz, s);
+      if (!tw || w.idx > tw.ri) return null;
+      const inner = w.hw2, outer = (w.hw2 + tw.d - tw.hw) / 2;
+      if (outer - inner >= 1) return null; // a planted median is drawn here
+      const off = s * (tw.d / 2), mx = x - dz * off, mz = z + dx * off;
+      if (inCarriage(mx, mz, w.idx, 0, dx, dz, 2, 0.5) || nearJunction(mx, mz, w.idx, 1) || inCut(mx, mz) || inRail(mx, mz, 0, BALLAST_HW + 1)) return null;
+      return { off, mode: 'barrier' };
+    });
+  }
+
   lap('roundabout islands');
   const flowerA = C(0xe0567a), flowerB = C(0xf2c14e), flowerC = C(0xb16fd8), moundC = C(0x6fb84f), splitC = C(0xcfd1c9);
   // ---- roundabout islands ----
+  const rings = [];
   {
     const groups = new Map(), parent = new Map();
     const find = (k) => { while (parent.get(k) !== k) k = parent.get(k); return k; };
@@ -2195,6 +2521,7 @@ function buildNetwork(data, ctx) {
       for (let i = 1; i < angs.length; i++) gap = Math.max(gap, angs[i] - angs[i - 1]);
       if (gap > 2.1) continue; // not a closed ring
       const rad = pts.reduce((s, p) => s + Math.hypot(p[0] - cx, p[1] - cz), 0) / pts.length;
+      rings.push({ x: cx, z: cz, r: rad + Math.max(...g.map((w) => w.hw2)) }); // outer edge, for traffic lights
       const ri = rad - Math.max(...g.map((w) => w.hw2)) - 0.3;
       if (ri < 1.2) continue;
       const circle = [];
@@ -2402,12 +2729,30 @@ function buildNetwork(data, ctx) {
       if (r < bestR) { bestR = r; best = h; }
     }
     // Nothing underfoot within reach (falling, or a query from above): the highest surface below.
+    // A walker high on a structure first climbs a ledge a little above its feet: where two decks of
+    // one bridge meet 0.6-1.2 u apart (a slip road peeling off a deck, Sderot Tashah), the lower
+    // deck ended at a bare edge and the walker dropped 17 u past the higher one.
+    if (bestR === Infinity && y > g + 3) {
+      let ledge = Infinity;
+      for (const [id, h] of nearH) if (h > y + STEP_UP && h <= y + LEDGE_MAX && h < ledge) ledge = h;
+      if (ledge < Infinity) return ledge;
+    }
     return bestR === Infinity ? top : Math.max(best, g);
   }
 
   const onCarriage = (x, z, margin = 0) => inCarriage(x, z, -1, 0, 0, 0, 1, margin) || inRail(x, z, 0, BALLAST_HW + margin);
   lap(null);
-  return { roads, sidewalks, busStops, medians, crossings, heightAt, onCarriage, cars, junctions: junctions.length, rampStats, prof, platformAt, stationStairs, platformHandled, sidePlatforms, streetSigns };
+  // Ground-level junctions for dressing.js (traffic lights): every arm with its unit direction away
+  // from the node, half width and rank. Includes a side street ending on the middle of a main road.
+  const junctionNodes = junctions.map((j) => ({
+    x: j.x, z: j.z,
+    arms: j.arms.map((a) => {
+      const at = walkFrom(a.w.pts, a.seg, a.t, a.dir, 4);
+      const l = at ? Math.hypot(at.x - j.x, at.z - j.z) : 0;
+      return l > 0.5 ? { ax: (at.x - j.x) / l, az: (at.z - j.z) / l, hw: a.w.hw2, rank: a.w.rank, link: !!(a.w.cls && a.w.cls.link) } : null;
+    }).filter(Boolean),
+  })).filter((j) => j.arms.length >= 3);
+  return { roads, sidewalks, busStops, medians, crossings, heightAt, onCarriage, cars, junctions: junctions.length, junctionNodes, rings, rampStats, prof, platformAt, stationStairs, platformHandled, sidePlatforms, streetSigns };
 }
 
 // ---------- rail trench along the Ayalon (cut defined by terrain.js) ----------
@@ -3005,6 +3350,8 @@ export async function buildCity(scene, { exclude = [] } = {}) {
     signals: (data.signals || []).map(([kind, x, z]) => ({ kind, x, z })),
     // Street-name signs placed at junction corners: { x, z, rot, name (OSM local), nameEn }.
     streetSigns: net.streetSigns,
+    // Ground-level junction nodes and roundabout rings (outer radius) for traffic-light placement.
+    junctionNodes: net.junctionNodes, rings: net.rings,
     // Walkable footbridges (OSM bridge footways, paths, cycleways and steps that stand above the
     // ground): { kind, points: [[x, z]], surface: [y] walkable top per point, width, layer,
     // overWater (over water city.js draws), arch (short bridge over something a landmark draws,

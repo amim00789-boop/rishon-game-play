@@ -1,0 +1,76 @@
+{
+  "id": "sm09_key",
+  "act": 5,
+  "mode": "hero",
+  "requires": [
+    "sm08_practice"
+  ],
+  "giver": "mayor",
+  "npcs": {
+    "mayor": {
+      "archetype": "mayor",
+      "fallback": "office_worker",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": 21.6,
+        "dz": -33.8
+      }
+    },
+    "noa": {
+      "archetype": "noa",
+      "fallback": "secular_woman",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": 28,
+        "dz": -30
+      }
+    },
+    "savta": {
+      "archetype": "savta",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": -2,
+        "dz": -12
+      }
+    }
+  },
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "savta",
+      "obj": "obj.savta",
+      "dialogue": "d.savta"
+    },
+    {
+      "type": "choice",
+      "npc": "mayor",
+      "obj": "obj.mayor",
+      "dialogue": "d.mayor",
+      "options": [
+        {
+          "text": "c.reveal",
+          "reply": "d.rReveal",
+          "effects": {
+            "rel": {
+              "noa": 1,
+              "rachel": 1
+            },
+            "heroFlag": "revealed"
+          }
+        },
+        {
+          "text": "c.stay",
+          "reply": "d.rStay",
+          "effects": {
+            "rel": {
+              "noa": -1
+            },
+            "heroFlag": "stays_secret"
+          }
+        }
+      ]
+    }
+  ],
+  "after": "page"
+}

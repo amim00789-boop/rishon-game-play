@@ -17,17 +17,17 @@
     "alex": {
       "archetype": "hipster",
       "at": {
-        "poi": "gan_hair",
-        "dx": 22,
-        "dz": 10
+        "poi": "city_hall_plaza",
+        "dx": 11,
+        "dz": -9
       }
     },
     "avi": {
       "archetype": "dati_leumi_man",
       "at": {
-        "poi": "gan_hair",
-        "dx": -22,
-        "dz": 10
+        "poi": "city_hall_plaza",
+        "dx": 24,
+        "dz": -9
       }
     },
     "shiri": {

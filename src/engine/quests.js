@@ -12,6 +12,7 @@
 //   barter  - trade items along a chain of neighbours until the goal item is in the bag
 //   minigame- hand over to a mini-game module (rhythm, race, photo...); stubbed until it exists
 //   deduce  - read the clues, mark the spot on the big map (decoys cross out), then go there
+// A talk or choice step with `auto: true` starts by itself when the player gets close (no F).
 // Timed and drive steps can carry roadside `events` (a scene with a choice on the way).
 // V2 story: options, steps and quests carry `effects` (City Scale, sector trust, flags), and
 // steps and NPCs carry `if` conditions on them; a choice without `good` options has no wrong
@@ -25,17 +26,25 @@ import { PropStage } from './questprops.js';
 import { t as tr, register, i18n, dir, poiName, placeName, rich } from '../i18n.js';
 
 const TALK_R = 10;      // world units; avatars are ~5 u tall, so this is a couple of body lengths
+const TALK_R_VEHICLE = 20; // a car stops on the road, not at the pavement where the step's character stands
 const PICK_R = 6;
 const REVEAL_R = 55;    // a `find` item only shows itself this close
 const NPC_ACTIVE_R = 260;
 const NPC_VISIBLE_R = 520;
+const NOT_DRIVABLE = /footway|path|cycleway|steps|pedestrian|sidewalk|corridor|track|service|construction/i;
 const GATHER_TELEPORT_R = 150; // gathered NPCs further than this appear at the host instead of walking
+const GATHER_TIMEOUT = 14;     // seconds a gathering walker gets before it is placed at its spot
+const PARKED_NEAR_R = 30;      // a drive-step passenger gets out when the car stands this close to a drop it cannot reach
+const PARKED_NEAR_S = 6;
 const SCOOTER_SPEED = 22;      // vehicles.js cruise speed, the reference for delivery time limits
 const SAVE_KEY = 'rishon.quests.v1';
 // Quest ids that changed, so an old save keeps its progress. The wedding was a late side quest
 // (q6) whose cast outranked every main-story copy of Avi, Savta and Moshiko once unlocked early;
 // as m05b it sits in the main list right after the drive that brings the bride.
 const RENAMED = { q6_wedding: 'm05b_wedding' };
+// The founder cut m19_tour (the mayor's errands tour) on 2026-10-23. A save that lists it as done
+// drops it (every id not in the story is filtered below); m20 now follows m18, and nothing is
+// persisted for an open quest, so no save can be stuck inside it.
 const JUMP_R = 300;
 const LEAVE_R = 160;
 const INTRO_RIDE_R = 400;       // further than this from the first giver, the opening ends with a ride there            // a character moving on walks off visibly when the player is this close             // a pickup further than this from the player is reached by a jump
@@ -393,8 +402,11 @@ export class QuestSystem {
       resolve: (at) => this.resolve(at),
       npcAt: (id) => { const q = this.byId[this.props && this.props.ctx]; return q ? this.npc(q, id) : this.current(id); },
       avatarOf: (id) => (id === 'player' ? this.playerAv : (this.npcAt(id) || {}).av || null),
+      solid: (points) => collision.addPolygon({ points, kind: 'stage' }),
     });
     this.refreshScene();
+    // Finished quests that seated a crowd: the chairs exist only now, so sit them down again.
+    for (const q of this.quests) if (this.state.done.includes(q.id) && !q.dismantle) for (const s of q.steps) if (s.gather && s.seat) this.gatherTo(q, s.npc, s.gather, false, s.seat);
     this.lastPlayer = { x: spawn.x, z: spawn.z };
     this.refreshHud();
   }
@@ -553,6 +565,12 @@ export class QuestSystem {
     try { const h = this.surface(x, z, y); return Number.isFinite(h) ? h : 0; } catch (_) { return 0; }
   }
 
+  // Where a character's feet go: the ground, or the top of a stage prop when it stands on one.
+  standY(x, z, y = Infinity) {
+    const g = this.groundY(x, z, y), t = this.props ? this.props.surfaceAt(x, z) : null;
+    return t != null ? Math.max(g, t) : g;
+  }
+
   // Locations are a landmark POI, a neighbourhood place or lat/lon, plus an offset in world units,
   // never raw x/z: the world scale changes and a hardcoded spot would drift. `busStop` / `lot` /
   // `shop` pick the nearest such world feature to that anchor when the world has it, and fall back
@@ -576,14 +594,20 @@ export class QuestSystem {
     if (at.busStop) return nearestOf(this.world.busStops) || base;
     if (at.lot) return nearestOf(this.world.lots, (l) => l.stalls?.[0] || l.centre || null) || base;
     if (at.shop) return nearestOf(this.world.shops.filter((s) => s.shop === at.shop || s.amenity === at.shop)) || base;
+    // `street` snaps to the nearest street or footpath (a person on the pavement); `road` to the
+    // nearest street a car can drive (a drop-off: a fenced lot or a building footprint next to
+    // the anchor is never reachable by car, so the ride would never end).
+    if (at.road) return this.streetSpot(base.x, base.z, true);
+    if (at.street) return this.streetSpot(base.x, base.z);
     return base;
   }
 
   // A free spot can still sit in a closed courtyard the player cannot enter, so pickups snap to
   // the nearest street first (roads have no colliders, so a street point is always reachable).
-  streetSpot(x, z) {
+  streetSpot(x, z, drivable = false) {
     let best = Infinity, bx = x, bz = z;
     for (const r of this.roads) {
+      if (drivable && NOT_DRIVABLE.test(r.kind || '')) continue;
       const p = r.points;
       for (let i = 0; i < p.length - 1; i++) {
         const ax = p[i][0], az = p[i][1], vx = p[i + 1][0] - ax, vz = p[i + 1][1] - az;
@@ -606,18 +630,43 @@ export class QuestSystem {
 
   available() {
     if (this.state.active) return [];
-    return this.quests.filter((q) => !this.state.done.includes(q.id) && this.unlocked(q));
+    return this.quests.filter((q) => !this.state.done.includes(q.id) && this.unlocked(q) && this.inMode(q));
+  }
+
+  // Two story modes (docs/SUPER_MALUL.md): the regular Rishoni's story, and Malul in his Super
+  // Malul suit (quests marked `mode: "hero"`). Each is offered only in its own mode.
+  inMode(q) { return (q.mode === 'hero') === !!this.heroMode; }
+
+  // Switch the story mode. The running quest of the mode being left is parked and picked up again
+  // (from the start of its current step) when the player switches back.
+  setHeroMode(on) {
+    on = !!on;
+    if (on === !!this.heroMode) return;
+    this.endMinigame(); this.clearStepObjs(); this.dropCarry();
+    const a = this.state.active;
+    this._parked ||= {};
+    this._parked[this.heroMode ? 'hero' : 'main'] = a ? { id: a.id, step: Math.max(0, a.step) } : null;
+    this.state.active = null;
+    this.heroMode = on;
+    const p = this._parked[on ? 'hero' : 'main'];
+    if (p && this.byId[p.id]) { this.state.active = { id: p.id, step: p.step - 1 }; this.nextStep(); }
+    this.refreshHud();
   }
 
   // The instance a character currently lives as: the latest quest that declares it and is
   // unlocked, else its first appearance.
   // `unlockOnly` characters (the Heckler) do not exist before their quest opens.
   current(char) {
+    // The quest being played, or the next one offered, owns its characters even when a later-listed
+    // side quest is also unlocked (they would otherwise hide the giver: Moshiko of sm01 vs q1).
+    const pref = this._prefer && this._prefer.get(char);
+    if (pref && !(pref.cond && !this.test(pref.cond))) return pref;
     let best = null;
     for (const n of Object.values(this.npcs)) {
       if (n.id !== char) continue;
       if (n.activity) { if (this.activityOn(n.activity)) return n; continue; }
       if (n.unlockOnly && !this.unlocked(this.byId[n.quest])) continue;
+      if (this.byId[n.quest] && this.byId[n.quest].mode === 'hero' && !this.heroMode) continue; // the hero story's cast stays out of the regular story
       if (n.cond && !this.test(n.cond)) continue;
       if (!best) { best = n; continue; }
       const ok = this.unlocked(this.byId[n.quest]);
@@ -783,12 +832,17 @@ export class QuestSystem {
       const toCur = cur ? Math.hypot(cur.x - prev.x, cur.z - prev.z) : Infinity;
       if (!prev.leaving) {
         if (d > LEAVE_R) { this._showing[id] = cur; if (cur) shown.add(cur); continue; }
+        // `stay` characters (the band on the cliff lookout's benches) do not walk off when the
+        // story moves on: a walk-off is a straight line away from the player, which on a cliff top
+        // is over the edge and into the road. They stay until the player is out of range (or walks
+        // up to the next copy), and then the crowd's own regulars take the benches.
+        if (prev.def.stay && !(cur && Math.hypot(px - cur.x, pz - cur.z) < 25)) { shown.add(prev); continue; }
         prev.leaving = { at: this.time, join: toCur < 150 };
         let dst;
         if (prev.leaving.join) dst = { x: cur.x, z: cur.z };
         else { const k = 60 / Math.max(1, d); dst = { x: prev.x + (prev.x - px) * k, z: prev.z + (prev.z - pz) * k }; }
         prev.target = this.collision.findFree(dst.x, dst.z, 1.6);
-        prev.path = null; prev.escortSpeed = 0;
+        prev.path = null; prev.escortSpeed = 0; prev.sit = null; prev.sitting = false;
       }
       const arrived = !prev.target;
       // The new copy also takes over when the player walks up to its spot (they want to talk).
@@ -838,6 +892,8 @@ export class QuestSystem {
         const keep = new Set((q.leave || []).map((a) => `${q.id}:${a.id || a.show}`));
         for (const a of q.scene || []) { const id = `${q.id}:${a.id || a.show}`; if (!keep.has(id) && this.props.has(id)) this.props.apply({ remove: id }, q.id); }
         if (!q._left) { q._left = true; this.propActs(q, q.leave); }
+        // props another quest left behind (the flag tables on the plaza) go when this one is done
+        for (const id of q.clear || []) if (this.props.has(id)) this.props.apply({ remove: id }, q.id);
       } else if (this.unlocked(q) && !q._staged) {
         q._staged = true;
         this.propActs(q, q.scene);
@@ -857,6 +913,8 @@ export class QuestSystem {
   // effects: { scale: +2, trust: { haredi: +1 }, flag: "gen_to=yeshiva" | ["a", "b=c"] }
   applyEffects(e, source = '') {
     if (!e) return;
+    // Super Malul story bonds (src/engine/herostory.js): `rel` (bond changes) and `heroFlag` go there.
+    if ((e.rel || e.heroFlag) && this.heroLedger) this.heroLedger.apply({ rel: e.rel, flag: e.heroFlag });
     if (typeof e.scale === 'number' && e.scale && !this.test('scale_seen')) {
       // First choice that moves the City Scale: reveal the meter and say what it is.
       this.applyEffects({ flag: 'scale_seen' });
@@ -890,6 +948,7 @@ export class QuestSystem {
     if (Array.isArray(c)) return c.every((x) => this.test(x));
     const s = String(c).trim();
     if (s.startsWith('!')) return !this.test(s.slice(1));
+    if (/^rel\.\w+/.test(s)) return this.heroLedger ? this.heroLedger.test(s) : false;
     const L = this.ledger;
     const m = /^(scale|trust\.\w+)\s*(>=|<=|>|<|==)\s*(-?\d+)$/.exec(s);
     if (m) {
@@ -1056,7 +1115,7 @@ export class QuestSystem {
       a.drop = this.resolve(s.at, qi);
       this.addBeam(a.drop, 0x2ec4b6);
     } else if (s.type === 'talk' && s.gather) {
-      this.gatherTo(q, s.npc, s.gather, true);
+      this.gatherTo(q, s.npc, s.gather, true, s.seat);
     }
     this.refreshHud();
   }
@@ -1090,18 +1149,55 @@ export class QuestSystem {
 
   // Bring characters next to a host. Far ones (another district) appear there at once instead
   // of a long walk across the city; near ones walk over.
-  gatherTo(q, hostId, ids, walk) {
+  // `seatId` names a chair_rows prop of the quest (or of another one, `quest:id`): the gathered
+  // characters take its chairs, front row and centre first, and the ones left over stand in a
+  // line just behind the last row.
+  gatherTo(q, hostId, ids, walk, seatId = null) {
     const host = this.npc(q, hostId);
     if (!host) return;
+    const placed = [];
+    const rowsId = seatId && this.props ? (seatId.includes(':') ? seatId : `${q.id}:${seatId}`) : null;
+    const seats = rowsId ? this.props.seatsOf(rowsId).filter((c) => this.collision.isFree(c.x, c.z, 0.7)) : [];
+    const sitters = rowsId ? ids.filter((id) => { const n = this.npc(q, id); return n && n !== host; }).length : 0;
+    const behind = rowsId ? this.props.behindRows(rowsId, Math.max(0, sitters - seats.length)) : [];
+    let nextSeat = 0, nextBehind = 0;
     ids.forEach((id, i) => {
       const n = this.npc(q, id);
       if (!n || n === host) return;
-      const ang = (i + 1) * (Math.PI * 2 / Math.max(6, ids.length + 1));
-      const r = ids.length > 4 ? 7 : 4.5;
-      const p = this.collision.findFree(host.x + Math.cos(ang) * r, host.z + Math.sin(ang) * r, 1.6);
-      if (walk && Math.hypot(n.x - p.x, n.z - p.z) < GATHER_TELEPORT_R) n.target = p;
-      else { n.x = p.x; n.z = p.z; n.target = null; n.y = this.groundY(n.x, n.z); }
+      n.sit = null; n.sitting = false;
+      let seat = null, p = null;
+      if (rowsId && nextSeat < seats.length) { seat = seats[nextSeat++]; p = { x: seat.x, z: seat.z }; }
+      else if (rowsId && behind[nextBehind]) { const b = behind[nextBehind++]; p = this.collision.findFree(b.x, b.z, 1.2); }
+      else {
+        let ang = (i + 1) * (Math.PI * 2 / Math.max(6, ids.length + 1));
+        // A host on a stage keeps the huddle on it: the stage is a wall for findFree, so spots
+        // over its top are taken as they are.
+        const onStage = !!this.props && this.props.surfaceAt(host.x, host.z) != null;
+        const r = onStage ? 3 : ids.length > 4 ? 7 : 4.5;
+        // findFree pushes a spot that lands in a bench or a rail to the nearest open ground, which
+        // can be the very spot a neighbour was just given: turn the ring a little until it is clear.
+        for (let k = 0; k < 6; k++, ang += 0.7) {
+          const cx = host.x + Math.cos(ang) * r, cz = host.z + Math.sin(ang) * r;
+          p = onStage && this.props.surfaceAt(cx, cz) != null ? { x: cx, z: cz } : this.collision.findFree(cx, cz, 1.6);
+          const clear = (o) => Math.hypot(o.x - p.x, o.z - p.z) > 2.2;
+          if (placed.every(clear) && Object.values(this.npcs).every((o) => o === n || o === host || o.quest !== n.quest || clear(o.target || o))) break;
+        }
+      }
+      placed.push(p);
+      if (seat) n.sit = seat;
+      if (walk && Math.hypot(n.x - p.x, n.z - p.z) < GATHER_TELEPORT_R) { n.target = p; n.gatherAt = this.time; }
+      else { n.x = p.x; n.z = p.z; n.target = null; n.y = this.standY(n.x, n.z); if (seat) this.sitDown(n); }
     });
+  }
+
+  // On the chair it walked to (or was put on): faces the way the chair does; the avatar sits
+  // itself down in the update loop once it exists.
+  sitDown(n) {
+    const c = n.sit;
+    if (!c) return;
+    // The pelvis sits a little behind the middle of the seat, against the chair back.
+    n.x = c.x - Math.sin(c.yaw) * 0.2; n.z = c.z - Math.cos(c.yaw) * 0.2; n.yaw = c.yaw; n.y = this.standY(n.x, n.z);
+    n.sitting = true;
   }
 
   stepDone(q, s, key = s.dialogue) {
@@ -1129,9 +1225,25 @@ export class QuestSystem {
   // Everyone in a finished quest stands together near the giver (and anyone its steps gathered).
   settleDone(q, emote = false) {
     if (!q) return;
+    // `dismantle`: the show is over, the stage and chairs are gone (see `scene`/`leave`), and everyone
+    // it gathered walks back to where they belong instead of standing around the empty plaza.
+    if (q.dismantle) {
+      const ids = new Set();
+      for (const st of q.steps) for (const id of st.gather || []) ids.add(id);
+      for (const id of ids) {
+        const n = this.npc(q, id);
+        if (!n || (n.quest === q.id && q.npcs && q.npcs[id])) continue;
+        n.sit = null; n.sitting = false; n.path = null;
+        if (emote) { n.target = this.collision.findFree(n.home.x, n.home.z, 1.6); n.gatherAt = this.time; }
+        else { n.x = n.home.x; n.z = n.home.z; n.y = this.groundY(n.x, n.z); n.target = null; }
+      }
+      return;
+    }
+    if (!q) return;
     const own = Object.keys(q.npcs || {}).filter((id) => id !== q.giver);
-    this.gatherTo(q, q.giver, own, emote);
-    for (const s of q.steps) if (s.gather) this.gatherTo(q, s.npc, s.gather, emote);
+    // `onStage` quests (the finale's band) keep their own characters where the story put them.
+    if (!q.onStage) this.gatherTo(q, q.giver, own, emote);
+    for (const s of q.steps) if (s.gather) this.gatherTo(q, s.npc, s.gather, emote, s.seat);
     if (emote) {
       for (const id of Object.keys(q.npcs || {})) { const n = this.npc(q, id); try { n?.av?.emote && n.av.emote('wave'); } catch (_) { /* optional */ } }
     }
@@ -1175,6 +1287,7 @@ export class QuestSystem {
       const av = this.available()[0];
       if (!av) {
         const finished = this.quests.length && this.quests.every((q) => this.state.done.includes(q.id));
+        if (this.heroMode && !finished) return { title: '', text: this.t(this.state.done.includes('m20_certificate') ? 'ui.heroDone' : 'ui.heroWait'), target: null };
         return { title: '', text: this.t(finished ? 'ui.freePlay' : 'ui.allDone'), target: null };
       }
       const g = this.npc(av, av.giver);
@@ -1301,11 +1414,23 @@ export class QuestSystem {
     // NPCs: walk to targets, face the player when close, animate only when near.
     let nearest = null, nearestD = Infinity;
     const avail = this.available();
+    this._prefer = new Map();
+    const aq = this.state.active && this.byId[this.state.active.id];
+    for (const x of aq ? [aq] : avail.slice(0, 1)) for (const id of Object.keys(x.npcs || {})) { const n = this.npcs[`${x.id}:${id}`]; if (n && !n.activity) this._prefer.set(id, n); }
     const givers = new Set(avail.map((x) => this.npc(x, x.giver)).filter(Boolean));
     const stepNpc = step && (['talk', 'choice', 'escort'].includes(step.type) || (step.type === 'drive' && a.phase === 'meet') || (step.type === 'minigame' && a.phase === 'go')) && step.npc ? this.npc(q, step.npc) : null;
     // Barter: every neighbour still in the chain can be asked.
     const barter = step && step.type === 'barter' ? new Set((step.chain || []).filter((c) => !a.traded.includes(c.npc)).map((c) => this.npc(q, c.npc)).filter(Boolean)) : null;
     const shown = this.whoIsShown(px, pz);
+    // A gathering walker is only moved while it is shown, and walks in a straight line: one that
+    // is hidden (far from the player) or cannot get there would keep the host untalkable for
+    // good, so after a while it simply appears at its spot.
+    for (const n of Object.values(this.npcs)) {
+      if (n.target && n.gatherAt != null && this.time - n.gatherAt > GATHER_TIMEOUT) {
+        n.x = n.target.x; n.z = n.target.z; n.y = this.standY(n.x, n.z); n.target = null; n.gatherAt = null;
+        if (n.sit) this.sitDown(n);
+      } else if (!n.target && n.gatherAt != null) n.gatherAt = null;
+    }
     for (const n of Object.values(this.npcs)) {
       if (!shown.has(n)) { if (n.av) n.av.group.visible = false; continue; }
       if (!this.ensureAv(n)) continue;
@@ -1321,7 +1446,11 @@ export class QuestSystem {
       if (n.escortSpeed && n.path) speed = this.walkPath(n, dt, n.walking ? n.escortSpeed : 0);
       else if (n.target) {
         const tx = n.target.x - n.x, tz = n.target.z - n.z, tl = Math.hypot(tx, tz);
-        if (tl < 0.4) { n.target = null; try { n.av.setMode('idle'); } catch (_) { /* optional */ } }
+        if (tl < 0.4) {
+          n.target = null;
+          if (n.sit) this.sitDown(n);
+          else { try { n.av.setMode('idle'); } catch (_) { /* optional */ } }
+        }
         else {
           if (n.av.mode !== 'walk') { try { n.av.setMode('walk'); } catch (_) { /* optional */ } }
           speed = tl > 30 ? 14 : 7;
@@ -1329,8 +1458,12 @@ export class QuestSystem {
           n.x += tx * k; n.z += tz * k;
           n.yaw = Math.atan2(tx, tz);
         }
-      } else if (d < 18) n.yaw += Math.atan2(Math.sin(Math.atan2(dx, dz) - n.yaw), Math.cos(Math.atan2(dx, dz) - n.yaw)) * Math.min(1, dt * 5);
-      if (speed > 0 || n._yDirty !== false) { n.y = this.groundY(n.x, n.z, n.y + 1.5); n._yDirty = speed > 0; }
+      } else if (d < 18 && !n.sitting) n.yaw += Math.atan2(Math.sin(Math.atan2(dx, dz) - n.yaw), Math.cos(Math.atan2(dx, dz) - n.yaw)) * Math.min(1, dt * 5);
+      // (a stage prop can appear under a standing character, so the height is re-read twice a second)
+      if (speed > 0 || n._yDirty !== false || this.time - (n._yAt || 0) > 0.5) { n.y = this.standY(n.x, n.z, n.y + 1.5); n._yDirty = speed > 0; n._yAt = this.time; }
+      if (n.sitting && !n.target) {
+        if (n.av.mode !== 'sit') { try { n.av.setSeat && n.av.setSeat(n.sit ? n.sit.h : 1.2); n.av.setMode('sit'); } catch (_) { /* optional */ } }
+      }
       n.av.group.position.set(n.x, n.y, n.z);
       n.av.group.rotation.y = n.yaw;
       if (d < NPC_ACTIVE_R) { try { n.av.update(dt, speed); } catch (e) { if (!this._warnedAv) { console.warn('[quests] avatar.update failed', e); this._warnedAv = true; } } }
@@ -1352,7 +1485,10 @@ export class QuestSystem {
       if (n.marker.visible) n.marker.position.y = (n.av.height || 5.2) + 2.2 + Math.sin(this.time * 3) * 0.3;
 
       const talkable = (n.activity && !this.mg) || (((n === stepNpc && (step.type === 'talk' || step.type === 'choice' || step.type === 'minigame')) || barter?.has(n)) && !n.target && !this.gathering(q, step));
-      if ((givers.has(n) || talkable) && d < TALK_R && d < nearestD) { nearest = n; nearestD = d; }
+      // A step's character can be talked to from the vehicle that just brought the player, from a bit
+      // further out: the car stops on the road and the character stands on the pavement.
+      const reach = n === stepNpc && player.mode !== 'walk' ? TALK_R_VEHICLE : TALK_R;
+      if ((givers.has(n) || talkable) && d < reach && d < nearestD) { nearest = n; nearestD = d; }
     }
 
     this.maybeIntro(player);
@@ -1398,6 +1534,13 @@ export class QuestSystem {
     if (!guessing && this._dedOv) { this._dedOv = false; if (this.world.bigmap && this.world.bigmap.setOverlay) this.world.bigmap.setOverlay(null); }
     if (step && !this.dlg) this.tickStep(q, step, a, dt, player);
     if (this.mg && this.mg.update && !this.dlg) { try { this.mg.update(dt, player, input); } catch (e) { console.warn('[quests] minigame update failed', e); this.mg = null; } }
+
+    // `auto` talk steps start by themselves once the player is close: the scene does not depend on
+    // the character being shown, the prompt being in reach or F reaching the game (m19 at Teder).
+    if (step && step.auto && (step.type === 'talk' || step.type === 'choice') && !this.dlg && !this.mg && !(this.minigames && this.minigames.active) && !consumed && !this.gathering(q, step)) {
+      const sn = this.npc(q, step.npc);
+      if (sn && Math.hypot(px - sn.x, pz - sn.z) < TALK_R_VEHICLE * 0.8) { this.hud && this.hud.setPrompt(null); if (step.type === 'choice') this.openChoice(q, step, a); else this.stepDone(q, step); return; }
+    }
 
     // Talk prompt + interaction.
     // A running mini-game owns the keys (F included): no talk prompt under it.
@@ -1651,6 +1794,13 @@ export class QuestSystem {
       return;
     }
     n.x = px; n.z = pz;
+    // Safety net for a drop-off the vehicle cannot physically reach (a fence or a building on the
+    // spot): standing still nearby for a few seconds counts as arriving, so the ride cannot stall.
+    const nearDrop = Math.hypot(px - a.drop.x, pz - a.drop.z) < Math.max(PARKED_NEAR_R, (s.radius || 10) * 4);
+    if (nearDrop && Math.abs(player.speed || 0) < 1.5) {
+      a.parkedAt ??= this.time;
+      if (this.time - a.parkedAt > PARKED_NEAR_S) { a.parkedAt = null; this.arrive(q, s, a, n); return; }
+    } else a.parkedAt = null;
     if (a.managed) { this.tickEvents(q, s, a, player); return; }
     if (!modes.includes(player.mode)) { this.driveReset(q, s, a, n, s.noVehicle ? `${q.id}.${s.noVehicle}` : 'ui.noCarRide'); return; }
     if (this.time > a.deadline) { this.driveReset(q, s, a, n, s.timeUp ? `${q.id}.${s.timeUp}` : 'ui.timeUpRide'); return; }

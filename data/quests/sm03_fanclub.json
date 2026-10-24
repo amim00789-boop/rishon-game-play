@@ -1,0 +1,98 @@
+{
+  "id": "sm03_fanclub",
+  "act": 5,
+  "requires": [
+    "sm02_patrol"
+  ],
+  "giver": "orit",
+  "npcs": {
+    "orit": {
+      "archetype": "dati_leumi_woman",
+      "at": {
+        "poi": "fuel_yellow",
+        "dx": 8,
+        "dz": 6,
+        "street": true
+      }
+    },
+    "dudi": {
+      "archetype": "dudi",
+      "fallback": "kid",
+      "at": {
+        "poi": "fuel_yellow",
+        "dx": 14,
+        "dz": 8,
+        "street": true
+      }
+    },
+    "noa": {
+      "archetype": "noa",
+      "fallback": "secular_woman",
+      "at": {
+        "poi": "fuel_yellow",
+        "dx": -14,
+        "dz": 10,
+        "street": true
+      }
+    }
+  },
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "dudi",
+      "obj": "obj.hide",
+      "dialogue": "d.hide"
+    },
+    {
+      "type": "talk",
+      "npc": "noa",
+      "obj": "obj.noa",
+      "dialogue": "d.noa",
+      "effects": {
+        "rel": {
+          "noa": 1
+        },
+        "heroFlag": "met_noa"
+      }
+    },
+    {
+      "type": "choice",
+      "npc": "orit",
+      "obj": "obj.fans",
+      "dialogue": "d.fans",
+      "options": [
+        {
+          "text": "c.selfie",
+          "reply": "d.rSelfie",
+          "effects": {
+            "rel": {
+              "orit": 2
+            }
+          }
+        },
+        {
+          "text": "c.rules",
+          "reply": "d.rRules",
+          "effects": {
+            "rel": {
+              "orit": 1,
+              "dudi": 1
+            }
+          }
+        },
+        {
+          "text": "c.run",
+          "reply": "d.rRun",
+          "effects": {
+            "rel": {
+              "orit": -1
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "after": "page",
+  "mode": "hero"
+}

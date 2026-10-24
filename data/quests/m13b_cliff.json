@@ -12,16 +12,18 @@
         "poi": "cliff_lookout",
         "dx": 10,
         "dz": -1
-      }
+      },
+      "stay": true
     },
     "malul": {
       "archetype": "malul",
       "fallback": "beach_guy",
       "at": {
         "poi": "cliff_lookout",
-        "dx": 13,
-        "dz": 27
-      }
+        "dx": -11,
+        "dz": -6
+      },
+      "stay": true
     },
     "ofir": {
       "archetype": "ofir",
@@ -38,7 +40,8 @@
             "color": "#ffcb3d"
           }
         ]
-      }
+      },
+      "stay": true
     },
     "adir": {
       "archetype": "adir",
@@ -47,7 +50,8 @@
         "poi": "gali_hadar_country",
         "dx": 6,
         "dz": 6
-      }
+      },
+      "stay": true
     }
   },
   "giver": "dekel",

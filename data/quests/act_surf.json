@@ -9,6 +9,32 @@
         "poi": "surf_club_beach",
         "dx": 6,
         "dz": 4
+      },
+      "look": {
+        "skin": "#8d5a3b",
+        "hair": {
+          "style": "ponytail",
+          "color": "#1d1d24",
+          "tie": "#2ec4b6"
+        },
+        "shirt": {
+          "color": "#2e86de",
+          "pattern": null,
+          "neck": "crew",
+          "sleeves": "long",
+          "print": null
+        },
+        "pants": {
+          "color": "#1f2f55",
+          "pattern": null
+        },
+        "accessories": [
+          {
+            "type": "cap",
+            "color": "#ffffff",
+            "brim": "#ffffff"
+          }
+        ]
       }
     }
   },

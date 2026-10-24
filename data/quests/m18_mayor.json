@@ -9,45 +9,45 @@
       "archetype": "mayor",
       "fallback": "office_worker",
       "at": {
-        "poi": "gan_hair",
-        "dx": 2,
-        "dz": 18
+        "poi": "city_hall_plaza",
+        "dx": 23.6,
+        "dz": -24.5
       }
     },
     "malul": {
       "archetype": "malul",
       "fallback": "beach_guy",
       "at": {
-        "poi": "gan_hair",
-        "dx": -6,
-        "dz": 30
+        "poi": "city_hall_plaza",
+        "dx": 21.6,
+        "dz": -34.1
       }
     },
     "dekel": {
       "archetype": "dekel",
       "fallback": "dati_leumi_man",
       "at": {
-        "poi": "gan_hair",
-        "dx": 0,
-        "dz": 34
+        "poi": "city_hall_plaza",
+        "dx": 17.1,
+        "dz": -32.6
       }
     },
     "ofir": {
       "archetype": "ofir",
       "fallback": "mizrahi_street_guy",
       "at": {
-        "poi": "gan_hair",
-        "dx": 6,
-        "dz": 30
+        "poi": "city_hall_plaza",
+        "dx": 21.6,
+        "dz": -30.6
       }
     },
     "adir": {
       "archetype": "adir",
       "fallback": "beach_guy",
       "at": {
-        "poi": "gan_hair",
-        "dx": 12,
-        "dz": 34
+        "poi": "city_hall_plaza",
+        "dx": 26.1,
+        "dz": -32.6
       }
     }
   },

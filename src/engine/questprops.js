@@ -30,8 +30,12 @@ function part(g, geo, color, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) {
   return m;
 }
 
+// A chair's place in a block of rows (the prop's own frame), and the height of its seat.
+const CHAIR_DX = 2.4, CHAIR_DZ = 2.8, SEAT_H = 1.2, STAGE_TOP = 1.4, STAGE_HW = 8.2, STAGE_HD = 4.7;
+const chairSlot = (rows, cols, r, c) => [(c - (cols - 1) / 2) * CHAIR_DX, 0, r * CHAIR_DZ];
+
 // Every prop is built standing on y = 0, facing +z.
-export function propMesh(kind) {
+export function propMesh(kind, opts = {}) {
   const g = new THREE.Group();
   g.name = 'prop:' + kind;
   switch (kind) {
@@ -86,9 +90,16 @@ export function propMesh(kind) {
     case 'chair_stack':
       for (let i = 0; i < 5; i++) { const c = propMesh('chair'); c.position.y = i * 0.32; g.add(c); }
       break;
-    case 'chair_rows': // 5 rows of 8: the first row at the origin, the rest further back (+z), all facing -z (the stage)
-      for (let r = 0; r < 5; r++) for (let c = 0; c < 8; c++) { const ch = propMesh('chair'); ch.position.set((c - 3.5) * 2.4, 0, r * 2.8); ch.rotation.y = Math.PI; g.add(ch); }
+    case 'chair_rows': { // rows x cols (default 5 x 8): the first row at the origin, the rest further back (+z), all facing -z (the stage)
+      const rows = opts.rows || 5, cols = opts.cols || 8;
+      g.userData.chairs = { rows, cols };
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const ch = propMesh('chair'); ch.position.set(...chairSlot(rows, cols, r, c)); ch.rotation.y = Math.PI;
+        ch.userData.slot = [ch.position.x, ch.position.z];
+        g.add(ch);
+      }
       break;
+    }
     case 'certificate': // the mayor's certificate of appreciation: a gold frame, cream paper, a ribbon seal
       part(g, G.box(1.3, 1.0, 0.08), 0xd8b24a);
       part(g, G.box(1.12, 0.82, 0.02), 0xf7f0dc, 0, 0, 0.045);
@@ -161,7 +172,7 @@ export function propMesh(kind) {
       for (let i = 0; i < 4; i++) part(g, G.box(0.12, 0.08, 0.5), [0xe8364f, 0x2ec4b6, 0xffcb3d, 0xb36bd6][i], -0.7 + i * 0.45, 1.98, 0.05);
       break;
     case 'stage':
-      part(g, G.box(16, 1.2, 9), 0x3a3f48, 0, 0.6);
+      part(g, G.box(16, 3.2, 9), 0x3a3f48, 0, -0.4); // the skirt reaches down into a sloping plaza
       part(g, G.box(16.4, 0.3, 9.4), 0x23232b, 0, 1.25);
       for (const x of [-7.6, 7.6]) part(g, G.box(0.4, 8, 0.4), 0x8a8f99, x, 5, -4.2);
       part(g, G.box(15.6, 0.5, 0.5), 0x8a8f99, 0, 9, -4.2);
@@ -199,7 +210,7 @@ const HAND = { phone: [0, -0.55, 0.3], keys: [0, -0.5, 0.2], flowers: [0, -0.6, 
   umbrella: [0, -0.4, 0.2], certificate: [0, -0.5, 0.45], wheel: [0, -0.6, 0.3], torch: [0, -0.4, 0.2], skateboard: [0, -0.7, 0.3], tray: [0, -0.4, 0.6], pot: [0, -0.9, 0.5], bucket: [0, -1.0, 0.3] };
 
 export class PropStage {
-  constructor({ scene, groundY, resolve, npcAt, avatarOf, playerAvatar }) {
+  constructor({ scene, groundY, resolve, npcAt, avatarOf, playerAvatar, solid }) {
     this.root = new THREE.Group();
     this.root.name = 'quest-props';
     scene.add(this.root);
@@ -208,15 +219,16 @@ export class PropStage {
     this.npcAt = npcAt;       // id -> npc record ({x, z, yaw, av}) or null
     this.avatarOf = avatarOf; // 'player' | npc id -> avatar or null
     this.playerAvatar = playerAvatar;
+    this.solid = solid;       // (polygon points) -> void: a stage is a wall for walkers
     this.items = new Map();   // id -> { kind, mesh, holder, how, x, z, yaw }
   }
 
   has(id) { return this.items.has(id); }
 
-  get(id, kind) {
+  get(id, kind, opts) {
     let it = this.items.get(id);
     if (!it) {
-      it = { id, kind, mesh: propMesh(kind), holder: null, how: null, x: 0, z: 0, yaw: 0 };
+      it = { id, kind, mesh: propMesh(kind, opts), holder: null, how: null, x: 0, z: 0, yaw: 0 };
       this.items.set(id, it);
     }
     return it;
@@ -240,7 +252,7 @@ export class PropStage {
     const nid = (id) => (!id ? null : id.includes(':') ? id : `${qid}:${id}`);
     try {
       if (a.show) {
-        const it = this.get(nid(a.id || a.show), a.show);
+        const it = this.get(nid(a.id || a.show), a.show, a);
         if (it.holder) this.detach(it);
         else if (!it.mesh.parent) this.root.add(it.mesh);
         const p = this.where(a.at);
@@ -285,9 +297,71 @@ export class PropStage {
   }
 
   put(it) {
-    it.mesh.position.set(it.x, this.groundY(it.x, it.z), it.z);
+    // Anything put down on a stage stands on its top, not on the plaza under it.
+    let gy = this.groundY(it.x, it.z), top = null;
+    if (it.kind === 'stage') {
+      // Level on the highest ground under it, so no corner is buried; the skirt covers the rest.
+      const s = Math.sin(it.yaw), c = Math.cos(it.yaw);
+      for (const [lx, lz] of [[-STAGE_HW, -STAGE_HD], [STAGE_HW, -STAGE_HD], [-STAGE_HW, STAGE_HD], [STAGE_HW, STAGE_HD]]) gy = Math.max(gy, this.groundY(it.x + c * lx + s * lz, it.z - s * lx + c * lz));
+      if (!it.solid && this.solid) {
+        it.solid = true;
+        this.solid([[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => { const lx = a * (STAGE_HW + 0.2), lz = b * (STAGE_HD + 0.2); return [it.x + c * lx + s * lz, it.z - s * lx + c * lz]; }));
+      }
+    } else top = this.surfaceAt(it.x, it.z);
+    it.mesh.position.set(it.x, top != null ? Math.max(gy, top) : gy, it.z);
     it.mesh.rotation.set(0, it.yaw, 0);
     it.mesh.scale.setScalar(1);
+    if (it.mesh.userData.chairs) {
+      // Chairs follow the ground one by one (a plaza falls a metre or two across a block of rows).
+      const s = Math.sin(it.yaw), c = Math.cos(it.yaw);
+      for (const ch of it.mesh.children) {
+        const sl = ch.userData.slot;
+        if (sl) ch.position.y = this.groundY(it.x + c * sl[0] + s * sl[1], it.z - s * sl[0] + c * sl[1]) - it.mesh.position.y;
+      }
+    }
+  }
+
+  // Height of the top of a stage prop at (x, z), or null when the point is not on one.
+  surfaceAt(x, z) {
+    for (const it of this.items.values()) {
+      if (it.kind !== 'stage' || !it.mesh.parent) continue;
+      const s = Math.sin(it.yaw), c = Math.cos(it.yaw), dx = x - it.x, dz = z - it.z;
+      const lx = c * dx - s * dz, lz = s * dx + c * dz;
+      if (Math.abs(lx) <= STAGE_HW && Math.abs(lz) <= STAGE_HD) return it.mesh.position.y + STAGE_TOP;
+    }
+    return null;
+  }
+
+  // Every chair of a chair_rows prop in world space, front row first and centre-out inside a
+  // row: { x, y, z, yaw (the way a sitter faces), h (seat height), row, col }.
+  seatsOf(id) {
+    const it = this.items.get(id);
+    const ch = it && it.mesh.userData.chairs;
+    if (!ch) return [];
+    const s = Math.sin(it.yaw), c = Math.cos(it.yaw), out = [];
+    for (let r = 0; r < ch.rows; r++) {
+      const cols = [...Array(ch.cols).keys()].sort((a, b) => Math.abs(a - (ch.cols - 1) / 2) - Math.abs(b - (ch.cols - 1) / 2) || a - b);
+      for (const k of cols) {
+        const [lx, , lz] = chairSlot(ch.rows, ch.cols, r, k);
+        const x = it.x + c * lx + s * lz, z = it.z - s * lx + c * lz;
+        out.push({ x, z, y: this.groundY(x, z), yaw: it.yaw + Math.PI, h: SEAT_H, row: r, col: k });
+      }
+    }
+    return out;
+  }
+
+  // The ground just behind the last row, as world points (for those who find no chair).
+  behindRows(id, n) {
+    const it = this.items.get(id);
+    const ch = it && it.mesh.userData.chairs;
+    if (!ch) return [];
+    const s = Math.sin(it.yaw), c = Math.cos(it.yaw), out = [];
+    const perRow = Math.max(4, ch.cols);
+    for (let i = 0; i < n; i++) {
+      const lx = ((i % perRow) - (perRow - 1) / 2) * CHAIR_DX, lz = (ch.rows - 0.2) * CHAIR_DZ + Math.floor(i / perRow) * 2.4 + 1.2;
+      out.push({ x: it.x + c * lx + s * lz, z: it.z - s * lx + c * lz });
+    }
+    return out;
   }
 
   // Per frame: attach held props once their avatar exists, drag carts behind their holder.

@@ -42,7 +42,9 @@
     "howTalk": "There: {k:F} to talk to {name}",
     "howStart": "There: {k:F} next to {name} to start",
     "howBeam": "Step into the light beam to start",
-    "howBarter": "{k:F} next to a neighbour to offer something"
+    "howBarter": "{k:F} next to a neighbour to offer something",
+    "heroWait": "Super Malul's story starts after the mayor's speech. Play the regular story meanwhile; V switches back",
+    "heroDone": "You have finished the Super Malul missions that exist so far. V switches back to the Rishoni"
   },
   "npc": {
     "gal": "Gal",
@@ -70,7 +72,12 @@
     "ziva": "Ziva, the Heichal's manager",
     "yanki": "Yanki",
     "avi": "Avi",
-    "savta": "Savta Rachel"
+    "savta": "Savta Rachel",
+    "dudi": "Dudi",
+    "noa": "Noa",
+    "haviav": "Haviav",
+    "moshiko": "Moshiko",
+    "orit": "Orit"
   },
   "items": {
     "pot": "jachnun pot",
@@ -212,13 +219,13 @@
     "c": {
       "chair": "\"Bring a chair, bring someone\"",
       "spirits": "\"Four Spirits, every month\"",
-      "saturday": "\"Saturday night in Gan HaIr\""
+      "saturday": "\"Saturday night at the City Hall square\""
     },
     "d": {
       "offer": [
         [
           "narrator",
-          "The stage is almost empty. A man in a navy jacket runs across the grass, phone to his ear, and stops right in front of Malul's drums."
+          "The stage is almost empty. A man in a navy jacket runs across the square, phone to his ear, and stops right in front of Malul's drums."
         ],
         [
           "mayor",
@@ -248,7 +255,7 @@
         ],
         [
           "mayor",
-          "I know them too. Listen: what happened here tonight, religious, secular, grandmothers, skaters, all on the same lawn... I want it every month. A city event. A stage, chairs, real power. Not one generator and a prayer."
+          "I know them too. Listen: what happened here tonight, religious, secular, grandmothers, skaters, all on the same square... I want it every month. A city event. A stage, chairs, real power. Not one generator and a prayer."
         ],
         [
           "adir",
@@ -350,227 +357,7 @@
         ]
       ]
     },
-    "page": "📱 Rishon Unfiltered: did anyone see the mayor drumming on a chair in Gan HaIr at midnight? (1,204 likes. Three comments about parking, out of habit.)"
-  },
-  "m19_tour": {
-    "title": "A ride with the mayor",
-    "obj": {
-      "leg1": "Pick up Raz at the City Hall square, by car",
-      "run1": "Drive Raz to the Heichal HaTarbut. Gently, he has coffee",
-      "ziva": "Talk to Ziva, the Heichal's manager",
-      "leg2": "Pick Raz up at the Heichal",
-      "run2": "Drive Raz to the Teder",
-      "teder": "Talk to Grisha and Itai at the Teder",
-      "youth": "Help Itai decide what the youth do at the event",
-      "leg3": "Pick Raz up at the Teder",
-      "run3": "Drive Raz to the Great Synagogue",
-      "shul": "Talk to Yanki and Avi by the Great Synagogue",
-      "bye": "Hear what Raz says at the end of the round"
-    },
-    "t": {
-      "needCar": "Raz doesn't ride scooters. He tried once, and there's a photo. You need a car: {k:4}",
-      "late": "Raz is late for a meeting. He's already calling to say he's late. Let's try again, from the same spot."
-    },
-    "c": {
-      "stop": "Stop. Let him talk to her",
-      "wave": "Wave to her and keep going",
-      "open": "\"An open stage. Whoever wants, goes up\"",
-      "skate": "\"A skate demo, with a ramp in Gan HaIr\"",
-      "duet": "\"Grisha and Itai, one song together\""
-    },
-    "d": {
-      "offer": [
-        [
-          "mayor",
-          "Good morning! I brought coffee. One for you, one for me, and one for the car seats. Just in case."
-        ],
-        [
-          "mayor",
-          "Three stops: the Heichal, the Teder, the Great Synagogue. I sit next to you, I talk on the phone, and you drive like there's a full cup of coffee on your lap. Because on mine there is."
-        ]
-      ],
-      "ePnina": [
-        [
-          "narrator",
-          "A woman with a shopping trolley stands on the pavement waving both arms, as if landing a plane."
-        ],
-        [
-          "pnina",
-          "Raz! Raz! The street lamp on my street has been flickering for a month! It's like living in a disco!"
-        ],
-        [
-          "mayor",
-          "Pnina! ...Shall we stop for a moment? Or we're in a hurry. You're the driver."
-        ]
-      ],
-      "rStop": [
-        [
-          "mayor",
-          "Pnina, the lamp by the playground, right? Noted. ...I really am noting it, look."
-        ],
-        [
-          "pnina",
-          "Last time you said you noted it, and the lamp started flickering faster."
-        ],
-        [
-          "mayor",
-          "Then this time I'm also calling. ...Hello? Yes, it's Raz. We have a disco by the playground. Send someone with a bulb."
-        ]
-      ],
-      "rWave": [
-        [
-          "mayor",
-          "Pnina, I'll get back to you! ...I really will. She knows where I live. Everyone knows where I live."
-        ]
-      ],
-      "arrive1": [
-        [
-          "narrator",
-          "Raz gets out of the car. The coffee is still in the cup. Most of it."
-        ],
-        [
-          "mayor",
-          "Excellent ride. Only once did I feel last night's dinner."
-        ]
-      ],
-      "ziva": [
-        [
-          "ziva",
-          "Raz. If you come with coffee, you want something."
-        ],
-        [
-          "mayor",
-          "Ziva, I want the mobile stage. Once a month. For Gan HaIr."
-        ],
-        [
-          "ziva",
-          "The mobile stage left the Heichal once, at Hanukkah, and came back with glitter I'm still finding."
-        ],
-        [
-          "player",
-          "Both choirs sang on one stage here. It worked."
-        ],
-        [
-          "ziva",
-          "...It really did. Fine. The stage is yours. But if I find one more speck of glitter, I know where the mayor lives."
-        ],
-        [
-          "mayor",
-          "Everyone does."
-        ]
-      ],
-      "arrive2": [
-        [
-          "narrator",
-          "The Teder. A smell of skate wheels and burekas from the kiosk. Raz straightens his jacket as if walking into a budget debate."
-        ]
-      ],
-      "teder": [
-        [
-          "grisha",
-          "Ah, the mayor! Look, I don't fall anymore. Almost."
-        ],
-        [
-          "itai",
-          "He fell twice yesterday. But elegantly."
-        ],
-        [
-          "mayor",
-          "Grisha, Itai, I need the youth at the event. Not in the back row on their phones. On the stage."
-        ],
-        [
-          "itai",
-          "On the stage? And do what there, besides stand?"
-        ]
-      ],
-      "youth": [
-        [
-          "itai",
-          "Okay, you tell him. He won't listen to me, I'm only sixteen."
-        ]
-      ],
-      "rOpen": [
-        [
-          "itai",
-          "An open stage... I've got a friend who beatboxes. He'll beatbox even if you don't let him. Better if you let him."
-        ],
-        [
-          "mayor",
-          "Noted: beatbox. ...How do you spell beatbox?"
-        ]
-      ],
-      "rSkate": [
-        [
-          "mayor",
-          "A ramp in Gan HaIr? ...I'll talk to the insurance. I'm always talking to the insurance."
-        ],
-        [
-          "grisha",
-          "And I am first in line. With a helmet. With two helmets."
-        ]
-      ],
-      "rDuet": [
-        [
-          "grisha",
-          "A song together? I sing only in Russian, and only at weddings."
-        ],
-        [
-          "itai",
-          "Then I'll make you a beat. \"Grisha falls, Grisha gets up.\" It's a hit."
-        ],
-        [
-          "grisha",
-          "...It really is a hit."
-        ]
-      ],
-      "arrive3": [
-        [
-          "narrator",
-          "The Great Synagogue, by Founders' Square. Old stone, old trees, and two men who have been waiting for ten minutes and pretend they haven't."
-        ]
-      ],
-      "shul": [
-        [
-          "yanki",
-          "The mayor! What do you need? Just don't say chairs. Everyone who came here this month wanted chairs."
-        ],
-        [
-          "mayor",
-          "Chairs. And a good hour. I want you to come, and to bring whoever doesn't usually come."
-        ],
-        [
-          "avi",
-          "If it's Saturday night, then after Havdalah. A quarter of an hour after Shabbat ends, not a minute before. Otherwise half my neighbourhood arrives just for dessert."
-        ],
-        [
-          "yanki",
-          "And we need a corner to sit a little to the side. Not at the back. To the side. With respect."
-        ],
-        [
-          "mayor",
-          "A quarter of an hour after Shabbat ends, and a corner on the side with the good chairs. Write that down."
-        ],
-        [
-          "player",
-          "Writing."
-        ],
-        [
-          "yanki",
-          "And our chairs come back before Shacharit. I heard what happened to Ziva's stage."
-        ]
-      ],
-      "bye": [
-        [
-          "mayor",
-          "A stage, the youth, chairs and an hour. In one morning. At City Hall that takes half a year and three committees."
-        ],
-        [
-          "mayor",
-          "Tomorrow at six, at the City Hall square. I have something for you. Tell the guys to come in an ironed shirt. ...At least in a shirt."
-        ]
-      ]
-    },
-    "page": "📱 Rishon Unfiltered: I saw the mayor in the passenger seat of a small car, with a coffee, smiling all the way from the Heichal to the Teder. Anyone know what's going on? (640 likes)"
+    "page": "📱 Rishon Unfiltered: did anyone see the mayor drumming on a chair at the City Hall square at midnight? (1,204 likes. Three comments about parking, out of habit.)"
   },
   "m20_certificate": {
     "title": "A certificate of appreciation",
@@ -618,7 +405,7 @@
         ],
         [
           "mayor",
-          "Four guys, and everyone who helped them, sat the whole city down on one lawn. So from next month it's official: \"Bring a chair, bring someone\", once a month, in Gan HaIr."
+          "Four guys, and everyone who helped them, sat the whole city down on one square. So from next month it's official: \"Bring a chair, bring someone\", once a month, at the City Hall square."
         ],
         [
           "savta",
@@ -644,7 +431,7 @@
         ],
         [
           "mayor",
-          "Four guys, and everyone who helped them, sat the whole city down on one lawn. So from next month it's official: \"Four Spirits, every month\", in Gan HaIr. With a new drum skin."
+          "Four guys, and everyone who helped them, sat the whole city down on one square. So from next month it's official: \"Four Spirits, every month\", at the City Hall square. With a new drum skin."
         ],
         [
           "malul",
@@ -670,7 +457,7 @@
         ],
         [
           "mayor",
-          "Four guys, and everyone who helped them, sat the whole city down on one lawn. So from next month it's official: \"Saturday night in Gan HaIr\". A quarter of an hour after Shabbat ends, not a minute before."
+          "Four guys, and everyone who helped them, sat the whole city down on one square. So from next month it's official: \"Saturday night at the City Hall square\". A quarter of an hour after Shabbat ends, not a minute before."
         ],
         [
           "yanki",
@@ -741,5 +528,395 @@
       ]
     },
     "page": "📱 Rishon Unfiltered: a certificate of appreciation at the City Hall square, and the whole neighbourhood in the photo. (2,018 likes. One comment about parking. Its author deleted it himself.)"
+  },
+  "sm01_cape": {
+    "title": "The Cape in the Crate",
+    "obj": {
+      "savta": "Talk to Savta Rachel by the crate",
+      "secret": "Decide who knows the new identity, with Malul",
+      "suit": "Back to Moshiko to suit up (then V switches to Super Malul)"
+    },
+    "c": {
+      "all": "\"We tell everyone. The city needs a hero\"",
+      "secret": "\"A secret. Nobody knows\"",
+      "savta": "\"Only Savta Rachel. She knows anyway\""
+    },
+    "d": {
+      "offer": [
+        [
+          "narrator",
+          "City Hall plaza, after the speech. Moshiko rolls a crate marked \"Weddings, fragile, no Carlebach\"."
+        ],
+        [
+          "moshiko",
+          "Bro. I found something I left years ago for a cousin's wedding. ...Don't ask who the cousin was."
+        ],
+        [
+          "moshiko",
+          "It's a suit. Blue, a star, red boots. Malul, it's for you. Savta Rachel already knows, ask her."
+        ]
+      ],
+      "savta": [
+        [
+          "savta",
+          "Finally. How long have I waited for someone to climb a roof in a cape."
+        ],
+        [
+          "malul",
+          "Savta, how do you...?"
+        ],
+        [
+          "savta",
+          "For years I've watched you help old ladies cross. No suit. With a suit at least they'll notice."
+        ],
+        [
+          "savta",
+          "Just remember: a hero doesn't look away. Even from the car parked at the corner."
+        ]
+      ],
+      "secret": [
+        [
+          "malul",
+          "I'm not sure I'm a hero. I'm a drummer."
+        ],
+        [
+          "moshiko",
+          "Same in theatre. Who gets to know it's you?"
+        ]
+      ],
+      "rAll": [
+        [
+          "malul",
+          "Everyone. Except your cousin."
+        ],
+        [
+          "moshiko",
+          "He knew before you. Don't worry."
+        ]
+      ],
+      "rSecret": [
+        [
+          "malul",
+          "A secret. But I need a name."
+        ],
+        [
+          "moshiko",
+          "\"Super Malul\". It's already on the crate, in marker."
+        ]
+      ],
+      "rSavta": [
+        [
+          "malul",
+          "Only Savta Rachel."
+        ],
+        [
+          "savta",
+          "Fine. I'll keep the secret. Mostly from Orit."
+        ]
+      ],
+      "suit": [
+        [
+          "moshiko",
+          "Go on, suit up. ...Not here. Behind the stand."
+        ],
+        [
+          "narrator",
+          "Malul steps out in blue, red and a star. A few passers-by stop. One honks."
+        ],
+        [
+          "moshiko",
+          "He says: \"At last\". I'm translating."
+        ],
+        [
+          "narrator",
+          "You can now press V any time: it switches between regular Malul and Super Malul."
+        ]
+      ]
+    },
+    "page": "📱 Rishon Without a Filter: someone in blue with a star crossed City Hall plaza and made a bin disappear. (1,877 likes. One comment: \"who is that?\". Another: \"save him a chair\".)"
+  },
+  "sm02_patrol": {
+    "title": "First Patrol",
+    "obj": {
+      "cross": "Help Pnina cross by the Great Synagogue",
+      "sidekick": "Decide what to do about Dudi, who wants to join",
+      "cape": "Talk to Dudi"
+    },
+    "c": {
+      "yes": "\"Fine, be the sidekick. But I decide\"",
+      "school": "\"Homework first, cape after\"",
+      "later": "\"Maybe later\""
+    },
+    "d": {
+      "offer": [
+        [
+          "narrator",
+          "By the Teder. A fourteen-year-old on a skateboard, a yellow sheet tied round his shoulders."
+        ],
+        [
+          "dudi",
+          "Super Malul! It's you! I saw you! You have to take me. I'm fast, I'm quiet, I'm... not really quiet."
+        ],
+        [
+          "malul",
+          "Dudi? I know you. You're the neighbour's kid."
+        ],
+        [
+          "dudi",
+          "Doesn't matter. I'm the sidekick. Come on, an old lady is stuck at the crossing by the synagogue."
+        ]
+      ],
+      "cross": [
+        [
+          "pnina",
+          "Super Malul?! I don't know you, but blue suits you."
+        ],
+        [
+          "malul",
+          "Mrs Pnina, please, I'll carry the basket."
+        ],
+        [
+          "pnina",
+          "Basket? It's a bag. And it's the whole street's dinner. Three more crossings and I'm done."
+        ],
+        [
+          "dudi",
+          "I'll mark the way with the sheet."
+        ],
+        [
+          "pnina",
+          "Boy, you're causing a jam."
+        ]
+      ],
+      "sidekick": [
+        [
+          "dudi",
+          "Well? Am I helping or not? I even have a nickname: \"The Sheet\"."
+        ],
+        [
+          "malul",
+          "That nickname won't last a week."
+        ]
+      ],
+      "rYes": [
+        [
+          "malul",
+          "Fine, you help. But I decide, and you don't run ahead."
+        ],
+        [
+          "dudi",
+          "Got it! ...Is a sheet safe near roads?"
+        ]
+      ],
+      "rSchool": [
+        [
+          "malul",
+          "Homework first. Heroes do it too."
+        ],
+        [
+          "dudi",
+          "Maths? Actual maths?"
+        ],
+        [
+          "malul",
+          "And at the end a real cape. Not a sheet."
+        ]
+      ],
+      "rLater": [
+        [
+          "dudi",
+          "Oh. Okay. I'll wait. ...But I'm staying here."
+        ],
+        [
+          "malul",
+          "That's fine, I'll be back."
+        ]
+      ],
+      "cape": [
+        [
+          "dudi",
+          "Super Malul, I won't let you down."
+        ],
+        [
+          "narrator",
+          "Dudi straightens up on the skateboard. The sheet flaps behind him. He falls in the end, but elegantly."
+        ]
+      ]
+    },
+    "page": "📱 Rishon Without a Filter: a teen on a skateboard in a yellow sheet is escorting someone in blue. (940 likes. \"He carried my bag\" - Pnina, neighbour.)"
+  },
+  "sm03_fanclub": {
+    "title": "The Fan Club",
+    "obj": {
+      "hide": "Talk to Dudi by the fuel station before the fans arrive",
+      "noa": "Talk to the photographer standing to the side",
+      "fans": "Decide what to do about Orit's fan club"
+    },
+    "c": {
+      "selfie": "\"One selfie, then everyone goes home\"",
+      "rules": "\"Conditions: no chasing, no chairs\"",
+      "run": "\"I'm running. Sorry\""
+    },
+    "d": {
+      "offer": [
+        [
+          "narrator",
+          "The yellow fuel station. Orit holds a hand-painted sign: \"Super Malul Fan Club. Wait at the till\"."
+        ],
+        [
+          "orit",
+          "Super Malul! We have eight members, and three of them don't know you yet."
+        ],
+        [
+          "malul",
+          "Orit, that's unnecessary."
+        ],
+        [
+          "orit",
+          "It's excellent. We have shirts too."
+        ]
+      ],
+      "hide": [
+        [
+          "dudi",
+          "Super Malul! Ten fans on one side and five on the other. I'm checking an escape route."
+        ],
+        [
+          "malul",
+          "What escape route? We're here to help."
+        ],
+        [
+          "dudi",
+          "It's the other side of the station. There's a photographer there. I think she's following you."
+        ]
+      ],
+      "noa": [
+        [
+          "noa",
+          "Excuse me, you're Super Malul, right? I'm Noa. I write for \"Rishon Without a Filter\"."
+        ],
+        [
+          "malul",
+          "I'm just trying to help people."
+        ],
+        [
+          "noa",
+          "Everyone says that. Then it turns out they have something to hide. I'll look into it."
+        ],
+        [
+          "noa",
+          "But don't worry. I don't publish before I'm sure. ...Usually."
+        ]
+      ],
+      "fans": [
+        [
+          "orit",
+          "Well? What do you say to the fans? They've been standing there an hour."
+        ],
+        [
+          "dudi",
+          "I'm preparing an exit."
+        ]
+      ],
+      "rSelfie": [
+        [
+          "malul",
+          "One selfie. Then everyone goes home."
+        ],
+        [
+          "orit",
+          "Did you hear that?! One selfie! A historic day."
+        ],
+        [
+          "narrator",
+          "Eight fans, three improvised capes, and one selfie taken far too many times."
+        ]
+      ],
+      "rRules": [
+        [
+          "malul",
+          "Conditions: no chasing, no holding the cape, and no chairs from the butchers' house."
+        ],
+        [
+          "orit",
+          "Accepted. I'll put it in the rules."
+        ],
+        [
+          "dudi",
+          "There are rules?!"
+        ]
+      ],
+      "rRun": [
+        [
+          "malul",
+          "I'm running. Sorry, I'll be back."
+        ],
+        [
+          "orit",
+          "He's running! It only makes them more curious!"
+        ],
+        [
+          "narrator",
+          "Dudi runs after him, sheet and all. He's late, but he doesn't give up."
+        ]
+      ]
+    },
+    "page": "📱 Rishon Without a Filter: a fan club opened a branch by the fuel station. (3,102 likes. A basket of apples was accepted as membership.)"
+  },
+  "sm04_noa": {
+    "title": "The Reporter Who Looks",
+    "obj": {
+      "shimon": "Ask Shimon about the photographer tailing Super Malul",
+      "noa": "Decide what to do about Noa",
+      "savta": "Tell Savta Rachel how it went"
+    }
+  },
+  "sm05_haviav": {
+    "title": "Haviav",
+    "obj": {
+      "haviav": "Find out who is taking the city's speakers down",
+      "dudi": "Decide with Dudi what to do about Haviav",
+      "shimon": "Report to Shimon"
+    }
+  },
+  "sm06_chase": {
+    "title": "A Chase in a Cape",
+    "obj": {
+      "reach": "Chase Haviav to the Teder",
+      "haviav": "Talk to Haviav by the Teder",
+      "pnina": "Help Pnina, stuck in the commotion"
+    }
+  },
+  "sm07_band": {
+    "title": "The Band Before",
+    "obj": {
+      "dekel": "Ask Dekel about Haviav, by the cliff",
+      "haviav": "Talk to Haviav a second time"
+    }
+  },
+  "sm08_practice": {
+    "title": "Practice for the Tournament",
+    "obj": {
+      "practice": "Practise with Adir for the solo",
+      "orit": "Decide with Orit what the stage looks like"
+    },
+    "cheer": "Practice paid off! The solo starts to sound like a solo"
+  },
+  "sm09_key": {
+    "title": "The Key to the City",
+    "obj": {
+      "savta": "Consult Savta Rachel before the tournament",
+      "mayor": "Hear Raz's offer, and decide"
+    }
+  },
+  "sm10_tournament": {
+    "title": "The Solo Tournament",
+    "obj": {
+      "haviav": "Talk to Haviav before the tournament",
+      "duel": "Beat Haviav in the solo",
+      "havi": "Decide what to do about Haviav after the win",
+      "noa": "Talk to Noa after the tournament"
+    },
+    "cheer": "The crowd is on its feet! Your solo won"
   }
 }

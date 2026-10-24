@@ -1,0 +1,95 @@
+{
+  "id": "sm04_noa",
+  "act": 5,
+  "mode": "hero",
+  "requires": [
+    "sm03_fanclub"
+  ],
+  "giver": "noa",
+  "npcs": {
+    "noa": {
+      "archetype": "noa",
+      "fallback": "secular_woman",
+      "at": {
+        "poi": "fuel_yellow",
+        "dx": -14,
+        "dz": 10,
+        "street": true
+      }
+    },
+    "shimon": {
+      "archetype": "older_man",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": 40,
+        "dz": 10,
+        "street": true
+      }
+    },
+    "savta": {
+      "archetype": "savta",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": -2,
+        "dz": -12
+      }
+    }
+  },
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "shimon",
+      "obj": "obj.shimon",
+      "dialogue": "d.shimon",
+      "effects": {
+        "heroFlag": "shimon_clue"
+      }
+    },
+    {
+      "type": "choice",
+      "npc": "noa",
+      "obj": "obj.noa",
+      "dialogue": "d.noa",
+      "options": [
+        {
+          "text": "c.show",
+          "reply": "d.rShow",
+          "effects": {
+            "rel": {
+              "noa": 3
+            },
+            "heroFlag": "noa_knows"
+          }
+        },
+        {
+          "text": "c.hint",
+          "reply": "d.rHint",
+          "effects": {
+            "rel": {
+              "noa": 1
+            },
+            "heroFlag": "noa_suspects"
+          }
+        },
+        {
+          "text": "c.hide",
+          "reply": "d.rHide",
+          "effects": {
+            "rel": {
+              "noa": -2
+            },
+            "heroFlag": "noa_hunting"
+          }
+        }
+      ]
+    },
+    {
+      "type": "talk",
+      "npc": "savta",
+      "obj": "obj.savta",
+      "dialogue": "d.savta"
+    }
+  ],
+  "after": "page"
+}

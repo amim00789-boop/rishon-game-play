@@ -1,0 +1,72 @@
+{
+  "id": "sm06_chase",
+  "act": 5,
+  "mode": "hero",
+  "requires": [
+    "sm05_haviav"
+  ],
+  "giver": "dudi",
+  "npcs": {
+    "dudi": {
+      "archetype": "dudi",
+      "fallback": "kid",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": 34,
+        "dz": 14,
+        "street": true
+      }
+    },
+    "haviav": {
+      "archetype": "haviav",
+      "fallback": "office_worker",
+      "at": {
+        "poi": "teder",
+        "dx": 24,
+        "dz": 50,
+        "street": true
+      }
+    },
+    "pnina": {
+      "archetype": "older_woman",
+      "at": {
+        "poi": "great_synagogue",
+        "dx": 30,
+        "dz": 20,
+        "street": true
+      }
+    }
+  },
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "reach",
+      "at": {
+        "poi": "teder",
+        "dx": 24,
+        "dz": 50,
+        "street": true
+      },
+      "radius": 10,
+      "obj": "obj.reach"
+    },
+    {
+      "type": "talk",
+      "npc": "haviav",
+      "obj": "obj.haviav",
+      "dialogue": "d.haviav"
+    },
+    {
+      "type": "talk",
+      "npc": "pnina",
+      "obj": "obj.pnina",
+      "dialogue": "d.pnina",
+      "effects": {
+        "rel": {
+          "dudi": 1
+        }
+      }
+    }
+  ],
+  "after": "page"
+}

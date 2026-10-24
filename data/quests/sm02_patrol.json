@@ -1,0 +1,89 @@
+{
+  "id": "sm02_patrol",
+  "act": 5,
+  "requires": [
+    "sm01_cape"
+  ],
+  "giver": "dudi",
+  "npcs": {
+    "dudi": {
+      "archetype": "dudi",
+      "fallback": "kid",
+      "at": {
+        "poi": "teder",
+        "dx": 24,
+        "dz": 50,
+        "street": true
+      }
+    },
+    "pnina": {
+      "archetype": "older_woman",
+      "at": {
+        "poi": "great_synagogue",
+        "dx": 30,
+        "dz": 20,
+        "street": true
+      }
+    }
+  },
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "pnina",
+      "obj": "obj.cross",
+      "dialogue": "d.cross",
+      "effects": {
+        "rel": {
+          "dudi": 1
+        }
+      }
+    },
+    {
+      "type": "choice",
+      "npc": "dudi",
+      "obj": "obj.sidekick",
+      "dialogue": "d.sidekick",
+      "options": [
+        {
+          "text": "c.yes",
+          "reply": "d.rYes",
+          "effects": {
+            "rel": {
+              "dudi": 2
+            },
+            "heroFlag": "dudi_sidekick"
+          }
+        },
+        {
+          "text": "c.school",
+          "reply": "d.rSchool",
+          "effects": {
+            "rel": {
+              "dudi": 1,
+              "rachel": 1
+            },
+            "heroFlag": "dudi_school_first"
+          }
+        },
+        {
+          "text": "c.later",
+          "reply": "d.rLater",
+          "effects": {
+            "rel": {
+              "dudi": -1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "talk",
+      "npc": "dudi",
+      "obj": "obj.cape",
+      "dialogue": "d.cape"
+    }
+  ],
+  "after": "page",
+  "mode": "hero"
+}

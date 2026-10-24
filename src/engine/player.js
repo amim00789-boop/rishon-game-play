@@ -47,6 +47,7 @@ export class Player {
     // the fallback capsule does not, so the engine supplies them.
     this.avatarOwnsProps = !!(avatar.joints || avatar.config);
     this.avatarMode = null;
+    this.abilities = null;
     // Pitch/roll follow the ground on wheels; YXZ so the tilt is in the vehicle's own frame.
     this.root.rotation.order = 'YXZ';
     this.pitch = 0;
@@ -54,6 +55,21 @@ export class Player {
     this.surface = null;
     this.setMode('walk');
     this.y = this.groundAt(this.pos.x, this.pos.z, Infinity);
+  }
+
+  // Switch the playable character (Super Malul mode): the new avatar takes the old one's place in
+  // the rider group; the mode is re-applied so scooter/bike/skate props follow.
+  // `abilities` ({ jump, run } multipliers, on foot only) are the hero powers; none for a normal character.
+  swapAvatar(avatar, abilities = null) {
+    this.abilities = abilities || null;
+    if (!avatar || !avatar.group || avatar === this.avatar) return false;
+    this.rider.remove(this.avatar.group);
+    this.avatar = avatar;
+    this.rider.add(avatar.group);
+    this.avatarOwnsProps = !!(avatar.joints || avatar.config);
+    this.avatarMode = null;
+    this.setMode(this.mode);
+    return true;
   }
 
   // `fn(x, z, y)` returns the walkable height under (x, z) for someone currently at height y:
@@ -177,7 +193,7 @@ export class Player {
         this.heading += THREE.MathUtils.clamp(diff, -p.turn * dt, p.turn * dt);
         // Wheeled modes slow down while turning hard instead of sliding sideways.
         const align = this.mode === 'walk' ? 1 : Math.max(0.25, Math.cos(diff));
-        target = (running ? p.run : p.speed) * align;
+        target = (running ? p.run : p.speed) * align * (this.mode === 'walk' && this.abilities ? this.abilities.run || 1 : 1);
       }
       const rate = target > this.speed ? p.accel : p.brake;
       this.speed += THREE.MathUtils.clamp(target - this.speed, -rate * dt, rate * dt);
@@ -211,7 +227,7 @@ export class Player {
     // Jump / gravity over the terrain and bridge decks.
     const ground = this.groundAt(this.pos.x, this.pos.z, this.y);
     if (p.canJump && this.onGround && input.wasPressed('Space')) {
-      this.vy = p.jumpV || JUMP_V; this.onGround = false;
+      this.vy = (p.jumpV || JUMP_V) * (this.mode === 'walk' && this.abilities ? this.abilities.jump || 1 : 1); this.onGround = false;
       // on the board the jump is an ollie: tail snap, board rising with the feet (avatar.js)
       if (this.mode === 'skate' && this.avatar.emote) { try { this.avatar.emote('ollie'); } catch (_) { /* optional */ } }
     }

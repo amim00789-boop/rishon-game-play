@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "note": "Job start points. lat/lon are projected through src/geo.js; src/world/jobspots.js places a marker and a talking NPC at each spot. Display text lives in data/minigames/jobs.<lang>.json under the job id.",
+  "jobs": {
+    "bus": {
+      "game": "bus",
+      "icon": "🚌",
+      "spot": { "lat": 31.967586, "lon": 34.785573, "snapTo": "busStop" },
+      "npc": { "archetype": "older_man", "seed": 7 },
+      "params": { "stops": 4, "minLeg": 170, "maxLeg": 700, "pace": 11, "grace": 14, "dwell": 4, "speedLimit": 26 },
+      "pay": { "base": 40, "perStar": 30 }
+    },
+    "bakery": {
+      "game": "bakery",
+      "icon": "🥐",
+      "spot": { "lat": 31.964915, "lon": 34.772059, "dx": 5, "dz": 4 },
+      "npc": { "archetype": "kiosk_vendor", "seed": 3 },
+      "params": { "orders": 3 },
+      "pay": { "base": 25, "perStar": 20 }
+    }
+  }
+}

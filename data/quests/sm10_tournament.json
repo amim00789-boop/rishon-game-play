@@ -1,0 +1,256 @@
+{
+  "id": "sm10_tournament",
+  "act": 5,
+  "mode": "hero",
+  "requires": [
+    "sm09_key"
+  ],
+  "giver": "dudi",
+  "npcs": {
+    "dudi": {
+      "archetype": "dudi",
+      "fallback": "kid",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": -6,
+        "dz": -22
+      }
+    },
+    "haviav": {
+      "archetype": "haviav",
+      "fallback": "office_worker",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": 6,
+        "dz": -26
+      }
+    },
+    "noa": {
+      "archetype": "noa",
+      "fallback": "secular_woman",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": -12,
+        "dz": -26
+      }
+    },
+    "orit": {
+      "archetype": "dati_leumi_woman",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": 14,
+        "dz": -22
+      }
+    },
+    "savta": {
+      "archetype": "savta",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": -2,
+        "dz": -12
+      }
+    }
+  },
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "haviav",
+      "obj": "obj.haviav",
+      "dialogue": "d.haviav"
+    },
+    {
+      "type": "minigame",
+      "game": "rhythm",
+      "npc": "haviav",
+      "intro": "d.duel",
+      "params": {
+        "chart": {
+          "id": "sm_duel",
+          "title": "quest.sm10_tournament.title",
+          "bpm": 116,
+          "offset": 0,
+          "countIn": 4,
+          "lengthBeats": 32,
+          "kit": "beach",
+          "lanes": 4,
+          "pass": 0,
+          "notes": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              1
+            ],
+            [
+              2,
+              2
+            ],
+            [
+              3,
+              3
+            ],
+            [
+              4,
+              3
+            ],
+            [
+              5,
+              2
+            ],
+            [
+              6,
+              1
+            ],
+            [
+              7,
+              0
+            ],
+            [
+              8,
+              0
+            ],
+            [
+              8,
+              3
+            ],
+            [
+              10,
+              1
+            ],
+            [
+              10,
+              2
+            ],
+            [
+              12,
+              0
+            ],
+            [
+              13,
+              1
+            ],
+            [
+              14,
+              2
+            ],
+            [
+              15,
+              3
+            ],
+            [
+              16,
+              0
+            ],
+            [
+              16,
+              3
+            ],
+            [
+              18,
+              1
+            ],
+            [
+              18,
+              2
+            ],
+            [
+              20,
+              3
+            ],
+            [
+              21,
+              2
+            ],
+            [
+              22,
+              1
+            ],
+            [
+              23,
+              0
+            ],
+            [
+              24,
+              0
+            ],
+            [
+              25,
+              2
+            ],
+            [
+              26,
+              1
+            ],
+            [
+              27,
+              3
+            ],
+            [
+              28,
+              0
+            ],
+            [
+              28,
+              3
+            ],
+            [
+              30,
+              1
+            ],
+            [
+              31,
+              2
+            ]
+          ]
+        },
+        "pass": 0
+      },
+      "cheer": "cheer",
+      "obj": "obj.duel",
+      "dialogue": "d.won"
+    },
+    {
+      "type": "choice",
+      "npc": "haviav",
+      "obj": "obj.havi",
+      "dialogue": "d.havi",
+      "options": [
+        {
+          "text": "c.join",
+          "reply": "d.rJoin",
+          "effects": {
+            "rel": {
+              "havi": 3
+            },
+            "heroFlag": "haviav_joins"
+          }
+        },
+        {
+          "text": "c.go",
+          "reply": "d.rGo",
+          "effects": {
+            "rel": {
+              "havi": -1
+            },
+            "heroFlag": "haviav_leaves"
+          }
+        }
+      ]
+    },
+    {
+      "type": "talk",
+      "npc": "noa",
+      "obj": "obj.noa",
+      "dialogue": {
+        "revealed": "d.noaRevealed",
+        "noa_knows": "d.noaKnows",
+        "default": "d.noaGuess"
+      }
+    }
+  ],
+  "after": "page",
+  "finale": true
+}

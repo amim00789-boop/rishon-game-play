@@ -1,5 +1,6 @@
 {
   "hud": {
+    "redLight": "You ran a red light! That is dangerous",
     "modes": {
       "walk": "On foot",
       "scooter": "Kick scooter",
@@ -76,5 +77,9 @@
     "save": "Save",
     "saveQuit": "Save and go to the start screen",
     "saved": "Saved."
+  },
+  "hero": {
+    "on": "Super Malul! His own story. V switches back to the Rishoni",
+    "off": "Back to the Rishoni. The main story continues where you left it"
   }
 }
