@@ -951,7 +951,7 @@
       "hair": [
         [
           "sarah",
-          "Realest thing you'll see. In Brooklyn they called me \"Traffic Light\". Here I'm \"the redhead from HaTedar\". That's progress."
+          "Realest thing you'll see. In Brooklyn they called me \"Traffic Light\". Here I'm \"the redhead from the Heichal\". That's progress."
         ]
       ],
       "hero": [
@@ -1037,13 +1037,13 @@
   "sm01b_sarah": {
     "title": "The Girl from New York",
     "obj": {
-      "sarah": "Talk to the redhead at HaTedar",
+      "sarah": "Talk to the redhead on the Heichal HaTarbut plaza",
       "dudi": "Talk to Dudi, who saw everything",
-      "ride": "Take Sarah to the water tower (scooter, bike or car)",
-      "rideRun": "Ride with Sarah to the water tower",
+      "ride": "Drive Sarah to the water tower",
+      "rideRun": "Drive with Sarah to the water tower",
       "ask": "Talk to Sarah by the water tower"
     },
-    "needVehicle": "Sarah doesn't walk. \"In New York there's the subway, babe. Here there's you.\" You need a scooter, a bike or a car.",
+    "needVehicle": "Sarah doesn't ride scooters. \"Babe, I'm from New York. I go by car, in the front seat.\" You need a car.",
     "c": {
       "yes": "\"Yes. Our secret\"",
       "shy": "\"I... umm... yes?\""
@@ -1052,7 +1052,7 @@
       "offer": [
         [
           "narrator",
-          "HaTedar, evening. A girl with red hair, really really red, sits on the skate park rail and waves at Super Malul."
+          "Heichal HaTarbut plaza, evening. A girl with red hair, really really red, sits on the steps with a coffee and waves at Super Malul."
         ],
         [
           "sarah",
@@ -1150,11 +1150,11 @@
     "title": "Sarah Covers",
     "obj": {
       "noa": "Talk to Noa by city hall and stay calm",
-      "pick": "Pick Sarah up at HaTedar, fast",
+      "pick": "Pick Sarah up by car at Heichal HaTarbut, fast",
       "run": "Get away with Sarah to Gan HaIr",
       "date": "Talk to Sarah in Gan HaIr"
     },
-    "needVehicle": "You need wheels. Noa is already aiming her camera.",
+    "needVehicle": "You need a car. Noa is already aiming her camera, and Sarah doesn't escape on a scooter.",
     "c": {
       "thanks": "\"You saved me. Again\"",
       "worry": "\"Noa isn't bad. She's just curious\""

@@ -11,19 +11,17 @@
       "archetype": "sarah",
       "fallback": "secular_woman",
       "at": {
-        "poi": "teder",
-        "dx": -14,
-        "dz": -10,
-        "street": true
+        "poi": "heichal_plaza",
+        "road": true
       }
     },
     "dudi": {
       "archetype": "dudi",
       "fallback": "kid",
       "at": {
-        "poi": "teder",
-        "dx": 18,
-        "dz": 6,
+        "poi": "heichal_plaza",
+        "dx": 16,
+        "dz": 8,
         "street": true
       }
     }
@@ -58,8 +56,6 @@
         "road": true
       },
       "modes": [
-        "scooter",
-        "bike",
         "car"
       ],
       "limit": 900,

@@ -11,10 +11,8 @@
       "archetype": "sarah",
       "fallback": "secular_woman",
       "at": {
-        "poi": "teder",
-        "dx": -14,
-        "dz": -10,
-        "street": true
+        "poi": "heichal_plaza",
+        "road": true
       }
     },
     "noa": {
@@ -49,8 +47,6 @@
         "road": true
       },
       "modes": [
-        "scooter",
-        "bike",
         "car"
       ],
       "limit": 900,

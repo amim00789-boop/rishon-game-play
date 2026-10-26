@@ -1,6 +1,6 @@
 {
   "id": "act_sarah",
-  "needsPoi": "teder",
+  "needsPoi": "heichal_plaza",
   "icon": "🗽",
   "yieldsToQuests": true,
   "npcs": {
@@ -8,10 +8,8 @@
       "archetype": "sarah",
       "fallback": "secular_woman",
       "at": {
-        "poi": "teder",
-        "dx": -14,
-        "dz": -10,
-        "street": true
+        "poi": "heichal_plaza",
+        "road": true
       }
     }
   },
