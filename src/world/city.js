@@ -365,6 +365,43 @@ class Acc {
     g.computeBoundingSphere();
     return g;
   }
+  // One draw of a city-wide layer (ground cover alone is ~1.1M triangles) cannot be frustum
+  // culled, so the GPU paid for the whole city every frame. Tiles by triangle centre let the
+  // renderer skip everything behind the camera.
+  tiles(drape = false, cell = RCHUNK) {
+    const g = this.geometry(drape);
+    const P = g.attributes.position.array, N = g.attributes.normal.array, C = g.attributes.color.array;
+    const U = g.attributes.uv ? g.attributes.uv.array : null;
+    const buckets = new Map();
+    for (let t = 0; t < P.length / 9; t++) {
+      const o = t * 9;
+      const cx = (P[o] + P[o + 3] + P[o + 6]) / 3, cz = (P[o + 2] + P[o + 5] + P[o + 8]) / 3;
+      const k = `${Math.floor(cx / cell)},${Math.floor(cz / cell)}`;
+      let b = buckets.get(k);
+      if (!b) { b = []; buckets.set(k, b); }
+      b.push(t);
+    }
+    const out = [];
+    for (const [key, list] of buckets) {
+      const n = list.length * 3;
+      const p = new Float32Array(n * 3), nn = new Float32Array(n * 3), c = new Float32Array(n * 3), uv = U ? new Float32Array(n * 2) : null;
+      list.forEach((t, i) => {
+        p.set(P.subarray(t * 9, t * 9 + 9), i * 9);
+        nn.set(N.subarray(t * 9, t * 9 + 9), i * 9);
+        c.set(C.subarray(t * 9, t * 9 + 9), i * 9);
+        if (uv) uv.set(U.subarray(t * 6, t * 6 + 6), i * 6);
+      });
+      const tg = new THREE.BufferGeometry();
+      tg.setAttribute('position', new THREE.BufferAttribute(p, 3));
+      tg.setAttribute('normal', new THREE.BufferAttribute(nn, 3));
+      tg.setAttribute('color', new THREE.BufferAttribute(c, 3));
+      if (uv) tg.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+      tg.computeBoundingSphere();
+      out.push({ key, geometry: tg });
+    }
+    g.dispose();
+    return out;
+  }
 }
 
 // One accumulator per road chunk, so the network merges into few meshes that still frustum-cull.
@@ -2984,12 +3021,15 @@ function buildWater(data, { ownedByLandmark, colliders, root, flatMat, toon }) {
       }
   }
   if (!surf.empty) {
-    const m = new THREE.Mesh(surf.geometry(true), toon({ color: PALETTE.lake }));
-    m.geometry.deleteAttribute('color');
-    m.userData.water = true;
-    m.userData.foam = false;
-    m.name = 'lakes';
-    root.add(m);
+    const lakeMat = toon({ color: PALETTE.lake });
+    for (const { key, geometry } of surf.tiles(true)) {
+      const m = new THREE.Mesh(geometry, lakeMat);
+      m.geometry.deleteAttribute('color');
+      m.userData.water = true;
+      m.userData.foam = false;
+      m.name = `lakes ${key}`;
+      root.add(m);
+    }
   }
   if (!banks.empty) {
     const m = new THREE.Mesh(banks.geometry(true), flatMat);
@@ -3275,10 +3315,16 @@ export async function buildCity(scene, { exclude = [] } = {}) {
   cover(data.woods, Y.grass + 0.015, woodC);
   for (const f of data.beach) fill(ground, ring(f), Y.beach, sandC);
   cover(data.pitches, Y.pitch, pitchC);
-  const groundMesh = new THREE.Mesh(ground.geometry(true), layerMat(1));
-  groundMesh.receiveShadow = true;
-  groundMesh.name = 'ground-cover';
-  root.add(groundMesh);
+  const groundGroup = new THREE.Group();
+  groundGroup.name = 'ground-cover';
+  const groundMat = layerMat(1);
+  for (const { key, geometry } of ground.tiles(true)) {
+    const m = new THREE.Mesh(geometry, groundMat);
+    m.receiveShadow = true;
+    m.name = `ground-cover ${key}`;
+    groundGroup.add(m);
+  }
+  root.add(groundGroup);
 
   const water = buildWater(data, { ownedByLandmark, colliders, root, flatMat, toon });
 

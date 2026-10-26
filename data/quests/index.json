@@ -22,6 +22,7 @@
     "m12_sayitback",
     "m13_rothschild",
     "m13b_cliff",
+    "m13c_zohar",
     "m14_blackout",
     "m15_mitzi",
     "m16_chairs",
@@ -29,15 +30,18 @@
     "m18_mayor",
     "m20_certificate",
     "sm01_cape",
+    "sm01b_sarah",
     "sm02_patrol",
     "sm03_fanclub",
     "sm04_noa",
+    "sm04b_sarah",
     "sm05_haviav",
     "sm06_chase",
     "sm07_band",
     "sm08_practice",
     "sm09_key",
-    "sm10_tournament"
+    "sm10_tournament",
+    "sm11_sarah"
   ],
   "side": [
     "q1_speaker",
@@ -56,6 +60,8 @@
     "act_skate",
     "act_cinema_city",
     "act_yes_planet",
-    "act_skate_shikma"
+    "act_skate_shikma",
+    "act_sarah",
+    "act_zohar"
   ]
 }

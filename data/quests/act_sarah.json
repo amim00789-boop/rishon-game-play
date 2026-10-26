@@ -1,0 +1,38 @@
+{
+  "id": "act_sarah",
+  "needsPoi": "teder",
+  "icon": "🗽",
+  "yieldsToQuests": true,
+  "npcs": {
+    "sarah": {
+      "archetype": "sarah",
+      "fallback": "secular_woman",
+      "at": {
+        "poi": "teder",
+        "dx": -14,
+        "dz": -10,
+        "street": true
+      }
+    }
+  },
+  "host": "sarah",
+  "dialogue": "d.hello",
+  "options": [
+    {
+      "text": "c.ny",
+      "reply": "d.ny"
+    },
+    {
+      "text": "c.hair",
+      "reply": "d.hair"
+    },
+    {
+      "text": "c.hero",
+      "reply": "d.hero"
+    },
+    {
+      "text": "c.bye",
+      "reply": "d.bye"
+    }
+  ]
+}

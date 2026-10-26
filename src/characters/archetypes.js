@@ -807,6 +807,50 @@ export const ARCHETYPES = {
     crowd: { zones: {} },
   },
 
+  // ---- round 9 cast (founder request 2026-10-26) ----
+  // Sarah, from New York: fire-red long hair, very fair skin, blue eyes. The only one who knows
+  // who is under Super Malul's mask; the two are a secret couple (docs/NEW_CAST.md).
+  sarah: {
+    label: 'Sarah',
+    skin: '#fbe6d8',
+    face: { lashes: true, mouth: 'grin', brows: 'up', iris: '#2e86de' },
+    hair: { style: 'long', color: '#ff1e12' },
+    shirt: { color: '#141414', neck: 'crew', sleeves: 'short', print: 'text', text: 'NYC', textColor: '#ffffff' },
+    pants: { kind: 'long', color: '#2b3448' },
+    shoes: { kind: 'boots', color: '#141414' },
+    accessories: [{ type: 'sunglassesOnHead', color: '#141414' }, { type: 'earrings', color: '#ffcb3d' }],
+    style: { stride: 1.05, swagger: 0.5, bounce: 0.3 },
+    crowd: { zones: {} },
+  },
+  // Ori, one of the friends from the cliff: fair (not white) skin, very long tousled black curls.
+  ori: {
+    label: 'Ori',
+    skin: '#efc9a8',
+    face: { lashes: true, mouth: 'smile', brows: 'up' },
+    hair: { style: 'longCurly', color: '#0e0a08' },
+    shirt: { color: '#9c6fb6', neck: 'crew', sleeves: 'short' },
+    pants: { kind: 'long', color: '#3d5f8f' },
+    shoes: { kind: 'sneakers', color: '#ffffff', stripe: '#9c6fb6' },
+    accessories: [{ type: 'earrings', color: '#e0e0e0' }, { type: 'toteBag', color: '#e8dcc0', print: '#9c6fb6' }],
+    style: { stride: 1.0, bounce: 0.3 },
+    crowd: { zones: {}, named: true },
+  },
+  // Zohar from Natan Bernitzki St: shorter, round glasses, very pale skin, long wavy blonde hair.
+  // She does not drive, so the main story has an errands day where the player drives her around.
+  zohar: {
+    label: 'Zohar',
+    skin: '#fff3ec',
+    face: { lashes: true, mouth: 'smile', glasses: '#6b4a2a' },
+    hair: { style: 'longCurly', color: '#f2d27a' },
+    body: { scale: 0.88 },
+    shirt: { color: '#bfe3d0', neck: 'crew', sleeves: 'short', pattern: 'flowers', alt: '#ffffff' },
+    pants: { kind: 'long', color: '#c8b48a' },
+    shoes: { kind: 'sandals', color: '#7a5232' },
+    accessories: [{ type: 'handbag', color: '#c2405a' }],
+    style: { stride: 0.9 },
+    crowd: { zones: {} },
+  },
+
   // skate park regulars (spawned only at the skate park)
   skater_kid: {
     label: 'Skater kid',

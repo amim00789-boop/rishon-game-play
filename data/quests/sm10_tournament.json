@@ -251,6 +251,5 @@
       }
     }
   ],
-  "after": "page",
-  "finale": true
+  "after": "page"
 }

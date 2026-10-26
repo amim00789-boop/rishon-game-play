@@ -669,7 +669,8 @@ export class QuestSystem {
     let best = null;
     for (const n of Object.values(this.npcs)) {
       if (n.id !== char) continue;
-      if (n.activity) { if (this.activityOn(n.activity)) return n; continue; }
+      // a hangout host flagged yieldsToQuests (Sarah, Zohar) steps aside while one of her quests is open
+      if (n.activity) { if (this.activityOn(n.activity) && !(n.activity.yieldsToQuests && this.questWants(char))) return n; continue; }
       if (n.unlockOnly && !this.unlocked(this.byId[n.quest])) continue;
       if (this.byId[n.quest] && this.byId[n.quest].mode === 'hero' && !this.heroMode) continue; // the hero story's cast stays out of the regular story
       if (n.cond && !this.test(n.cond)) continue;
@@ -678,6 +679,11 @@ export class QuestSystem {
       if (ok && (n.qi > best.qi || !this.unlocked(this.byId[best.quest]))) best = n;
     }
     return best;
+  }
+
+  // An open quest of the current story mode (unlocked, not done) declares this character.
+  questWants(char) {
+    return this.quests.some((q) => q.npcs && q.npcs[char] && this.inMode(q) && this.unlocked(q) && !this.state.done.includes(q.id));
   }
 
   // An NPC as a quest refers to it: its own instance if it declares the character, else the

@@ -238,6 +238,11 @@ export function createPost(renderer, scene, camera) {
     outline.uniforms.cameraFar.value = preFar;
     outline.uniforms.tanHalfFov.value = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
     outline.uniforms.aspect.value = camera.aspect;
+    // Each renderer.render() walks the whole scene graph to refresh world matrices (~2 ms for
+    // 23k nodes). The pre-pass and the colour pass see the same frame, so do it once.
+    scene.updateMatrixWorld();
+    const autoWorld = scene.matrixWorldAutoUpdate;
+    scene.matrixWorldAutoUpdate = false;
     camera.far = preFar;
     camera.updateProjectionMatrix();
 
@@ -262,7 +267,7 @@ export function createPost(renderer, scene, camera) {
 
     // Shadows render once per frame, in the colour pass only.
     renderer.shadowMap.needsUpdate = true;
-    composer.render();
+    try { composer.render(); } finally { scene.matrixWorldAutoUpdate = autoWorld; }
   }
 
   function dispose() {

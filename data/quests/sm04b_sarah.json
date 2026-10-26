@@ -1,0 +1,91 @@
+{
+  "id": "sm04b_sarah",
+  "act": 5,
+  "mode": "hero",
+  "requires": [
+    "sm04_noa"
+  ],
+  "giver": "sarah",
+  "npcs": {
+    "sarah": {
+      "archetype": "sarah",
+      "fallback": "secular_woman",
+      "at": {
+        "poi": "teder",
+        "dx": -14,
+        "dz": -10,
+        "street": true
+      }
+    },
+    "noa": {
+      "archetype": "noa",
+      "fallback": "secular_woman",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": 30,
+        "dz": -18,
+        "street": true
+      }
+    }
+  },
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "noa",
+      "obj": "obj.noa",
+      "dialogue": {
+        "noa_knows": "d.noaKnows",
+        "default": "d.noa"
+      }
+    },
+    {
+      "type": "drive",
+      "npc": "sarah",
+      "at": {
+        "poi": "gan_hair",
+        "dx": 0,
+        "dz": 0,
+        "road": true
+      },
+      "modes": [
+        "scooter",
+        "bike",
+        "car"
+      ],
+      "limit": 900,
+      "obj": "obj.pick",
+      "objRun": "obj.run",
+      "needVehicle": "needVehicle",
+      "dialogue": "d.park"
+    },
+    {
+      "type": "choice",
+      "npc": "sarah",
+      "obj": "obj.date",
+      "dialogue": "d.date",
+      "options": [
+        {
+          "text": "c.thanks",
+          "reply": "d.rThanks",
+          "effects": {
+            "rel": {
+              "sarah": 2
+            }
+          }
+        },
+        {
+          "text": "c.worry",
+          "reply": "d.rWorry",
+          "effects": {
+            "rel": {
+              "sarah": 1,
+              "noa": 1
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "after": "page"
+}

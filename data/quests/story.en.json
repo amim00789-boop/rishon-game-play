@@ -77,7 +77,11 @@
     "noa": "Noa",
     "haviav": "Plonter",
     "moshiko": "Moshiko",
-    "orit": "Orit"
+    "orit": "Orit",
+    "sarah": "Sarah",
+    "ori": "Ori",
+    "zohar": "Zohar",
+    "baker": "Esther from the bakery"
   },
   "items": {
     "pot": "jachnun pot",
@@ -918,5 +922,532 @@
       "noa": "Talk to Noa after the tournament"
     },
     "cheer": "The crowd is on its feet! Your solo won"
+  },
+  "act_sarah": {
+    "title": "Sarah from New York",
+    "c": {
+      "ny": "How is Rishon after New York?",
+      "hair": "Is that hair real?",
+      "hero": "Heard of Super Malul?",
+      "bye": "Bye Sarah"
+    },
+    "d": {
+      "hello": [
+        [
+          "sarah",
+          "Hi! You look like someone who knows where the best coffee is. No? Okay, stay anyway."
+        ]
+      ],
+      "ny": [
+        [
+          "sarah",
+          "In New York everyone rushes to nowhere. In Rishon everyone stops to tell you you're not dressed warm enough. At thirty degrees."
+        ],
+        [
+          "sarah",
+          "And I love it. My neighbour brought me soup. Just because. On a Tuesday."
+        ]
+      ],
+      "hair": [
+        [
+          "sarah",
+          "Realest thing you'll see. In Brooklyn they called me \"Traffic Light\". Here I'm \"the redhead from HaTedar\". That's progress."
+        ]
+      ],
+      "hero": [
+        [
+          "sarah",
+          "Super Malul? Oh, the guy with the cape. Don't know him. At all."
+        ],
+        [
+          "narrator",
+          "Sarah looks away and smiles to herself."
+        ]
+      ],
+      "bye": [
+        [
+          "sarah",
+          "Bye, babe. I mean, bye. I say that to everyone. Sort of."
+        ]
+      ]
+    }
+  },
+  "act_zohar": {
+    "title": "Zohar from Natan Bernitzki St",
+    "c": {
+      "drive": "Do you drive?",
+      "street": "How is life on Natan Bernitzki?",
+      "bye": "Bye Zohar"
+    },
+    "d": {
+      "hello": [
+        [
+          "zohar",
+          "Hi! Sorry, I was waiting for the bus, then I remembered I don't know which one."
+        ]
+      ],
+      "drive": [
+        [
+          "zohar",
+          "Me? No. I tried once. The instructor got out in the middle of a junction and walked home. He said it was safer."
+        ],
+        [
+          "zohar",
+          "So I have friends with cars. And optimism."
+        ]
+      ],
+      "street": [
+        [
+          "zohar",
+          "Quiet, green, and the neighbours know everything about me. Even things I don't know yet."
+        ]
+      ],
+      "bye": [
+        [
+          "zohar",
+          "Bye! If you're driving towards... well, anywhere, tell me."
+        ]
+      ]
+    }
+  },
+  "act_cliff": {
+    "lines": {
+      "ori": [
+        [
+          [
+            "ori",
+            "Malul says this is the best bench in town. He's right, but don't tell him, it goes to his head."
+          ]
+        ],
+        [
+          [
+            "ori",
+            "I don't play. I'm the audience. Without an audience it's just four guys on a cliff."
+          ]
+        ],
+        [
+          [
+            "ori",
+            "Every day I say \"five more minutes\" and stay until the old tree is a shadow."
+          ]
+        ]
+      ]
+    }
+  },
+  "sm01b_sarah": {
+    "title": "The Girl from New York",
+    "obj": {
+      "sarah": "Talk to the redhead at HaTedar",
+      "dudi": "Talk to Dudi, who saw everything",
+      "ride": "Take Sarah to the water tower (scooter, bike or car)",
+      "rideRun": "Ride with Sarah to the water tower",
+      "ask": "Talk to Sarah by the water tower"
+    },
+    "needVehicle": "Sarah doesn't walk. \"In New York there's the subway, babe. Here there's you.\" You need a scooter, a bike or a car.",
+    "c": {
+      "yes": "\"Yes. Our secret\"",
+      "shy": "\"I... umm... yes?\""
+    },
+    "d": {
+      "offer": [
+        [
+          "narrator",
+          "HaTedar, evening. A girl with red hair, really really red, sits on the skate park rail and waves at Super Malul."
+        ],
+        [
+          "sarah",
+          "Hey! You. With the cape. Come here a sec."
+        ]
+      ],
+      "sarah": [
+        [
+          "sarah",
+          "Sarah. From New York. Yes, really. Nice to meet you, Malul."
+        ],
+        [
+          "malul",
+          "Wh... who's Malul? I'm Super..."
+        ],
+        [
+          "sarah",
+          "Babe, you drum with your fingers on everything. The rail, the helmet, the air. I saw you play on Friday. It's you."
+        ],
+        [
+          "sarah",
+          "Don't worry. I won't tell anyone. I'm the best at secrets. In New York it's a sport."
+        ]
+      ],
+      "dudi": [
+        [
+          "dudi",
+          "Super Malul! Who's that? Does she know you?"
+        ],
+        [
+          "malul",
+          "She's... a fan. A regular one. Like all of them."
+        ],
+        [
+          "dudi",
+          "She doesn't look like all of them."
+        ],
+        [
+          "narrator",
+          "Dudi is right. Malul keeps that to himself."
+        ]
+      ],
+      "ask": [
+        [
+          "sarah",
+          "So: I know who you are. You know who I am. And nobody else knows anything."
+        ],
+        [
+          "sarah",
+          "Want to be... a secret? Just the two of us?"
+        ]
+      ],
+      "rYes": [
+        [
+          "malul",
+          "Yes. Our secret."
+        ],
+        [
+          "sarah",
+          "Deal. I'll be the girl at the side who smiles when you save someone. And nobody will get why."
+        ],
+        [
+          "narrator",
+          "She kisses his cheek, right by the mask, and laughs."
+        ]
+      ],
+      "rShy": [
+        [
+          "malul",
+          "I... umm... yes?"
+        ],
+        [
+          "sarah",
+          "OMG, a blushing superhero. Cutest thing I've seen in Israel."
+        ],
+        [
+          "sarah",
+          "Yes. That's a yes. We're a secret."
+        ]
+      ],
+      "tower": [
+        [
+          "narrator",
+          "The old water tower at night. Sarah climbs the low fence and looks at the lights of Rishon."
+        ],
+        [
+          "sarah",
+          "New York has the Empire State. Here there's a hundred-year-old water tower and no queue. I like this better."
+        ]
+      ]
+    },
+    "page": "📱 Rishon Without a Filter: someone saw Super Malul at the beach at sunset with a redhead. We're checking. (2,340 likes. Comment: \"it's just the sun\".)"
+  },
+  "sm04b_sarah": {
+    "title": "Sarah Covers",
+    "obj": {
+      "noa": "Talk to Noa by city hall and stay calm",
+      "pick": "Pick Sarah up at HaTedar, fast",
+      "run": "Get away with Sarah to Gan HaIr",
+      "date": "Talk to Sarah in Gan HaIr"
+    },
+    "needVehicle": "You need wheels. Noa is already aiming her camera.",
+    "c": {
+      "thanks": "\"You saved me. Again\"",
+      "worry": "\"Noa isn't bad. She's just curious\""
+    },
+    "d": {
+      "offer": [
+        [
+          "narrator",
+          "A message on Malul's phone, from a number saved as \"🗽\"."
+        ],
+        [
+          "sarah",
+          "Babe. Noa from the paper is sitting by city hall with a camera, waiting for the cape. I have a plan. Walk past her, stay cool, then come and get me."
+        ]
+      ],
+      "noa": [
+        [
+          "noa",
+          "Super Malul. Just who I was looking for. I heard you were seen at the beach with a redhead."
+        ],
+        [
+          "malul",
+          "Me? No. I don't... date. I save."
+        ],
+        [
+          "noa",
+          "Shame. It was a good story."
+        ],
+        [
+          "narrator",
+          "Right then Sarah walks by with a bunch of red balloons, shouting: \"I saw Super Malul at Superland!\" Noa runs."
+        ]
+      ],
+      "noaKnows": [
+        [
+          "noa",
+          "I know who you are, remember? But I heard you have a girlfriend. That's a different story."
+        ],
+        [
+          "malul",
+          "I don't. I mean... no story."
+        ],
+        [
+          "narrator",
+          "Sarah walks behind Noa with red balloons, shouting: \"I saw Super Malul at Superland!\" Noa hesitates for a second, then runs."
+        ]
+      ],
+      "park": [
+        [
+          "narrator",
+          "Gan HaIr. A bench behind the trees. Sarah pulls two ice lollies out of her bag."
+        ],
+        [
+          "sarah",
+          "The park, an ice lolly and a superhero. Best date I've ever had. And the most secret."
+        ]
+      ],
+      "date": [
+        [
+          "sarah",
+          "Listen, I can't fool her forever. She's smart. Almost as smart as me."
+        ]
+      ],
+      "rThanks": [
+        [
+          "malul",
+          "You saved me. Again."
+        ],
+        [
+          "sarah",
+          "That's what girlfriends do. Secret girlfriends. Mostly with balloons."
+        ]
+      ],
+      "rWorry": [
+        [
+          "malul",
+          "Noa isn't bad. She's just curious."
+        ],
+        [
+          "sarah",
+          "I know. That's why I like her. But she's not getting this story."
+        ]
+      ]
+    },
+    "page": "📱 Rishon Without a Filter: report: Super Malul spotted at Superland. Source: a girl with balloons. We checked. Only balloons. (3,120 likes)"
+  },
+  "sm11_sarah": {
+    "title": "Sunset Without a Mask",
+    "obj": {
+      "savta": "Talk to Savta Rachel after the tournament",
+      "end": "Talk to Sarah by the sea",
+      "beach": "Get to the beach, to Sarah, before the sun sets"
+    },
+    "c": {
+      "secret": "\"It stays this way. Just ours\"",
+      "mask": "Take off the mask, only for her"
+    },
+    "d": {
+      "offer": [
+        [
+          "narrator",
+          "After the tournament. The chairs are folded. Savta Rachel waits by the stage with a folded note."
+        ],
+        [
+          "savta",
+          "Nu. This is for you. A girl with red hair left it. She wrote \"Fan No. 1\" and a heart. With three spelling mistakes."
+        ]
+      ],
+      "savta": [
+        [
+          "malul",
+          "Savta, you... know?"
+        ],
+        [
+          "savta",
+          "I know everything and I say nothing. She's waiting at the beach. Go. And get her something to eat, she's thin."
+        ]
+      ],
+      "sunset": [
+        [
+          "narrator",
+          "The beach. The sun touches the water. Sarah sits on the sand, still holding the cardboard sign: \"Fan No. 1\"."
+        ],
+        [
+          "sarah",
+          "I saw it all from the back row. Sunglasses on, nobody recognised me. ...Okay, everybody did. But nobody got why I screamed the loudest."
+        ],
+        [
+          "narrator",
+          "She rests her head on Super Malul's shoulder."
+        ],
+        [
+          "sarah",
+          "You beat Plonter, saved the city, and nobody knows I'm part of it. Most beautiful secret I've ever had."
+        ]
+      ],
+      "end": [
+        [
+          "sarah",
+          "So what now, hero?"
+        ]
+      ],
+      "rSecret": [
+        [
+          "malul",
+          "It stays this way. Just ours."
+        ],
+        [
+          "sarah",
+          "Just ours. And at someone else's wedding, when everyone dances, I'll wink at you. And nobody will get it."
+        ],
+        [
+          "narrator",
+          "They sit until the promenade lights come on. Rishon doesn't know. And that's exactly right."
+        ]
+      ],
+      "rMask": [
+        [
+          "narrator",
+          "Super Malul takes off the mask. Only for her. Only for a second."
+        ],
+        [
+          "sarah",
+          "Hi, Malul."
+        ],
+        [
+          "malul",
+          "Hi, Sarah."
+        ],
+        [
+          "narrator",
+          "She puts the mask back on him herself and laughs. The secret stays. Now it just belongs to two."
+        ]
+      ]
+    },
+    "page": "📱 Rishon Without a Filter: after the tournament Super Malul vanished. Someone saw a couple on the beach at sunset. They looked happy. We didn't check. Some things you don't check. (12,400 likes)"
+  },
+  "m13c_zohar": {
+    "title": "Errands Day with Zohar",
+    "obj": {
+      "pick": "Pick Zohar up on Natan Bernitzki St (by car)",
+      "wait": "Wait for Zohar and go on to the next stop",
+      "optician": "Drive Zohar to the optician",
+      "bank": "Drive Zohar to the bank",
+      "bakery": "Drive Zohar to the bakery",
+      "market": "Drive Zohar to the supermarket",
+      "home": "Take Zohar home to Natan Bernitzki",
+      "thanks": "Talk to Zohar by her home"
+    },
+    "c": {
+      "again": "\"Next week? I'm free\"",
+      "lessons": "\"What if I teach you to drive?\""
+    },
+    "d": {
+      "offer": [
+        [
+          "zohar",
+          "Hi! You're Malul and Ori's friend, right? Ori said you have a car and can't say no."
+        ],
+        [
+          "zohar",
+          "I have a list. Tiny. Four things. Okay, four things and something at the end. And I don't drive. At all. Questions?"
+        ]
+      ],
+      "optician": [
+        [
+          "zohar",
+          "Optician! My glasses are round, and they must stay round. Last time they tried to sell me square ones. I ran."
+        ],
+        [
+          "narrator",
+          "Ten minutes later Zohar comes out in the exact same glasses. \"They cleaned them\", she says. \"I see new colours.\""
+        ]
+      ],
+      "bank": [
+        [
+          "zohar",
+          "Bank. I need one signature. One."
+        ],
+        [
+          "narrator",
+          "Twenty minutes. Zohar comes back with a sweet, a bank pen, and no signature."
+        ],
+        [
+          "zohar",
+          "The clerk said come tomorrow. But she gave me a sweet, so it worked out."
+        ]
+      ],
+      "bakery": [
+        [
+          "baker",
+          "Zohar! Challah as usual? And cookies for Savta?"
+        ],
+        [
+          "zohar",
+          "As usual, Esther. And one cookie for the driver. He works hard."
+        ],
+        [
+          "narrator",
+          "The cookie is still warm. More chocolate than dough."
+        ]
+      ],
+      "market": [
+        [
+          "zohar",
+          "Supermarket. I only need milk."
+        ],
+        [
+          "narrator",
+          "Zohar comes out with two bags, a watermelon and a pot plant. She forgot the milk."
+        ],
+        [
+          "zohar",
+          "...But the watermelon was on sale."
+        ]
+      ],
+      "home": [
+        [
+          "narrator",
+          "Natan Bernitzki. The neighbour is already on her balcony asking who the new driver is."
+        ],
+        [
+          "zohar",
+          "Best driver in Rishon. And no, he's not my boyfriend. ...We haven't decided yet."
+        ]
+      ],
+      "thanks": [
+        [
+          "zohar",
+          "Thank you. Really. Without a car this city is three times bigger."
+        ]
+      ],
+      "rAgain": [
+        [
+          "player",
+          "Next week? I'm free."
+        ],
+        [
+          "zohar",
+          "You'll regret saying that. I have a list for next week too. And the one after."
+        ]
+      ],
+      "rLessons": [
+        [
+          "player",
+          "What if I teach you to drive?"
+        ],
+        [
+          "zohar",
+          "Brave. My last instructor moved to a moshav. But... okay. Sunday. In an empty car park. Completely empty."
+        ]
+      ]
+    },
+    "page": "📱 Rishon. Natan Bernitzki: neighbours report a devoted driver who took Zohar on four errands and came back with a watermelon. (680 likes. Zohar commented: \"and a cookie!\")"
   }
 }

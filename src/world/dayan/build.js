@@ -95,6 +95,19 @@ class Soup {
     const m = new THREE.Mesh(g, mat); m.castShadow = true; m.receiveShadow = true; return m;
   }
   get tris() { return this.p.length / 9; }
+  // The 2-unit graded ground is ~300k triangles; one mesh of it was drawn whole whenever any
+  // corner of the box was on screen. Tiles by triangle centre frustum-cull separately.
+  tileMeshes(mat, cell) {
+    const buckets = new Map();
+    for (let t = 0; t < this.p.length / 9; t++) {
+      const o = t * 9;
+      const k = `${Math.floor((this.p[o] + this.p[o + 3] + this.p[o + 6]) / 3 / cell)},${Math.floor((this.p[o + 2] + this.p[o + 5] + this.p[o + 8]) / 3 / cell)}`;
+      let b = buckets.get(k);
+      if (!b) { b = new Soup(); buckets.set(k, b); }
+      for (let i = o; i < o + 9; i++) { b.p.push(this.p[i]); b.n.push(this.n[i]); b.c.push(this.c[i]); }
+    }
+    return [...buckets.values()].map((b) => b.mesh(mat));
+  }
 }
 
 const cumLen = (pts) => { const s = [0]; for (let i = 1; i < pts.length; i++) s.push(s[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])); return s; };
@@ -344,7 +357,10 @@ export function buildInterchange(D, { context = true, signals = true } = {}) {
   }
 
   const add = (soup, m, name) => { if (!soup.p.length) return; const mesh = soup.mesh(m); mesh.name = name; root.add(mesh); stats[name] = soup.tris; return mesh; };
-  add(S.ground, matGround, 'ground');
+  if (S.ground.p.length) {
+    for (const m of S.ground.tileMeshes(matGround, 160)) { m.name = 'ground'; m.castShadow = false; root.add(m); }
+    stats.ground = S.ground.tris;
+  }
   add(S.ctx, matGround, 'context');
   add(S.road, matRoad, 'roads');
   add(S.mark, matMark, 'markings');

@@ -1,0 +1,127 @@
+{
+  "id": "m13c_zohar",
+  "act": 3,
+  "requires": [
+    "m13b_cliff"
+  ],
+  "giver": "zohar",
+  "npcs": {
+    "zohar": {
+      "archetype": "zohar",
+      "fallback": "secular_woman",
+      "at": {
+        "lat": 31.959395,
+        "lon": 34.796091,
+        "street": true
+      }
+    },
+    "baker": {
+      "archetype": "older_woman",
+      "at": {
+        "lat": 31.964129,
+        "lon": 34.79828,
+        "street": true
+      }
+    }
+  },
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "drive",
+      "npc": "zohar",
+      "at": {
+        "lat": 31.96379,
+        "lon": 34.799074,
+        "road": true
+      },
+      "modes": [
+        "car"
+      ],
+      "limit": 600,
+      "obj": "obj.pick",
+      "objRun": "obj.optician",
+      "dialogue": "d.optician"
+    },
+    {
+      "type": "drive",
+      "npc": "zohar",
+      "at": {
+        "lat": 31.964348,
+        "lon": 34.796383,
+        "road": true
+      },
+      "modes": [
+        "car"
+      ],
+      "limit": 600,
+      "obj": "obj.wait",
+      "objRun": "obj.bank",
+      "dialogue": "d.bank"
+    },
+    {
+      "type": "drive",
+      "npc": "zohar",
+      "at": {
+        "lat": 31.964129,
+        "lon": 34.79828,
+        "road": true
+      },
+      "modes": [
+        "car"
+      ],
+      "limit": 600,
+      "obj": "obj.wait",
+      "objRun": "obj.bakery",
+      "dialogue": "d.bakery"
+    },
+    {
+      "type": "drive",
+      "npc": "zohar",
+      "at": {
+        "lat": 31.958867,
+        "lon": 34.799321,
+        "road": true
+      },
+      "modes": [
+        "car"
+      ],
+      "limit": 600,
+      "obj": "obj.wait",
+      "objRun": "obj.market",
+      "dialogue": "d.market"
+    },
+    {
+      "type": "drive",
+      "npc": "zohar",
+      "at": {
+        "lat": 31.959395,
+        "lon": 34.796091,
+        "road": true
+      },
+      "modes": [
+        "car"
+      ],
+      "limit": 600,
+      "obj": "obj.wait",
+      "objRun": "obj.home",
+      "dialogue": "d.home"
+    },
+    {
+      "type": "choice",
+      "npc": "zohar",
+      "obj": "obj.thanks",
+      "dialogue": "d.thanks",
+      "options": [
+        {
+          "text": "c.again",
+          "reply": "d.rAgain"
+        },
+        {
+          "text": "c.lessons",
+          "reply": "d.rLessons"
+        }
+      ]
+    }
+  ],
+  "after": "page"
+}

@@ -1,0 +1,74 @@
+{
+  "id": "sm11_sarah",
+  "act": 5,
+  "mode": "hero",
+  "requires": [
+    "sm10_tournament"
+  ],
+  "giver": "savta",
+  "finale": true,
+  "npcs": {
+    "sarah": {
+      "archetype": "sarah",
+      "fallback": "secular_woman",
+      "at": {
+        "poi": "surf_club_beach",
+        "dx": 10,
+        "dz": -20,
+        "street": true
+      }
+    },
+    "savta": {
+      "archetype": "savta",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": -2,
+        "dz": -12
+      }
+    }
+  },
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "savta",
+      "obj": "obj.savta",
+      "dialogue": "d.savta"
+    },
+    {
+      "type": "talk",
+      "npc": "sarah",
+      "obj": "obj.beach",
+      "dialogue": "d.sunset"
+    },
+    {
+      "type": "choice",
+      "npc": "sarah",
+      "obj": "obj.end",
+      "dialogue": "d.end",
+      "options": [
+        {
+          "text": "c.secret",
+          "reply": "d.rSecret",
+          "effects": {
+            "rel": {
+              "sarah": 2
+            },
+            "heroFlag": "sarah_secret_kept"
+          }
+        },
+        {
+          "text": "c.mask",
+          "reply": "d.rMask",
+          "effects": {
+            "rel": {
+              "sarah": 3
+            },
+            "heroFlag": "sarah_saw_face"
+          }
+        }
+      ]
+    }
+  ],
+  "after": "page"
+}

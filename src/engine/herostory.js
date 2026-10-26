@@ -7,7 +7,7 @@
 export const HERO_LEDGER_KEY = 'rishon.hero.ledger.v1';
 // noa: reporter (suspicion <-> trust), dudi: sidekick confidence, havi: the villain's wound (grudge <->
 // forgiveness), rachel: mentor, orit: fan-club founder.
-export const BONDS = ['noa', 'dudi', 'havi', 'rachel', 'orit'];
+export const BONDS = ['noa', 'dudi', 'havi', 'rachel', 'orit', 'sarah'];
 export const REL_MIN = -10, REL_MAX = 10;
 const clamp = (v) => (v < REL_MIN ? REL_MIN : v > REL_MAX ? REL_MAX : v);
 const blank = () => ({ v: 1, rel: Object.fromEntries(BONDS.map((b) => [b, 0])), flags: {} });

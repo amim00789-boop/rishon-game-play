@@ -1,0 +1,101 @@
+{
+  "id": "sm01b_sarah",
+  "act": 5,
+  "mode": "hero",
+  "requires": [
+    "sm01_cape"
+  ],
+  "giver": "sarah",
+  "npcs": {
+    "sarah": {
+      "archetype": "sarah",
+      "fallback": "secular_woman",
+      "at": {
+        "poi": "teder",
+        "dx": -14,
+        "dz": -10,
+        "street": true
+      }
+    },
+    "dudi": {
+      "archetype": "dudi",
+      "fallback": "kid",
+      "at": {
+        "poi": "teder",
+        "dx": 18,
+        "dz": 6,
+        "street": true
+      }
+    }
+  },
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "talk",
+      "npc": "sarah",
+      "obj": "obj.sarah",
+      "dialogue": "d.sarah",
+      "effects": {
+        "rel": {
+          "sarah": 2
+        },
+        "heroFlag": "sarah_knows"
+      }
+    },
+    {
+      "type": "talk",
+      "npc": "dudi",
+      "obj": "obj.dudi",
+      "dialogue": "d.dudi"
+    },
+    {
+      "type": "drive",
+      "npc": "sarah",
+      "at": {
+        "poi": "water_tower",
+        "dx": 0,
+        "dz": 0,
+        "road": true
+      },
+      "modes": [
+        "scooter",
+        "bike",
+        "car"
+      ],
+      "limit": 900,
+      "obj": "obj.ride",
+      "objRun": "obj.rideRun",
+      "needVehicle": "needVehicle",
+      "dialogue": "d.tower"
+    },
+    {
+      "type": "choice",
+      "npc": "sarah",
+      "obj": "obj.ask",
+      "dialogue": "d.ask",
+      "options": [
+        {
+          "text": "c.yes",
+          "reply": "d.rYes",
+          "effects": {
+            "rel": {
+              "sarah": 3
+            },
+            "heroFlag": "sarah_couple"
+          }
+        },
+        {
+          "text": "c.shy",
+          "reply": "d.rShy",
+          "effects": {
+            "rel": {
+              "sarah": 2
+            },
+            "heroFlag": "sarah_couple"
+          }
+        }
+      ]
+    }
+  ],
+  "after": "page"
+}

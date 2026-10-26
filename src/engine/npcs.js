@@ -65,6 +65,8 @@ const NAMED = {
   ofir: { homes: ['ganim', 'beach', 'tizmoret'], reroll: true, seat: 1 },
   adir: { homes: ['ganim', 'tizmoret', 'beach'], seat: 2 },
   malul: { homes: ['beach', 'ganim', 'plaza', 'tizmoret'], drums: true, seat: 3 },
+  // Ori (round 9) sits with the band at the lookout and listens; no instrument, no street gigs
+  ori: { homes: ['ganim', 'tizmoret'], seat: 4, listener: true },
 };
 // Until landmarks.js publishes poi 'cliff_lookout' with its benches: the lookout data the
 // landmarks and terrain agents gave (round 5): two picnic benches and the giant leaning tree.
@@ -139,7 +141,7 @@ export class Crowd {
     this.frame = 0;
     this.proxy = buildProxies(scene, this.max);
     // the regulars, readable by quests: crowd.named.dekel -> { x, z, y, state, playing, instrument } or null
-    this.named = { dekel: null, ofir: null, adir: null, malul: null };
+    this.named = { dekel: null, ofir: null, adir: null, malul: null, ori: null };
     // The cliff lookout is the band's hangout only once the story has brought the player there
     // (Adir's pickup in m13b_cliff); until then they keep to their old haunts.
     this.lookoutOpen = false;
@@ -1901,7 +1903,7 @@ export class Crowd {
     rec.home = { kind: 'lookout', x: Lk.x, z: Lk.z, r: 40 };
     rec.away = 0;
     rec.jamT = 8 + this.rnd() * 20;
-    n.playing = def.drums && seat.stool ? 'drums' : true;
+    n.playing = def.listener ? false : def.drums && seat.stool ? 'drums' : true;
     return n;
   }
 
@@ -1910,6 +1912,7 @@ export class Crowd {
   playNamed(id, seconds = 20, opts = {}) {
     const rec = this.namedRec[id], n = rec && rec.npc;
     if (!n || !this.npcs.includes(n)) return false;
+    if (NAMED[id] && NAMED[id].listener) return true; // listens along, keeps her seat
     const drums = !!(opts.drums && NAMED[id] && NAMED[id].drums);
     rec.forceT = Math.max(0.5, seconds);
     if (n.state === 'sit') {
@@ -1964,7 +1967,7 @@ export class Crowd {
         rec.forceT -= dt;
         if (rec.forceT <= 0) {
           rec.forceT = 0;
-          if (atLookout) n.playing = NAMED[name].drums && n.seat.stool ? 'drums' : true;
+          if (atLookout) n.playing = NAMED[name].listener ? false : NAMED[name].drums && n.seat.stool ? 'drums' : true;
           else { n.playing = false; n.seat = null; n.leaveT = undefined; if (!this.toWalker(n)) n.state = 'walk'; }
         }
       } else if (atLookout && !this.lookoutOpen) {
@@ -1974,7 +1977,7 @@ export class Crowd {
         rec.jamT -= dt;
         if (rec.jamT <= 0) {
           const playing = !!n.playing;
-          n.playing = playing ? false : NAMED[name].drums && n.seat.stool ? 'drums' : true;
+          n.playing = playing || NAMED[name].listener ? false : NAMED[name].drums && n.seat.stool ? 'drums' : true;
           rec.jamT = playing ? 8 + this.rnd() * 14 : 35 + this.rnd() * 50;
         }
         // now and then one of them goes for a stroll while nobody watches
@@ -2014,7 +2017,7 @@ export class Crowd {
       }
       // a song now and then
       if (away) rec.gigCd -= dt;
-      if (away && rec.gigCd <= 0 && n.state === 'walk' && !n.group) {
+      if (away && rec.gigCd <= 0 && n.state === 'walk' && !n.group && !NAMED[name].listener) {
         rec.gigCd = 70 + this.rnd() * 110;
         this.startGig(n, view);
       }

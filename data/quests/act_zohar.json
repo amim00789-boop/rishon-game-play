@@ -1,0 +1,32 @@
+{
+  "id": "act_zohar",
+  "icon": "👓",
+  "yieldsToQuests": true,
+  "npcs": {
+    "zohar": {
+      "archetype": "zohar",
+      "fallback": "secular_woman",
+      "at": {
+        "lat": 31.959395,
+        "lon": 34.796091,
+        "street": true
+      }
+    }
+  },
+  "host": "zohar",
+  "dialogue": "d.hello",
+  "options": [
+    {
+      "text": "c.drive",
+      "reply": "d.drive"
+    },
+    {
+      "text": "c.street",
+      "reply": "d.street"
+    },
+    {
+      "text": "c.bye",
+      "reply": "d.bye"
+    }
+  ]
+}

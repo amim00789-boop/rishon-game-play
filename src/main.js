@@ -12,6 +12,8 @@ import { Crowd } from './engine/npcs.js';
 import { Hud } from './engine/hud.js';
 import { loadI18n, t, dir } from './i18n.js';
 import { createProfiles } from './engine/profiles.js';
+import { createFreezer } from './engine/freeze.js';
+import { createQuality } from './engine/quality.js';
 
 const params = new URLSearchParams(location.search);
 const POST_ON = params.get('post') !== '0';
@@ -474,7 +476,11 @@ async function boot() {
   let usePost = !!post;
   let last = performance.now(), time = 0;
   const stats = { frames: 0, fps: 0 };
+  // Lowers resolution, then bloom, then shadow size when frames stay slow (src/engine/quality.js).
+  let quality = null;
+  try { quality = createQuality({ renderer, post: usePost ? post : null, sun: sky.sun, onResize }); } catch (e) { console.warn('[main] quality failed', e); }
   function frame(now) {
+    if (quality) quality.frame(now - last);
     const dt = Math.min((now - last) / 1000, 1 / 20);
     last = now;
     step(dt, true);
@@ -499,6 +505,8 @@ async function boot() {
     } catch (e) { console.warn('[main] hero swap failed', e); return false; }
   };
   let heroApplied = false;
+  // ?freeze=0 turns the static-matrix freezer off, for A/B checks (src/engine/freeze.js).
+  let freezer = params.get('freeze') === '0' ? null : createFreezer(scene);
   function step(dt, draw) {
     time += dt;
     if (input.wasPressed('KeyP') && post) usePost = !usePost;
@@ -526,6 +534,7 @@ async function boot() {
     if (bigmap) bigmap.update(dt);
     if (audio) { try { audio.update(dt); } catch (e) { console.warn('[main] audio.update failed', e); audio = null; } }
     input.endFrame();
+    if (freezer) { try { freezer.update(); } catch (e) { console.warn('[main] freezer failed', e); freezer.setEnabled(false); freezer = null; } }
 
     if (draw) {
       const tf = firstFrame ? performance.now() : 0;
@@ -548,7 +557,9 @@ async function boot() {
   // `streamed` resolves once parking, trees, furniture, shops, traffic, quests, audio and the big
   // map are in (tools and playtests await it before reading __game.quests).
   const streamed = streamWorld();
-  window.__game = { get heroLedger() { return quests && quests.heroLedger; }, setHero, get hero() { return hero; }, THREE, scene, camera, renderer, player, chase, input, crowd, hud, collision, city, landmarks, water, stats, sky, post, profiles,
+  // streaming hitches are not the machine's frame rate; judge only once the world is in
+  if (quality) { quality.paused = true; Promise.race([streamed, new Promise((r) => setTimeout(r, 30000))]).finally(() => { quality.paused = false; }); }
+  window.__game = { get freezer() { return freezer; }, get quality() { return quality; }, get heroLedger() { return quests && quests.heroLedger; }, setHero, get hero() { return hero; }, THREE, scene, camera, renderer, player, chase, input, crowd, hud, collision, city, landmarks, water, stats, sky, post, profiles,
     get quests() { return quests; }, get bigmap() { return bigmap; }, get audio() { return audio; }, get traffic() { return traffic; },
     get storefronts() { return storefronts; }, get details() { return details; }, streamed,
     tick: (dt = 1 / 60, draw = false) => step(dt, draw),
