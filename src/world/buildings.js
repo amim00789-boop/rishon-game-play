@@ -663,6 +663,10 @@ class Acc {
       g.setAttribute('wcell', new THREE.Float32BufferAttribute(this.cell, 3));
     }
     g.computeBoundingSphere();
+    // The build arrays are plain JS numbers (8 bytes each, ~1.9 GB across the city); the
+    // geometry holds its own Float32 copy, so let them go. `tris` keeps the count for stats.
+    this.tris = this.p.length / 9;
+    this.p = []; this.n = []; this.c = []; if (this.w) { this.uv = []; this.cell = []; }
     return g;
   }
 }

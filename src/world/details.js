@@ -168,6 +168,10 @@ class Acc {
     g.setAttribute('color', new THREE.Float32BufferAttribute(this.c, 3));
     if (this.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(this.uv, 2));
     g.computeBoundingSphere();
+    // The build arrays are plain JS numbers (8 bytes each, ~1.9 GB across the city); the
+    // geometry holds its own Float32 copy, so let them go. `tris` keeps the count for stats.
+    this.tris = this.p.length / 9;
+    this.p = []; this.n = []; this.c = []; if (this.uv) this.uv = [];
     const m = new THREE.Mesh(g, mat);
     m.name = name;
     m.receiveShadow = true;
