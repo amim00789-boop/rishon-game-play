@@ -26,10 +26,10 @@ const SHOP_AMENITY = /restaurant|cafe|fast_food|bank|pharmacy|ice_cream|pub|bar|
 
 // Draw distance per prop type (world units). Beyond this the chunk's mesh for that type is hidden.
 const DRAW = {
-  lamp: 750, lamp2: 750, promLamp: 600, shelter: 700, busSign: 450, trafficLight: 600, trafficLightPed: 600,
+  lamp: 750, lamp2: 750, promLamp: 600, shelter: 700, busSign: 450, trafficLight: 600, trafficLightPed: 600, trafficHead: 600,
   bench: 320, bin: 260, bikeRack: 260, pergola: 700,
 };
-const SHADOW = new Set(['lamp', 'lamp2', 'promLamp', 'shelter', 'pergola', 'trafficLight', 'trafficLightPed']);
+const SHADOW = new Set(['lamp', 'lamp2', 'promLamp', 'shelter', 'pergola', 'trafficLight', 'trafficLightPed', 'trafficHead']);
 
 const hash = (n) => { n = (n ^ 61) ^ (n >>> 16); n = (n + (n << 3)) >>> 0; n ^= n >>> 4; n = Math.imul(n, 0x27d4eb2d) >>> 0; n ^= n >>> 15; return (n >>> 0) / 4294967296; };
 const hxz = (x, z, s = 0) => hash((Math.round(x * 7) * 73856093) ^ (Math.round(z * 7) * 19349663) ^ (s * 83492791));
@@ -138,6 +138,12 @@ function trafficLightTemplate(ped) {
   ];
   if (ped) parts.push(box(0.6, 1.4, 0.6, -0.45, 3.2, 0, 0x1e2226));
   return merge(parts);
+}
+
+// A second head bolted onto a pole that already stands (back to back with its own head, or turned
+// to face another approach): the same housing as trafficLightTemplate, no pole.
+function trafficHeadTemplate() {
+  return merge([box(1.5, 3.0, 0.08, 0, 5.8, 0.18, 0xf2c84b), box(0.95, 2.7, 0.7, 0, 5.8, 0.55, 0x1e2226), box(0.3, 0.3, 0.3, 0, 5.8, 0.05, 0x606a73)]);
 }
 
 function pergolaTemplate() {
@@ -500,13 +506,21 @@ export async function buildDressing(scene, city, opts = {}) {
       const cands = [[1.2, 0.9, 1], [1.2, 2.0, 1], [0.2, 0.9, 1], [3, 0.9, 1], [3, 2.0, 1], [5, 2.0, 1], [5, 3.2, 1], [8, 3.2, 1], [11, 4.4, 1], [14, 4.4, 1],
         [1.2, 0.9, -1], [3, 0.9, -1], [3, 2.0, -1], [6, 2.0, -1], [9, 3.2, -1], [12, 3.2, -1]];
       for (const side of [1, -1]) for (const dd of [1.2, 4, 8, 13, 19]) for (const ds of [0.9, 2.2, 3.8, 5.6, 8, 11]) cands.push([dd, ds, side]);
-      for (const [dd, ds, side] of cands) {
+      for (const [dd, ds, side] of site.deck ? [[1.2, 0.7, 1], [3, 0.7, 1], [0.2, 0.7, 1], [1.2, 0.7, -1], [5, 0.7, 1]] : cands) {
         plan.armPoint(arm, dd, side * (arm.e.hw + ds), PT);
         if (plan.nearRing(PT.x, PT.z)) continue; // roundabouts and their entries never get lights
         const rot = face(-PT.tx, -PT.tz);
-        if (!tryPut(type, PT.x, PT.z, rot, 0.45, { claimR: 3 })) continue;
+        // On a raised junction the pole stands on the deck edge at the road's height; the ground
+        // veto (bridge clearance) does not apply there.
+        let y = ground(PT.x, PT.z);
+        if (site.deck) {
+          y = plan.armY(arm, dd);
+          if (!free(PT.x, PT.z, 3)) continue;
+          claim(PT.x, PT.z, 3);
+          put(type, PT.x, PT.z, rot, 1, y);
+        } else if (!tryPut(type, PT.x, PT.z, rot, 0.45, { claimR: 3 })) continue;
         arm.poles.push({ x: PT.x, z: PT.z, rot });
-        heads.push({ site, arm, x: PT.x, y: ground(PT.x, PT.z), z: PT.z, rot });
+        heads.push({ site, arm, x: PT.x, y, z: PT.z, rot });
         if (!hops.junction && site.kind === 'junction') hops.junction = { x: PT.x - PT.tx * 26 + PT.tz * 2, z: PT.z - PT.tz * 26 - PT.tx * 2, lx: site.x, lz: site.z };
         ok = true;
         break;
@@ -514,6 +528,95 @@ export async function buildDressing(scene, city, opts = {}) {
       if (ok) placed++; else noRoom.push([Math.round(site.x), Math.round(site.z), arm.idx]);
     }
     if (placed) { junctions++; lit.push([site.x, site.z]); }
+  }
+
+  // Founder 2026-10-30: "more than one light". As on Israeli junctions, every approach also gets a
+  // secondary head across the junction (on the far left, back to back with the head of the opposite
+  // approach when a pole stands there), and a divided road with two or more lanes a head on its
+  // median at the stop line. An approach whose kerb had no room gets its first head this way too.
+  const poles = []; // every pole of the plan, for mounting a second head on it
+  for (const h of heads) poles.push({ x: h.x, z: h.z, y: h.y, rots: [h.rot] });
+  const PG = 16, pgrid = new Map();
+  const pk = (x, z) => `${Math.floor(x / PG)},${Math.floor(z / PG)}`;
+  for (const p of poles) { const k = pk(p.x, p.z); (pgrid.get(k) || pgrid.set(k, []).get(k)).push(p); }
+  const poleNear = (x, z, r) => {
+    let best = null, bd = r;
+    for (let i = Math.floor((x - r) / PG); i <= Math.floor((x + r) / PG); i++) for (let j = Math.floor((z - r) / PG); j <= Math.floor((z + r) / PG); j++)
+      for (const p of pgrid.get(`${i},${j}`) || []) { const d = Math.hypot(p.x - x, p.z - z); if (d < bd) { bd = d; best = p; } }
+    return best;
+  };
+  const sameRot = (a, b) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b))) < 0.5;
+  // Mount on a pole within reach, else stand a new pole: returns true when the head is up.
+  const headAt = (site, arm, x, z, rot, mountR = 2.6, deckY = null) => {
+    if (plan.nearRing(x, z)) return false;
+    const p = poleNear(x, z, mountR);
+    if (p) {
+      if (p.rots.some((r) => sameRot(r, rot))) return false;
+      p.rots.push(rot);
+      put('trafficHead', p.x, p.z, rot, 1, p.y);
+      heads.push({ site, arm, x: p.x, y: p.y, z: p.z, rot, ped: false, extra: true });
+      return true;
+    }
+    let y;
+    if (deckY != null) {
+      if (!free(x, z, 2.2)) return false;
+      claim(x, z, 2.2);
+      y = deckY;
+      put('trafficLight', x, z, rot, 1, y);
+    } else {
+      if (!tryPut('trafficLight', x, z, rot, 0.45, { claimR: 2.2 })) return false;
+      y = ground(x, z);
+    }
+    const np = { x, z, y, rots: [rot] };
+    poles.push(np); (pgrid.get(pk(x, z)) || pgrid.set(pk(x, z), []).get(pk(x, z))).push(np);
+    heads.push({ site, arm, x, y, z, rot, ped: false, extra: true });
+    return true;
+  };
+  const R0 = { x: 0, z: 0, tx: 0, tz: 1 }, R1 = { x: 0, z: 0, tx: 0, tz: 1 };
+  let extraHeads = 0, farHeads = 0, medianHeads = 0;
+  if (plan) for (const site of plan.sites) {
+    if (site.kind !== 'junction') continue;
+    for (const arm of site.arms) {
+      if (!arm.stop) continue;
+      // my travel direction and my right, at my stop line
+      plan.armPoint(arm, 0, 0, R0);
+      plan.armPoint(arm, 0, 1, R1);
+      const tx = R0.tx, tz = R0.tz, rx = R1.x - R0.x, rz = R1.z - R0.z;
+      const toMe = face(-tx, -tz);
+      // far side: the arm leaving straight ahead
+      let opp = null, od = -0.75;
+      for (const b of site.arms) { if (b === arm) continue; const d = b.ax * arm.ax + b.az * arm.az; if (d < od) { od = d; opp = b; } }
+      let far = false;
+      if (opp) {
+        // on the opposite arm, its right kerb is my far left, its left kerb my far right
+        for (const [dd, side] of [[1.2, 1], [3, 1], [-0.5, 1], [1.2, -1], [3, -1], [5, 1], [5, -1]]) {
+          for (const ds of [0.9, 2.0, 3.2]) {
+            plan.armPoint(opp, dd, side * (opp.e.hw + (site.deck ? 0.7 : ds)), PT);
+            if (headAt(site, arm, PT.x, PT.z, toMe, 2.6, site.deck ? plan.armY(opp, dd) : null)) { far = true; break; }
+          }
+          if (far) break;
+        }
+      } else if (!site.deck) {
+        // the stem of a T: the far kerb of the road ahead
+        const across = arm.stopD * 2 + 2;
+        for (const extra of [0, 2, 4, 7]) {
+          for (const lat of [-arm.e.hw * 0.6, -arm.e.hw * 0.6 - 3, arm.e.hw * 0.6, arm.e.hw * 0.6 + 3, 0]) {
+            const x = R0.x + tx * (across + extra) + rx * lat, z = R0.z + tz * (across + extra) + rz * lat;
+            if (headAt(site, arm, x, z, toMe)) { far = true; break; }
+          }
+          if (far) break;
+        }
+      }
+      if (far) { farHeads++; extraHeads++; }
+      // median of a divided road with two or more lanes
+      if (arm.e.oneway && arm.lanes >= 2 && !arm.poles.some((p) => Math.hypot(p.x - R0.x, p.z - R0.z) < arm.e.hw + 4 && ((p.x - R0.x) * rx + (p.z - R0.z) * rz) < 0)) {
+        for (const [dd, ds] of [[1.2, 0.9], [1.2, 1.6], [3, 0.9], [3, 1.6], [0.2, 1.2], [5, 1.2]]) {
+          plan.armPoint(arm, dd, -(arm.e.hw + ds), PT);
+          if (site.deck) break;
+          if (headAt(site, arm, PT.x, PT.z, face(-PT.tx, -PT.tz), 1.2)) { medianHeads++; extraHeads++; break; }
+        }
+      }
+    }
   }
 
   // ================= 3. boulevard medians: double-arm lamps =================
@@ -652,7 +755,7 @@ export async function buildDressing(scene, city, opts = {}) {
   const tpl = {
     lamp: lampTemplate(false), lamp2: lampTemplate(true), promLamp: promLampTemplate(),
     bench: merge(benchTemplate()), bin: binTemplate(), bikeRack: bikeRackTemplate(),
-    shelter: shelterTemplate(), busSign: busSignTemplate(), trafficLight: trafficLightTemplate(false), trafficLightPed: trafficLightTemplate(true),
+    shelter: shelterTemplate(), busSign: busSignTemplate(), trafficLight: trafficLightTemplate(false), trafficLightPed: trafficLightTemplate(true), trafficHead: trafficHeadTemplate(),
     pergola: pergolaTemplate(),
   };
   const cull = [];
@@ -687,7 +790,7 @@ export async function buildDressing(scene, city, opts = {}) {
     } catch (e) { console.warn('[dressing] signal lamps failed', e); }
   }
 
-  root.userData.stats = { ...stats, junctions, signals: plan ? { ...plan.stats, heads: heads.length, ...(signalMeshes ? signalMeshes.stats : {}) } : null, chunks: chunks.size, meshes: cull.length, colliders: colliders.length, sidewalks: walksReal ? 'city' : 'derived', busStops: stopsReal ? 'city' : 'derived', ms: Math.round(performance.now() - t0) };
+  root.userData.stats = { ...stats, junctions, signals: plan ? { ...plan.stats, heads: heads.length, extraHeads, farHeads, medianHeads, ...(signalMeshes ? signalMeshes.stats : {}) } : null, chunks: chunks.size, meshes: cull.length, colliders: colliders.length, sidewalks: walksReal ? 'city' : 'derived', busStops: stopsReal ? 'city' : 'derived', ms: Math.round(performance.now() - t0) };
   root.userData.hops = hops;
   root.userData.lightsNoRoom = noRoom;
   root.userData.droppedStops = dropped;

@@ -24,15 +24,22 @@ const STITCH_R = 9;      // loose ends of sidewalks / footways / crossings join 
 const CAR_STITCH_R = 3.5; // carriageway ends rejoin the nearest carriageway within this
 const C = { CAR: 0, FOOT: 1, STEPS: 2, CYCLE: 3, CROSS: 4, LINK: 5, CARLINK: 6 };
 const FOOT_KINDS = /^(footway|path|pedestrian|promenade|track|bridleway|corridor|platform)$/;
-const MODE_ALIAS = { scooter: 'wheels', bike: 'wheels', bicycle: 'wheels', foot: 'walk', walk: 'walk', car: 'car', wheels: 'wheels' };
-const H_FACTOR = { car: 0.85, wheels: 0.8, walk: 1 };
-const CLEAR = { car: 0, wheels: 2.0, walk: 1.4 };
-const STRAY = { car: 22, wheels: 13, walk: 10 };
+const MODE_ALIAS = { scooter: 'wheels', bike: 'wheels', bicycle: 'wheels', foot: 'walk', walk: 'walk', car: 'car', wheels: 'wheels', bus: 'bus' };
+const H_FACTOR = { car: 0.85, wheels: 0.8, walk: 1, bus: 0.8 };
+const CLEAR = { car: 0, wheels: 2.0, walk: 1.4, bus: 0 };
+const STRAY = { car: 22, wheels: 13, walk: 10, bus: 22 };
 
 export const gpsMode = (m) => MODE_ALIAS[m] || 'walk';
 
 // Edge cost multiplier for a mode; Infinity = not allowed.
 function cost(mode, cls, rank, against) {
+  // A city bus (the line-5 job): the main roads; a neighbourhood street only when there is no other
+  // way, and never a service lane or a living street (founder 2026-10-30: "not into the neighbourhoods").
+  if (mode === 'bus') {
+    if (cls === C.CARLINK) return 1;
+    if (cls !== C.CAR || against) return Infinity;
+    return rank >= 6 ? 0.8 : rank >= 5 ? 0.9 : rank >= 4 ? 1.3 : rank >= 3 ? 4 : Infinity;
+  }
   if (mode === 'car') {
     if (cls === C.CARLINK) return 1;
     if (cls !== C.CAR || against) return Infinity;
@@ -503,7 +510,7 @@ export function createGps(deps = {}) {
       const s = nearestNode(G, from.x, from.z, mode), e = nearestNode(G, to.x, to.z, mode);
       if (s >= 0 && e >= 0) pts = astar(G, s, e, mode);
       // Islands (a footway that never meets a sidewalk): try the street network instead.
-      if (!pts && mode !== 'car') {
+      if (!pts && mode !== 'car' && mode !== 'bus') {
         const s2 = nearestNode(G, from.x, from.z, 'car'), e2 = nearestNode(G, to.x, to.z, 'car');
         if (s2 >= 0 && e2 >= 0) pts = astar(G, s2, e2, 'car');
       }

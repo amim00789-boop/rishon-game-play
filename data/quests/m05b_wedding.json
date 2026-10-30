@@ -69,7 +69,8 @@
       "timeFactor": 1.8,
       "obj": "obj.pickup",
       "objRun": "obj.run",
-      "dialogue": "d.delivered"
+      "dialogue": "d.delivered",
+      "relaxed": true
     },
     {
       "type": "drive",
@@ -80,11 +81,11 @@
       "modes": [
         "car"
       ],
-      "limit": 240,
       "obj": "obj.meet",
       "objRun": "obj.walk",
       "timeUp": "t.late",
-      "dialogue": "d.arrived"
+      "dialogue": "d.arrived",
+      "relaxed": true
     },
     {
       "type": "choice",

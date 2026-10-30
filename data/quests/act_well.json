@@ -1,0 +1,37 @@
+{
+  "id": "act_well",
+  "needsPoi": "water_tower",
+  "icon": "💧",
+  "yieldsToQuests": true,
+  "npcs": {
+    "rivka": {
+      "archetype": "savta",
+      "fallback": "older_man",
+      "at": {
+        "poi": "water_tower",
+        "dx": 12,
+        "dz": -9
+      }
+    }
+  },
+  "host": "rivka",
+  "dialogue": "d.hello",
+  "options": [
+    {
+      "text": "c.play",
+      "game": "well",
+      "introFirst": "d.introFirst",
+      "intro": "d.intro",
+      "after": "d.after",
+      "afterBest": "d.best"
+    },
+    {
+      "text": "c.about",
+      "reply": "d.about"
+    },
+    {
+      "text": "c.bye",
+      "reply": "d.bye"
+    }
+  ]
+}

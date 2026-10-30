@@ -813,8 +813,9 @@ export const ARCHETYPES = {
   sarah: {
     label: 'Sarah',
     skin: '#fbe6d8',
-    face: { lashes: true, mouth: 'grin', brows: 'up', iris: '#2e86de' },
-    hair: { style: 'long', color: '#ff1e12' },
+    face: { lashes: true, mouth: 'grin', brows: 'up', bigEyes: true, iris: '#1f7fe0' },
+    // deep red, not orange-red: the founder asked for a slightly darker red (2026-10-30)
+    hair: { style: 'long', color: '#b3170f' },
     shirt: { color: '#141414', neck: 'crew', sleeves: 'short', print: 'text', text: 'NYC', textColor: '#ffffff' },
     pants: { kind: 'long', color: '#2b3448' },
     shoes: { kind: 'boots', color: '#141414' },
@@ -848,6 +849,22 @@ export const ARCHETYPES = {
     shoes: { kind: 'sandals', color: '#7a5232' },
     accessories: [{ type: 'handbag', color: '#c2405a' }],
     style: { stride: 0.9 },
+    crowd: { zones: {} },
+  },
+
+  // Sapir from Nahalat Yehuda: the best wedding and party producer in the city. Long straight black
+  // hair, short denim shorts, a fitted black tank top, sunglasses on her head, phone always ready.
+  // Her black jeep stands next to her (act_sapir in data/quests).
+  sapir: {
+    label: 'Sapir',
+    skin: '#e9c09a',
+    face: { lashes: true, mouth: 'grin', brows: 'up' },
+    hair: { style: 'long', color: '#0b0908' },
+    shirt: { color: '#141414', neck: 'scoop', sleeves: 'none' },
+    pants: { kind: 'shorts', length: 'short', color: '#5b84b8' },
+    shoes: { kind: 'sneakers', color: '#ffffff', stripe: '#141414' },
+    accessories: [{ type: 'sunglassesOnHead', color: '#141414' }, { type: 'earrings', color: '#ffcb3d' }, { type: 'watch', color: '#ffcb3d' }, { type: 'handbag', color: '#141414' }],
+    style: { stride: 1.05, swagger: 0.6, bounce: 0.25 },
     crowd: { zones: {} },
   },
 

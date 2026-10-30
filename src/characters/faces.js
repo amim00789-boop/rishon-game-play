@@ -90,11 +90,12 @@ function eyeShape(g, f, expr) {
       if (f.iris && !f.sleepy) {
         g.fillStyle = f.iris;
         g.beginPath();
-        g.ellipse(x, ey + 1, rx * 0.72, ry * 0.74, 0, 0, Math.PI * 2);
+        g.ellipse(x, ey + 1, rx * 0.84, ry * 0.84, 0, 0, Math.PI * 2);
         g.fill();
+        // a small pupil so the colour still reads from the chase camera
         g.fillStyle = INK;
         g.beginPath();
-        g.ellipse(x, ey + 1, rx * 0.34, ry * 0.36, 0, 0, Math.PI * 2);
+        g.ellipse(x, ey + 1, rx * 0.28, ry * 0.3, 0, 0, Math.PI * 2);
         g.fill();
       }
       g.fillStyle = '#ffffff';

@@ -1,0 +1,44 @@
+{
+  "id": "act_sapir",
+  "icon": "🖤",
+  "yieldsToQuests": true,
+  "npcs": {
+    "sapir": {
+      "archetype": "sapir",
+      "fallback": "secular_woman",
+      "at": {
+        "lat": 31.985887,
+        "lon": 34.8062396,
+        "street": true
+      },
+      "yaw": 0
+    }
+  },
+  "vehicle": {
+    "kind": "suv",
+    "color": "#121212",
+    "dx": 5,
+    "dz": 3,
+    "yaw": 0
+  },
+  "host": "sapir",
+  "dialogue": "d.hello",
+  "options": [
+    {
+      "text": "c.job",
+      "reply": "d.job"
+    },
+    {
+      "text": "c.jeep",
+      "reply": "d.jeep"
+    },
+    {
+      "text": "c.tip",
+      "reply": "d.tip"
+    },
+    {
+      "text": "c.bye",
+      "reply": "d.bye"
+    }
+  ]
+}

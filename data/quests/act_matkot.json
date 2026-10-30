@@ -1,0 +1,37 @@
+{
+  "id": "act_matkot",
+  "needsPoi": "matkot_spot",
+  "icon": "🏓",
+  "yieldsToQuests": true,
+  "npcs": {
+    "tal": {
+      "archetype": "beach_guy",
+      "fallback": "older_man",
+      "at": {
+        "poi": "matkot_spot",
+        "dx": 16,
+        "dz": 6
+      }
+    }
+  },
+  "host": "tal",
+  "dialogue": "d.hello",
+  "options": [
+    {
+      "text": "c.play",
+      "game": "matkot",
+      "introFirst": "d.introFirst",
+      "intro": "d.intro",
+      "after": "d.after",
+      "afterBest": "d.best"
+    },
+    {
+      "text": "c.about",
+      "reply": "d.about"
+    },
+    {
+      "text": "c.bye",
+      "reply": "d.bye"
+    }
+  ]
+}

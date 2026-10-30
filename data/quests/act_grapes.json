@@ -1,0 +1,37 @@
+{
+  "id": "act_grapes",
+  "needsPoi": "camel_cellars",
+  "icon": "🍇",
+  "yieldsToQuests": true,
+  "npcs": {
+    "yosef": {
+      "archetype": "older_man",
+      "fallback": "older_man",
+      "at": {
+        "poi": "camel_cellars",
+        "dx": -14,
+        "dz": 10
+      }
+    }
+  },
+  "host": "yosef",
+  "dialogue": "d.hello",
+  "options": [
+    {
+      "text": "c.play",
+      "game": "grapes",
+      "introFirst": "d.introFirst",
+      "intro": "d.intro",
+      "after": "d.after",
+      "afterBest": "d.best"
+    },
+    {
+      "text": "c.about",
+      "reply": "d.about"
+    },
+    {
+      "text": "c.bye",
+      "reply": "d.bye"
+    }
+  ]
+}

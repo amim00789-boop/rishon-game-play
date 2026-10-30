@@ -30,7 +30,7 @@ export function buildSignalMeshes(scene, plan, heads, { ground }) {
   for (const h of heads) {
     h.lamps = [];
     for (const [a] of VEH) { h.lamps.push({ kind: 'v', a, i: n++ }); }
-    if (h.arm.ped) for (const [a] of PED) { h.lamps.push({ kind: 'p', a, i: n++ }); }
+    if (h.ped !== false && h.arm.ped) for (const [a] of PED) { h.lamps.push({ kind: 'p', a, i: n++ }); }
     h.site.heads = h.site.heads || [];
     if (!h.site.heads.includes(h)) h.site.heads.push(h);
   }
@@ -62,7 +62,7 @@ export function buildSignalMeshes(scene, plan, heads, { ground }) {
   const paintHead = (h, T, flashOn) => {
     const g = h.arm.group, site = h.site;
     const va = aspect(site, g, T);
-    const w = h.arm.ped ? walkState(site, g, T) : 0;
+    const w = h.ped !== false && h.arm.ped ? walkState(site, g, T) : 0;
     for (const l of h.lamps) {
       let on;
       if (l.kind === 'v') on = l.a === va;
@@ -110,9 +110,12 @@ export function buildSignalMeshes(scene, plan, heads, { ground }) {
       plan.armPoint(arm, 0, arm.inner + 0.12, P);
       plan.armPoint(arm, 0, arm.outer - 0.1, Q2);
       const th = 0.9;
-      const a = [P.x, lift(P.x, P.z, arm.rank), P.z], b = [Q2.x, lift(Q2.x, Q2.z, arm.rank), Q2.z];
-      const c = [Q2.x + Q2.tx * th, lift(Q2.x + Q2.tx * th, Q2.z + Q2.tz * th, arm.rank), Q2.z + Q2.tz * th];
-      const d = [P.x + P.tx * th, lift(P.x + P.tx * th, P.z + P.tz * th, arm.rank), P.z + P.tz * th];
+      // on a raised junction the line lies on the deck: the road's own surface height
+      const ly = site.deck && plan.armY ? (() => { const y0 = plan.armY(arm, 0) + 0.06; return () => y0; })() : null;
+      const L = (x, z) => (ly ? ly() : lift(x, z, arm.rank));
+      const a = [P.x, L(P.x, P.z), P.z], b = [Q2.x, L(Q2.x, Q2.z), Q2.z];
+      const c = [Q2.x + Q2.tx * th, L(Q2.x + Q2.tx * th, Q2.z + Q2.tz * th), Q2.z + Q2.tz * th];
+      const d = [P.x + P.tx * th, L(P.x + P.tx * th, P.z + P.tz * th), P.z + P.tz * th];
       quad(a, b, c, d);
       lines++;
     }

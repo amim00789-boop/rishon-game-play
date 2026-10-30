@@ -79,7 +79,10 @@ export function createTraffic({ scene, city, lots = [], collision = null, camera
     if (c[end] !== undefined) return c[end];
     let r = null;
     const node = end === 1 ? e.b : e.a;
-    const site = plan.siteAtNode(node.x, node.z);
+    let site = plan.siteAtNode(node.x, node.z);
+    // a link inside a junction of several nodes: the car is already past the stop line
+    const from = end === 1 ? e.a : e.b;
+    if (site && plan.inside && plan.inside(site, from.x, from.z)) site = null;
     if (site) {
       let arm = null;
       for (const a of site.arms) if (a.approach && a.stop && a.e.road === e.road && a.end === end && Math.abs(a.e.L - e.L) < 0.05) { arm = a; break; }
@@ -300,6 +303,17 @@ export function createTraffic({ scene, city, lots = [], collision = null, camera
     return out;
   }
 
+  // On a raised road the car sits on the deck the city draws, not on the graph's own height profile:
+  // the two disagree on the interchange ramps (measured 2026-10-30 with tools/bridge_audit.js: 135 of
+  // 391 raised sections, cars up to 11 u above the drawn road). The drawn surface is looked up from a
+  // little above the profile, so a deck of another road passing overhead is never picked.
+  const drawnAt = city && typeof city.heightAt === 'function' ? city.heightAt : null;
+  function deckY(x, z, y) {
+    if (!drawnAt) return y;
+    const sY = drawnAt(x, z, y + 2.5);
+    return Number.isFinite(sY) && sY > y - 14 ? sY + 0.05 : y;
+  }
+
   // Position, heading, height and pitch from the vehicle's route state.
   function place(v) {
     const K = v.K;
@@ -308,7 +322,7 @@ export function createTraffic({ scene, city, lots = [], collision = null, camera
       turnPoint(T, T.u, P);
       v.x = P.x; v.z = P.z;
       v.yawT = Math.atan2(P.dx, P.dz);
-      const yg = T.raised ? T.y0 + (T.y2 - T.y0) * P.u : ground(P.x, P.z) + T.lift;
+      const yg = T.raised ? deckY(P.x, P.z, T.y0 + (T.y2 - T.y0) * P.u) : ground(P.x, P.z) + T.lift;
       v.y = yg;
       v.pitchT = T.raised ? v.pitch : -Math.atan2(ground(P.x + P.dx * K.L * 0.5, P.z + P.dz * K.L * 0.5) - ground(P.x - P.dx * K.L * 0.5, P.z - P.dz * K.L * 0.5), K.L);
       v.hidden = v.e.tunnel && T.ne.tunnel;
@@ -321,8 +335,10 @@ export function createTraffic({ scene, city, lots = [], collision = null, camera
     v.y = net.heightAt(e, v.s, P.x, P.z, P.i, P.t);
     const h = K.L * 0.5;
     if (e.raised) {
+      v.y = deckY(P.x, P.z, v.y);
+      const fx = P.dx * v.dir, fz = P.dz * v.dir;
       const sf = clamp(v.s + v.dir * h, 0, e.L), sb = clamp(v.s - v.dir * h, 0, e.L);
-      const yf = net.heightAt(e, sf, 0, 0), yb = net.heightAt(e, sb, 0, 0);
+      const yf = deckY(P.x + fx * h, P.z + fz * h, net.heightAt(e, sf, 0, 0)), yb = deckY(P.x - fx * h, P.z - fz * h, net.heightAt(e, sb, 0, 0));
       v.pitchT = -Math.atan2(yf - yb, Math.abs(sf - sb) || 1);
     } else {
       const fx = P.dx * v.dir, fz = P.dz * v.dir;

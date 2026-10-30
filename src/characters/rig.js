@@ -171,7 +171,12 @@ export function buildRig(cfg) {
   const upperLegM = skirt && skirt.length === 'coat' ? mat(pants.color) : pantsM;
   for (const [side, s] of [['L', 1], ['R', -1]]) {
     const hip = (J['hip' + side] = group(pelvis, 'hip' + side, s * d.legX, 0, 0, 'XZY'));
-    addMesh(hip, tbox(1.0 * Math.min(bw, 1.08), d.ul + 0.1, 1.05, LIMB_R, 0.86), upperLegM, 0, -d.ul * 0.476, 0);
+    if (pants.kind === 'shorts' && pants.length === 'short' && !skirt) {
+      // short shorts: the hem sits high on the thigh, bare leg below it
+      const hem = d.ul * 0.42;
+      addMesh(hip, tbox(1.0 * Math.min(bw, 1.08), d.ul + 0.1, 1.0, LIMB_R, 0.86), skinM, 0, -d.ul * 0.476, 0);
+      addMesh(hip, tbox(1.06 * Math.min(bw, 1.08), hem + 0.1, 1.1, LIMB_R, 0.96), upperLegM, 0, -hem * 0.5 + 0.02, 0);
+    } else addMesh(hip, tbox(1.0 * Math.min(bw, 1.08), d.ul + 0.1, 1.05, LIMB_R, 0.86), upperLegM, 0, -d.ul * 0.476, 0);
     const knee = (J['kn' + side] = group(hip, 'kn' + side, 0, -d.ul, 0));
     addMesh(knee, tbox(0.92 * Math.min(bw, 1.08), d.ll + 0.13, 0.96, LIMB_R, 0.78), lowerLegM, 0, -d.ll * 0.47, 0);
     if (pants.cuff) addMesh(knee, rbox(1.02, 0.2, 1.06, 0.08), mat(pants.cuff), 0, -(d.ll - 0.09), 0);

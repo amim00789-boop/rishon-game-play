@@ -28,6 +28,15 @@ const RING_ENTRY = 40;
 const GROUP_ANGLE = (32 * Math.PI) / 180;
 const CLUSTER_R = 45;
 const MIN_UPSTREAM = 14; // a stop line needs this much road behind it
+// One physical junction is often several graph nodes (dual carriageways, slip lanes, the Moshe Dayan
+// ramps). Signal nodes joined by a link shorter than COMPLEX_LINK are one site with one phase plan;
+// a plain node joins when a link shorter than COMPLEX_HUG ties it to a member, or links shorter than
+// COMPLEX_LINK tie it to two members. Links inside a site carry no stop line and no head.
+const COMPLEX_LINK = 40, COMPLEX_HUG = 20;
+// Major crossings OSM left untagged (founder 2026-10-30: "missing lights") get lights too: a node
+// where two different axes each carry a road of at least MAJOR_RANK (secondary and up, not a link),
+// and no tagged signal within MAJOR_CLEAR.
+const MAJOR_RANK = 6, MAJOR_CLEAR = 90;
 const STOP_OFFSET = 4.3; // stop line beyond the zebra centre (zebra half length 2.5 + gap)
 export const MID_STOP = 4.3; // stop line before the centre of a mid-block crossing
 
@@ -255,55 +264,123 @@ export function buildSignalPlan(city, net, { ground = () => 0 } = {}) {
   }
 
   // ---- junction sites ----
-  const taken = []; // sites' centres, to keep a node and its neighbour from both claiming one mark
-  const addJunction = (n, source) => {
-    const arms = armsOf(n);
-    if (arms.length < 3 || !arms.some((a) => a.approach)) { stats.droppedNoApproach++; return null; }
-    const gr = groupArms(arms);
-    const site = { id: sites.length, kind: 'junction', source, x: n.x, z: n.z, arms, groups: [], node: n };
-    let idx = 0;
-    gr.forEach((g, gi) => {
-      const members = g.members;
-      const active = members.some((i) => arms[i].approach);
-      const rank = Math.max(...members.map((i) => arms[i].rank));
-      const hw = Math.max(...members.map((i) => arms[i].hw));
-      site.groups.push({ axis: g.axis, members, active, ped: false, green: greenFor(rank), score: rank * 10 + hw * 0.2 + members.length * 0.1 });
-    });
-    arms.forEach((arm, ai) => {
-      const gi = site.groups.findIndex((g) => g.members.includes(ai));
-      const otherHw = Math.max(0, ...arms.filter((_, bi) => !site.groups[gi].members.includes(bi)).map((b) => b.hw));
-      const z = zebraOnArm(n.x, n.z, arm.ax, arm.az, otherHw + 14);
-      const stopD = z ? z.along + STOP_OFFSET : Math.max(otherHw, arm.hw * 0.6) + 5.5;
-      finishArm(site, arm, ai, gi, Math.min(stopD, Math.max(3, arm.e.L - 1)), z && z.c);
-      if (arm.ped && arm.approach !== undefined) site.groups[gi].ped = true;
-      if (arm.zebra) crossingMap.set(arm.zebra, { site, group: gi });
-    });
-    stats.arms += arms.length;
-    stats.approaches += arms.filter((a) => a.approach).length;
-    sites.push(site);
-    byKey.set(nodeKey(n.x, n.z), site);
-    return site;
-  };
-
   const miniNear = (n) => minis.some((m) => Math.hypot(m.x - n.x, m.z - n.z) < n.maxHw + 30);
+  const raisedNode = (n) => n.edges.some(({ e, end }) => e.ya && e.ya[end === 0 ? 0 : e.pts.length - 1] - ground(n.x, n.z) > 1.0);
+  const otherEnd = (e, end) => (end === 1 ? e.a : e.b);
   const midCandidates = [...loose];
+  const cand = new Map(); // node -> 'signals' | 'crossings' | 'major'
+  const deckNodes = new Set();
   for (const [n, c] of claimed) {
-    const raised = n.edges.some(({ e, end }) => e.ya && e.ya[end === 0 ? 0 : e.pts.length - 1] - ground(n.x, n.z) > 1.0);
-    const ringed = nearRing(n.x, n.z);
-    if (raised) { stats.droppedDeck++; continue; }
-    if (ringed) { stats.droppedRing++; continue; }
+    // A tagged signal on a raised junction (the ramp terminals on the interchange overpasses: Moshe
+    // Dayan, Tashach, Mota Gur, Komemiyut) stays: its poles and lines go on the road surface.
+    if (raisedNode(n)) {
+      if (!c.signals.length) { stats.droppedDeck++; continue; }
+      deckNodes.add(n);
+    }
+    if (nearRing(n.x, n.z)) { stats.droppedRing++; continue; }
     if (miniNear(n)) { stats.droppedMini++; continue; }
     if (c.signals.length) {
-      if (addJunction(n, 'signals')) stats.junctions++;
+      cand.set(n, 'signals');
       stats.crossingsAbsorbed += c.crossings.length;
       continue;
     }
     // Crossing marks only: a junction when they sit on two different arms, else single pedestrian signals.
     const dirs = new Set(c.crossings.map(({ o }) => Math.round(Math.atan2(o.z - n.z, o.x - n.x) / (Math.PI / 4))));
     if (dirs.size >= 2 && n.edges.some(({ e }) => e.rank >= 5 && !e.link)) {
-      if (addJunction(n, 'crossings')) { stats.junctions++; stats.junctionsFromCrossings++; }
+      cand.set(n, 'crossings');
       stats.crossingsAbsorbed += c.crossings.length;
     } else for (const { o } of c.crossings) midCandidates.push(o);
+  }
+  // Untagged major crossings.
+  stats.major = 0;
+  const tagged = [...cand.keys()];
+  for (const n of jn) {
+    if (cand.has(n) || n.maxRank < MAJOR_RANK || n.maxRank >= 9) continue;
+    const arms = armsOf(n).filter((a) => !a.link && a.rank >= MAJOR_RANK && a.rank < 9);
+    if (arms.length < 2) continue;
+    const axes = groupArms(arms);
+    if (axes.length < 2) continue;
+    if (raisedNode(n) || nearRing(n.x, n.z) || miniNear(n)) continue;
+    if (tagged.some((t) => Math.hypot(t.x - n.x, t.z - n.z) < MAJOR_CLEAR)) continue;
+    cand.set(n, 'major');
+    stats.major++;
+  }
+  // Complexes: candidates tied by short links, plus the plain nodes hugging them.
+  const cpar = new Map();
+  const cfind = (n) => { while (cpar.get(n) !== n) { cpar.set(n, cpar.get(cpar.get(n))); n = cpar.get(n); } return n; };
+  for (const n of cand.keys()) cpar.set(n, n);
+  for (const n of cand.keys()) for (const { e, end } of n.edges) {
+    const m = otherEnd(e, end);
+    if (m !== n && cand.has(m) && e.L < COMPLEX_LINK && !e.tunnel) cpar.set(cfind(n), cfind(m));
+  }
+  for (const n of jn) {
+    if (cand.has(n) || nearRing(n.x, n.z)) continue;
+    const ties = new Set();
+    let hug = null;
+    for (const { e, end } of n.edges) {
+      const m = otherEnd(e, end);
+      if (!cand.has(m) || e.tunnel || e.L >= COMPLEX_LINK) continue;
+      ties.add(cfind(m));
+      if (e.L < COMPLEX_HUG) hug = m;
+    }
+    if (!ties.size || (!hug && ties.size < 2)) continue;
+    cpar.set(n, n);
+    const roots = [...ties];
+    for (const r of roots) cpar.set(cfind(r), n);
+    stats.hugged = (stats.hugged || 0) + 1;
+  }
+  const complexes = new Map();
+  for (const n of cpar.keys()) { const r = cfind(n); let l = complexes.get(r); if (!l) complexes.set(r, (l = [])); l.push(n); }
+  stats.complexNodes = 0;
+  for (const members of complexes.values()) {
+    const src = members.map((m) => cand.get(m)).find((x) => x === 'signals') || members.map((m) => cand.get(m)).find(Boolean) || 'signals';
+    if (members.length > 1) stats.complexNodes += members.length;
+    if (addComplex(members, src)) { stats.junctions++; if (src === 'crossings') stats.junctionsFromCrossings++; }
+  }
+
+  // A site for one or more nodes that make one junction. Arms are the edges leaving the group; each
+  // keeps the node it leaves from, which is where its stop line and zebra are measured.
+  function addComplex(members, source) {
+    const memberSet = new Set(members);
+    const arms = [];
+    for (const m of members) for (const a of armsOf(m)) {
+      if (memberSet.has(otherEnd(a.e, a.end))) continue;
+      a.node = m;
+      arms.push(a);
+    }
+    if (arms.length < 3 || !arms.some((a) => a.approach)) { stats.droppedNoApproach++; return null; }
+    const gr = groupArms(arms);
+    if (gr.length < 2) { stats.droppedNoApproach++; return null; }
+    let cx = 0, cz = 0;
+    for (const m of members) { cx += m.x; cz += m.z; }
+    cx /= members.length; cz /= members.length;
+    const site = { id: sites.length, kind: 'junction', source, x: cx, z: cz, arms, groups: [], node: members[0], nodes: members, memberKeys: new Set(members.map((m) => nodeKey(m.x, m.z))), deck: members.some((m) => deckNodes.has(m) || raisedNode(m)) };
+    if (site.deck) stats.deckSites = (stats.deckSites || 0) + 1;
+    gr.forEach((g) => {
+      const mem = g.members;
+      const active = mem.some((i) => arms[i].approach);
+      const rank = Math.max(...mem.map((i) => arms[i].rank));
+      const hw = Math.max(...mem.map((i) => arms[i].hw));
+      site.groups.push({ axis: g.axis, members: mem, active, ped: false, green: greenFor(rank), score: rank * 10 + hw * 0.2 + mem.length * 0.1 });
+    });
+    arms.forEach((arm, ai) => {
+      const gi = site.groups.findIndex((g) => g.members.includes(ai));
+      // clearance at the arm's own node: the widest road there that crosses this arm's axis
+      const myAxis = axisOf(arm.ax, arm.az);
+      let otherHw = 0;
+      for (const b of armsOf(arm.node)) if (axisDist(axisOf(b.ax, b.az), myAxis) > GROUP_ANGLE) otherHw = Math.max(otherHw, b.hw);
+      const n = arm.node;
+      const z = zebraOnArm(n.x, n.z, arm.ax, arm.az, otherHw + 14);
+      const stopD = z ? z.along + STOP_OFFSET : Math.max(otherHw, arm.hw * 0.6) + 5.5;
+      finishArm(site, arm, ai, gi, Math.min(stopD, Math.max(3, arm.e.L - 1)), z && z.c);
+      if (arm.ped) site.groups[gi].ped = true;
+      if (arm.zebra) crossingMap.set(arm.zebra, { site, group: gi });
+    });
+    stats.arms += arms.length;
+    stats.approaches += arms.filter((a) => a.approach).length;
+    sites.push(site);
+    for (const k of site.memberKeys) byKey.set(k, site);
+    return site;
   }
 
   // ---- mid-block sites ----
@@ -395,6 +472,8 @@ export function buildSignalPlan(city, net, { ground = () => 0 } = {}) {
     hooks: [],
     advance(dt, px = 0, pz = 0) { this.t += dt; for (const h of this.hooks) h(this.t, px, pz); },
     siteAtNode(x, z) { return byKey.get(nodeKey(x, z)) || null; },
+    // True when both ends of a link are nodes of the same site: the inside of a junction.
+    inside(site, ax, az) { return !!(site && site.memberKeys && site.memberKeys.has(nodeKey(ax, az))); },
     // The arm of a junction site a vehicle with travel direction (tx, tz) arrives on.
     armFor(site, tx, tz) {
       let best = null;
@@ -411,6 +490,15 @@ export function buildSignalPlan(city, net, { ground = () => 0 } = {}) {
     crossingWalk(c, T = this.t) { const r = crossingMap.get(c); return r ? walkState(r.site, r.group, T) : null; },
     armPoint,
     nearRing,
+    // Height of the road surface at an arm point (ds before the stop line): on a raised junction the
+    // poles and the stop line stand on the deck, not on the ground below it.
+    armY(arm, ds) {
+      const e = arm.e;
+      const s = arm.end === 1 ? e.L - (arm.stopD + ds) : arm.stopD + ds;
+      const sc = Math.max(0, Math.min(e.L, s));
+      net.pointAt(e, sc, 0, PT);
+      return heightOn(e, sc, PT.x, PT.z);
+    },
   };
   return plan;
 }

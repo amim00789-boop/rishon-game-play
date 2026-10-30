@@ -23,6 +23,7 @@
     "go": "Go, go, go!",
     "limit": "{t} seconds on the clock",
     "timer": "⏱ {t}",
+    "noRush": "⭐ No rush, ride to the star",
     "wheels": "by {k:2} or {k:3}",
     "waiting": "{name} is waiting for you",
     "useMap": "{k:M} map · search the area",

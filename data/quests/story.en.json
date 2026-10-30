@@ -31,7 +31,10 @@
       "place": "Set the chairs",
       "deduce": "Map detective",
       "debate": "Say it back",
-      "surf": "Surf"
+      "surf": "Surf",
+      "grapes": "Winery harvest",
+      "well": "We found water",
+      "matkot": "Matkot"
     },
     "deduceNo": "Not there. Read the clues again and mark another spot on the map.",
     "markMap": "{k:M} map · mark where it is ({n} options)",
@@ -81,7 +84,11 @@
     "sarah": "Sarah",
     "ori": "Ori",
     "zohar": "Zohar",
-    "baker": "Esther from the bakery"
+    "baker": "Esther from the bakery",
+    "sapir": "Sapir",
+    "yosef": "Yosef",
+    "rivka": "Rivka",
+    "tal": "Tal"
   },
   "items": {
     "pot": "jachnun pot",
@@ -1449,5 +1456,218 @@
       ]
     },
     "page": "📱 Rishon. Natan Bernitzki: neighbours report a devoted driver who took Zohar on four errands and came back with a watermelon. (680 likes. Zohar commented: \"and a cookie!\")"
+  },
+  "act_sapir": {
+    "title": "Sapir from Nahalat Yehuda",
+    "c": {
+      "job": "What do you do, exactly?",
+      "jeep": "What a jeep!",
+      "tip": "Any tip for a good party?",
+      "bye": "Bye, Sapir"
+    },
+    "d": {
+      "hello": [
+        [
+          "sapir",
+          "Hold on, just closing with the DJ. ...Yes, honey, eight thirty and not a minute later. Great. Hi! Are you here for a wedding or a party?"
+        ]
+      ],
+      "job": [
+        [
+          "sapir",
+          "I'm Sapir. Weddings, bar mitzvahs, birthdays, bachelorette parties. If anyone danced in Rishon, chances are I set up their dance floor."
+        ],
+        [
+          "sapir",
+          "The secret? Know who isn't talking to whom, and seat them as far apart as possible. Then, at the end of the night, they dance together. Every time."
+        ]
+      ],
+      "jeep": [
+        [
+          "sapir",
+          "Black, tall and full to the roof. Three hundred cups, two speakers, a balloon arch and one bride's mother left over from Tuesday."
+        ],
+        [
+          "narrator",
+          "Sapir taps the jeep's roof, and something inside falls over."
+        ],
+        [
+          "sapir",
+          "It's fine. That was the number-two balloon."
+        ]
+      ],
+      "tip": [
+        [
+          "sapir",
+          "Three things. Food before the dancing, not after. Air conditioning on twenty-two, not lower. And put the crazy uncle next to the speaker, so he feels important."
+        ],
+        [
+          "sapir",
+          "No money for a hall? A garden in Nahalat Yehuda, a string of lights and the whole street comes. Best party there is."
+        ]
+      ],
+      "bye": [
+        [
+          "sapir",
+          "Right, I have a wedding at the Laguna at seven. If you see a black jeep going fast, that's me, and it's because of the desserts."
+        ]
+      ]
+    }
+  },
+  "act_grapes": {
+    "title": "Yosef at the winery",
+    "c": {
+      "play": "Let's pick!",
+      "about": "What is this place?",
+      "bye": "Bye, Yosef"
+    },
+    "d": {
+      "hello": [
+        [
+          "yosef",
+          "The harvest has started and my hands are not what they were. Got young legs? I have an empty barrel and sun over the vineyard."
+        ]
+      ],
+      "introFirst": [
+        [
+          "yosef",
+          "Very simple. Grapes fall, you move the barrel and catch them. A golden grape is worth three. And if you see a bee, move. It doesn't complain, it stings."
+        ]
+      ],
+      "intro": [
+        [
+          "yosef",
+          "Barrel ready. Forty seconds. Go."
+        ]
+      ],
+      "after": [
+        [
+          "yosef",
+          "{score} points! That's holiday wine. Your best: {best}."
+        ]
+      ],
+      "best": [
+        [
+          "yosef",
+          "{score}! A new record! I'm writing it on the barrel, next to the Baron's name."
+        ]
+      ],
+      "about": [
+        [
+          "yosef",
+          "The oldest winery in the country, since the Baron. Once the whole colony worked here. Today it's me, the bees and whoever passes by."
+        ]
+      ],
+      "bye": [
+        [
+          "yosef",
+          "L'chaim! I mean, goodbye. Here it's the same thing."
+        ]
+      ]
+    }
+  },
+  "act_well": {
+    "title": "Rivka at the water tower",
+    "c": {
+      "play": "Let's look for water",
+      "about": "What is \"we found water\"?",
+      "bye": "Bye, Rivka"
+    },
+    "d": {
+      "hello": [
+        [
+          "rivka",
+          "In 1882 they dug the sand here for weeks, until someone shouted \"We found water!\". Want to try? I have a hoe."
+        ]
+      ],
+      "introFirst": [
+        [
+          "rivka",
+          "You dig a hole and the colour says how close you are. Blue is very close, green is damp, brown is desert. You have ten digs. Not in my garden."
+        ]
+      ],
+      "intro": [
+        [
+          "rivka",
+          "The hoe is waiting. Ten digs."
+        ]
+      ],
+      "after": [
+        [
+          "rivka",
+          "{score} points. That's how a colony was built. Your best: {best}."
+        ]
+      ],
+      "best": [
+        [
+          "rivka",
+          "{score}! A new record! Had you been here in 1882, they'd have named a street after you."
+        ]
+      ],
+      "about": [
+        [
+          "rivka",
+          "It's the city's motto. \"We found water\", like in the Bible. Without that water there'd be no Rishon, no winery and nowhere for me to put this chair."
+        ]
+      ],
+      "bye": [
+        [
+          "rivka",
+          "Drink water, sweetie. Here that's respect."
+        ]
+      ]
+    }
+  },
+  "act_matkot": {
+    "title": "Tal at the beach",
+    "c": {
+      "play": "Let's play matkot",
+      "about": "Are there rules?",
+      "bye": "Bye, Tal"
+    },
+    "d": {
+      "hello": [
+        [
+          "tal",
+          "Bro, my partner went for an ice lolly an hour ago. Want a bat?"
+        ]
+      ],
+      "introFirst": [
+        [
+          "tal",
+          "Simple. When the ball reaches your circle, press Space. Right on time is perfect. Three misses and it's over. Nobody counts except me."
+        ]
+      ],
+      "intro": [
+        [
+          "tal",
+          "Bat in hand. I serve."
+        ]
+      ],
+      "after": [
+        [
+          "tal",
+          "{score} hits! A Rishon rally. Your best: {best}."
+        ]
+      ],
+      "best": [
+        [
+          "tal",
+          "{score}! A new record! The whole beach heard the tok-tok."
+        ]
+      ],
+      "about": [
+        [
+          "tal",
+          "Rule one: nobody wins at matkot. Only who keeps going. Rule two: don't drop it on the neighbour's towel."
+        ]
+      ],
+      "bye": [
+        [
+          "tal",
+          "Take care. And bring an ice lolly if you see my partner."
+        ]
+      ]
+    }
   }
 }

@@ -1,0 +1,43 @@
+{
+  "ui": {
+    "start": "Start {k:Enter}",
+    "later": "Later {k:Esc}",
+    "done": "Done {k:Enter}"
+  },
+  "grapes": {
+    "title": "Harvest at the winery",
+    "keys": "A / D, the arrows or the mouse: move the barrel · Esc quits",
+    "how": "Catch grapes in the barrel for 40 seconds. 🍇 is 1, a golden grape is 3, a bee takes 2. Leaves are just leaves.",
+    "stat": "🍇 {n} · ⏱ {t}",
+    "gold": "Golden grape! +3",
+    "bee": "Bee! -2",
+    "result": "You picked {n} points",
+    "line": "{c} bunches in the barrel, {b} stings"
+  },
+  "well": {
+    "title": "We found water!",
+    "keys": "Click a square, or the arrows and Space: dig · Esc quits",
+    "how": "The water hides under the sand. Each hole shows how close: blue very close, light blue close, green damp, brown far. Ten digs.",
+    "stat": "⛏ {n} left",
+    "found": "We found water!",
+    "wet": "Wet! Very close",
+    "damp": "Damp... getting closer",
+    "dry": "Dry",
+    "desert": "Desert",
+    "out": "Out of digs. Here's the water!",
+    "result": "{n} points",
+    "lineFound": "You found water after {n} digs",
+    "lineMiss": "No matter, the founders dug for weeks too"
+  },
+  "matkot": {
+    "title": "Matkot on the beach",
+    "keys": "Space or click: hit when the ball is in the circle · Esc quits",
+    "how": "Tal serves. When the ball reaches your circle, press Space. Three misses and it's over.",
+    "stat": "🏓 {n} · ❤️ {l}",
+    "perfect": "Perfect!",
+    "miss": "Missed! One more",
+    "over": "Over. What a rally!",
+    "result": "{n} hits",
+    "line": "Longest rally: {b}"
+  }
+}

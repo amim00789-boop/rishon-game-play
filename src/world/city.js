@@ -1498,12 +1498,12 @@ function buildNetwork(data, ctx) {
 
   // Is (x, z) on another road's carriageway at about height h? Roads running within ~30 degrees of
   // `dir` are ignored, so a street's own continuation never cuts its sidewalk or lines.
-  function inCarriage(x, z, self, h, dx, dz, minRank, margin, tol = 2.5) {
+  function inCarriage(x, z, self, h, dx, dz, minRank, margin, tol = 2.5, par = 0.87) {
     const list = cgrid.at(x, z);
     if (!list) return false;
     for (const s of list) {
       if (s.ri === self || s.rank < minRank) continue;
-      if ((dx || dz) && Math.abs(dx * s.ux + dz * s.uz) > 0.87) continue;
+      if ((dx || dz) && Math.abs(dx * s.ux + dz * s.uz) > par) continue;
       const d = segDist(s, x, z);
       if (d > s.hw + margin) continue;
       if (Math.abs(s.h0 + (s.h1 - s.h0) * segT - h) > tol) continue;
@@ -1666,6 +1666,22 @@ function buildNetwork(data, ctx) {
         const x = p[0] + RN[k][0] * s * (hs(s) - 0.25), z = p[1] + RN[k][1] * s * (hs(s) - 0.25);
         return inCarriage(x, z, w.idx ?? -1, ry[k], 0, 0, 1, 0.3);
       }));
+      // ...and between the vertices: on a long segment another carriageway can cross the edge with
+      // both ends clear, and the parapet ran across it (Etzel bridge, measured 2026-10-30: cars
+      // stuck both ways). A segment whose edge meets a carriageway anywhere along it stays open.
+      [-1, 1].forEach((s, m) => {
+        open[m].seg = rp.slice(0, -1).map((p, k) => {
+          const q = rp[k + 1], L = Math.hypot(q[0] - p[0], q[1] - p[1]);
+          const n = Math.min(12, Math.floor(L / 3));
+          for (let i = 1; i < n; i++) {
+            const t = i / n;
+            const x = p[0] + RN[k][0] * s * (hs(s) - 0.25) + ((q[0] + RN[k + 1][0] * s * (hs(s) - 0.25)) - (p[0] + RN[k][0] * s * (hs(s) - 0.25))) * t;
+            const z = p[1] + RN[k][1] * s * (hs(s) - 0.25) + ((q[1] + RN[k + 1][1] * s * (hs(s) - 0.25)) - (p[1] + RN[k][1] * s * (hs(s) - 0.25))) * t;
+            if (inCarriage(x, z, w.idx ?? -1, ry[k] + (ry[k + 1] - ry[k]) * t, 0, 0, 1, 0.3)) return true;
+          }
+          return false;
+        });
+      });
       // Parallel decks a few units apart (a carriageway and its collector road, twin halves over
       // the 412 at HaRishonim) read as separate bridges with a slot of sky and two parapets in
       // between. Where another raised carriageway at about this height lies within JOIN_GAP of
@@ -1681,7 +1697,7 @@ function buildNetwork(data, ctx) {
         return 0;
       }));
       absolute(modelled ? () => {} : () => {
-        const shut = (o) => (k) => !o[k] && !o[k + 1];
+        const shut = (o) => (k) => !o[k] && !o[k + 1] && !(o.seg && o.seg[k]);
         const both = (m) => (k) => !!join[m][k] && !!join[m][k + 1];
         // Segments whose slot this way decks over (it is the lower-indexed of the pair).
         const ownSeg = [[], []];
@@ -1819,6 +1835,19 @@ function buildNetwork(data, ctx) {
         for (const s of [-1, 1]) {
           const o = openC[s < 0 ? 0 : 1];
           if (o[k] || o[k + 1]) continue; // a road joins or runs alongside: no wall to drive into
+          if (open[s < 0 ? 0 : 1].seg && open[s < 0 ? 0 : 1].seg[k]) continue;
+          // ...also between the vertices (the ramp from Route 4 onto Moshe Dayan, 2026-10-30)
+          {
+            const p0 = rp[k], p1 = rp[k + 1], L = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]), n = Math.min(12, Math.floor(L / 3));
+            let hit = false;
+            for (let i = 1; i < n && !hit; i++) {
+              const t = i / n, off = s * (wos(s) + 0.2);
+              const x = p0[0] + RN[k][0] * off + (p1[0] + RN[k + 1][0] * off - p0[0] - RN[k][0] * off) * t;
+              const z = p0[1] + RN[k][1] * off + (p1[1] + RN[k + 1][1] * off - p0[1] - RN[k][1] * off) * t;
+              hit = inCarriage(x, z, w.idx ?? -1, 0, 0, 0, 1, 0.3, 1e9);
+            }
+            if (hit) continue;
+          }
           const wo = wos(s);
           const a = ep(rp, RN, k, s * (wo + 0.4), 0), b = ep(rp, RN, k + 1, s * (wo + 0.4), 0);
           const a2 = ep(rp, RN, k, s * wo, 0), b2 = ep(rp, RN, k + 1, s * wo, 0);
@@ -2437,6 +2466,9 @@ function buildNetwork(data, ctx) {
   // Nothing is drawn across a junction mouth or a driveway: a divider stops where another
   // carriageway covers its line.
   const DIV_HW = 0.4, DIV_H = 1.0, DIV_KERB = 0.2, DIV_STEP = 3;
+  // centre lines of two one-way twins must be at least this far apart for a barrier between them:
+  // a car (2.9 wide) on each centre line plus the barrier and a little play (measured 2026-10-30)
+  const TWIN_MIN = 7;
   const deckTwinAt = (w, x, z, dx, dz, h, side) => {
     const list = cgrid.at(x, z);
     if (!list) return null;
@@ -2509,6 +2541,9 @@ function buildNetwork(data, ctx) {
           if (h <= 0.3) return null;
           const tw = deckTwinAt(w, x, z, dx, dz, h, s);
           if (!tw || w.idx > tw.ri) return null;
+          // Twins mapped closer than two cars side by side (Etzel bridge, OSM centre lines 2 u
+          // apart): a barrier on the midline stands in both driving lines. No barrier there.
+          if (tw.d < TWIN_MIN) return null;
           const off = s * Math.max(0.1, (w.hw2 - tw.hw + tw.d) / 2), mx = x - dz * off, mz = z + dx * off;
           if (inCarriage(mx, mz, w.idx, h, dx, dz, 1, 0.5)) return null;
           return { off, mode: 'up' };
@@ -2524,7 +2559,7 @@ function buildNetwork(data, ctx) {
     dividerWalk(w, (x, z, dx, dz, h) => {
       if (h > 0.3) return null;
       const tw = twinAt(w, x, z, dx, dz, s);
-      if (!tw || w.idx > tw.ri) return null;
+      if (!tw || w.idx > tw.ri || tw.d < TWIN_MIN) return null;
       const inner = w.hw2, outer = (w.hw2 + tw.d - tw.hw) / 2;
       if (outer - inner >= 1) return null; // a planted median is drawn here
       const off = s * (tw.d / 2), mx = x - dz * off, mz = z + dx * off;
@@ -2793,6 +2828,28 @@ function buildNetwork(data, ctx) {
       return l > 0.5 ? { ax: (at.x - j.x) / l, az: (at.z - j.z) / l, hw: a.w.hw2, rank: a.w.rank, link: !!(a.w.cls && a.w.cls.link) } : null;
     }).filter(Boolean),
   })).filter((j) => j.arms.length >= 3);
+  // Safety net (2026-10-30): a raised wall piece (parapet, barrier, embankment wall) that runs
+  // across another carriageway at its height blocked cars dead on several interchanges (the
+  // city-wide ramp drive found 83 stuck runs). A piece whose middle lies well inside the lanes of
+  // a road it crosses at more than ~20 degrees loses its collider; walls along a road are kept.
+  {
+    let dropped = 0;
+    for (let ci = colliders.length - 1; ci >= 0; ci--) {
+      const c = colliders[ci];
+      if (c.kind !== 'wall' || c.y0 == null || !c.points || c.points.length !== 4) continue;
+      const P = c.points;
+      const cx = (P[0][0] + P[1][0] + P[2][0] + P[3][0]) / 4, cz = (P[0][1] + P[1][1] + P[2][1] + P[3][1]) / 4;
+      // long axis of the piece
+      let ax = P[1][0] - P[0][0], az = P[1][1] - P[0][1];
+      const bx = P[2][0] - P[1][0], bz = P[2][1] - P[1][1];
+      if (Math.hypot(bx, bz) > Math.hypot(ax, az)) { ax = bx; az = bz; }
+      const l = Math.hypot(ax, az);
+      if (l < 0.5) continue;
+      const h = c.y0 + 0.6;
+      if (inCarriage(cx, cz, -1, h, ax / l, az / l, 2, -1.6, 1.5, 0.94)) { colliders.splice(ci, 1); dropped++; }
+    }
+    prof.wallsAcrossRoads = dropped;
+  }
   return { roads, sidewalks, busStops, medians, crossings, heightAt, onCarriage, cars, junctions: junctions.length, junctionNodes, rings, rampStats, prof, platformAt, stationStairs, platformHandled, sidePlatforms, streetSigns };
 }
 

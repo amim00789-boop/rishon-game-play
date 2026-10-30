@@ -23,6 +23,7 @@ import * as THREE from 'three';
 import { toonMat } from './renderer.js';
 import { project } from '../geo.js';
 import { PropStage } from './questprops.js';
+import { buildVehicleMesh, KINDS as VEHICLE_KINDS } from '../vehicles/models.js';
 import { t as tr, register, i18n, dir, poiName, placeName, rich } from '../i18n.js';
 
 // The character the player becomes in the hero story (Super Malul): never shown as an NPC then.
@@ -380,6 +381,24 @@ export class QuestSystem {
         const n = { key, id, quest: act.id, qi: -1, def, activity: act, av: null, x: free.x, z: free.z, y: 0, home: { ...free }, target: null, path: null, yaw: def.yaw || 0, marker: null, markerKind: null };
         n.y = this.groundY(n.x, n.z, Infinity);
         this.npcs[key] = n;
+      }
+      // A host's own car parked beside them (Sapir's black jeep): { kind, color, dx, dz, yaw }.
+      if (act.vehicle) {
+        try {
+          const v = act.vehicle, host = this.npcs[`${act.id}:${act.host}`];
+          const K = VEHICLE_KINDS[v.kind] || VEHICLE_KINDS.suv;
+          const spot = collision.findFree((host ? host.x : 0) + (v.dx || 5), (host ? host.z : 0) + (v.dz || 0), Math.max(K.L, K.W) / 2 + 0.4);
+          const mesh = buildVehicleMesh(v.kind || 'suv', new THREE.Color(v.color || '#141414').getHex());
+          const yaw = v.yaw || 0;
+          mesh.position.set(spot.x, this.groundY(spot.x, spot.z, Infinity), spot.z);
+          mesh.rotation.y = yaw;
+          mesh.name = `${act.id}:vehicle`;
+          this.root.add(mesh);
+          const c = Math.cos(yaw), sn = Math.sin(yaw), hl = K.L / 2, hw = K.W / 2;
+          const pts = [[-hw, -hl], [hw, -hl], [hw, hl], [-hw, hl]].map(([lx, lz]) => [spot.x + lx * c + lz * sn, spot.z - lx * sn + lz * c]);
+          if (collision.addPolygon) collision.addPolygon({ points: pts, kind: 'stage' });
+          act.vehicleAt = { x: spot.x, z: spot.z };
+        } catch (e) { console.warn('[quests] activity vehicle failed', act.id, e); }
       }
     }
 
@@ -1322,7 +1341,7 @@ export class QuestSystem {
         key = s.objRun || s.obj;
         target = at(a.drop);
         const left = Math.max(0, Math.ceil(a.deadline - this.time));
-        progress = this.t('ui.timer', { t: `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` });
+        progress = s.relaxed ? this.t('ui.noRush') : this.t('ui.timer', { t: `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` });
       } else { target = at(a.pickup); progress = this.t('ui.wheels'); }
     } else if (s.type === 'escort') {
       const n = this.npc(q, s.npc);
@@ -1333,7 +1352,7 @@ export class QuestSystem {
         key = s.objRun || s.obj;
         target = at(a.drop);
         const left = Math.max(0, Math.ceil(a.deadline - this.time));
-        progress = this.t('ui.timer', { t: `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` });
+        progress = s.relaxed ? this.t('ui.noRush') : this.t('ui.timer', { t: `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` });
       } else { target = at(n); progress = this.t('ui.byCar'); }
     } else if (s.type === 'track') {
       if (a.phase === 'follow') { key = s.objFollow || s.obj; target = at(a.home); }
@@ -1646,13 +1665,14 @@ export class QuestSystem {
         return;
       }
       a.phase = 'run';
-      a.deadline = this.time + a.limit;
+      // relaxed: a friendly errand, no clock at all
+      a.deadline = s.relaxed ? Infinity : this.time + a.limit;
       a.runStart = this.time;
       this.clearStepObjs();
       this.addBeam(a.drop, 0x2ec4b6);
       this.carry = itemMesh(s.item || 'tray');
       this.root.add(this.carry);
-      if (this.hud) this.hud.banner(this.t('ui.go'), this.qt(q, s.objRun || s.obj), this.t('ui.limit', { t: a.limit }));
+      if (this.hud) this.hud.banner(this.t('ui.go'), this.qt(q, s.objRun || s.obj), s.relaxed ? this.t('ui.noRush') : this.t('ui.limit', { t: a.limit }));
       return;
     }
     // run
@@ -1780,7 +1800,7 @@ export class QuestSystem {
         return;
       }
       a.phase = 'run';
-      a.deadline = this.time + a.limit;
+      a.deadline = s.relaxed ? Infinity : this.time + a.limit;
       a.runStart = this.time;
       // A retry starts from where this leg began: a multi-stop ride (m19) picks the passenger up
       // where the last leg dropped them, not at their first spawn.
@@ -1802,7 +1822,7 @@ export class QuestSystem {
           this.arrive(q, s, a, n);
         }, q);
       }
-      if (this.hud) this.hud.banner(this.t('ui.go'), this.qt(q, s.objRun || s.obj), this.t('ui.limit', { t: a.limit }));
+      if (this.hud) this.hud.banner(this.t('ui.go'), this.qt(q, s.objRun || s.obj), s.relaxed ? this.t('ui.noRush') : this.t('ui.limit', { t: a.limit }));
       return;
     }
     n.x = px; n.z = pz;
@@ -1965,7 +1985,8 @@ export class QuestSystem {
     const a = this.state.active, step = a && this.byId[a.id].steps[a.step];
     // Founder: arrows on the ground only where the route is the challenge: timed deliveries
     // (races draw their own). Rides, first trips and everything else: star + tracker only.
-    const ribbon = !!(step && step.type === 'timed');
+    // A relaxed step (founder, 2026-10-30: "just a star, just ride there") gets no ribbon.
+    const ribbon = !!(step && step.type === 'timed' && !step.relaxed);
     const t = ribbon ? obj && obj.target : null;
     const mode = { scooter: 'wheels', bike: 'wheels', car: 'car' }[player.mode] || 'walk';
     if (!t || t.zone || !gps.ready || this.jumping) {
@@ -2043,7 +2064,7 @@ export class QuestSystem {
     this.refreshHud();
   }
 
-  static GAME_MODULE = { rhythm: 'rhythm', cue: 'rhythm', race: 'race', calm: 'passenger', photo: 'photo', parking: 'parking', crowd: 'crowdguide', debate: 'debate', surf: 'surf', skate: 'skate', cinema: 'cinema' };
+  static GAME_MODULE = { rhythm: 'rhythm', cue: 'rhythm', race: 'race', calm: 'passenger', photo: 'photo', parking: 'parking', crowd: 'crowdguide', debate: 'debate', surf: 'surf', skate: 'skate', cinema: 'cinema', grapes: 'grapes', well: 'well', matkot: 'matkot' };
 
   hasGame(kind) {
     const m = QuestSystem.GAME_MODULE[kind];

@@ -170,23 +170,58 @@ export function createBus(deps = {}) {
     const cache = new Map();
     const route = (a, b2) => {
       const key = `${a.at.x | 0},${a.at.z | 0}>${b2.at.x | 0},${b2.at.z | 0}`;
-      if (!cache.has(key)) cache.set(key, gps.route(a.at, b2.at, { mode: 'car' }));
+      if (!cache.has(key)) cache.set(key, gps.route(a.at, b2.at, { mode: cfg.relaxed ? 'bus' : 'car' }));
       return cache.get(key);
     };
     // a line stop's candidates: the stops with its name plus any stop within NEAR of them (OSM often
     // names the two kerbs of one street differently, or maps only one); shown under the line's name
     const NEAR = 70;
+    // relaxed: only stops on main roads (tertiary and up), so the line never turns into a neighbourhood
+    const net = deps.traffic && deps.traffic.net;
+    const mainRoad = (b) => {
+      if (!cfg.relaxed || !net || !net.nearest) return true;
+      const k = curbOf(b), h = net.nearest(k.x, k.z, 12, () => true);
+      return !h || h.e.rank >= 5;
+    };
+    // relaxed: a stop mapped on one kerb only is also served from the far kerb (its mirror across
+    // the carriageway), so the bus never loops through side streets to reach the "right" side
+    const onC = deps.city && deps.city.onCarriage;
+    const mirror = (b) => {
+      if (!onC) return null;
+      const dx = Math.sin(b.angle), dz = Math.cos(b.angle);
+      let d1 = -1, d2 = -1;
+      for (let d = 1; d <= 60; d += 1) {
+        const on = onC(b.x + dx * d, b.z + dz * d, 0);
+        if (d1 < 0 && on) d1 = d; else if (d1 >= 0 && !on) { d2 = d; break; }
+      }
+      if (d1 < 0 || d2 < 0 || d2 - d1 > 40) return null;
+      return { ...b, x: b.x + dx * (d1 + d2), z: b.z + dz * (d1 + d2), angle: b.angle + Math.PI, mirrorOf: b };
+    };
     const cands = (st) => {
       const named = byName.get(st.stop) || [];
       const set = new Set(named);
       for (const n of named) for (const b of all) if (Math.hypot(b.x - n.x, b.z - n.z) < NEAR) set.add(b);
-      return [...set].filter((b) => b !== first).map((b) => ({ ...mk(b), name: st.stop }));
+      const list = [...set].filter((b) => b !== first && mainRoad(b));
+      if (cfg.relaxed) for (const b of [...list]) { const m = mirror(b); if (m && mainRoad(m)) list.push(m); }
+      return list.map((b) => ({ ...mk(b), name: st.stop }));
     };
     const wps = shift.stops.map((st) => ({ st, c: cands(st) })).filter((w) => w.c.length);
-    if (!first) { const w0 = wps.shift(); if (!w0) return null; first = w0.c[0].b; firstName = w0.st.stop; }
+    let startCands = null;
+    if (!first) { const w0 = wps.shift(); if (!w0) return null; first = w0.c[0].b; firstName = w0.st.stop; startCands = w0.c.map((c) => c.b); }
     // the station has several kerbs; start from the one with the most direct road onto the line
     // (a kerb on a one-way terminal lane can force a loop of a kilometre or more)
     const firstServe = wps.find((w) => w.st.serve) || wps[wps.length - 1];
+    // relaxed: the start may be either kerb of the first stop, whichever leads onto the line directly
+    if (!depot && startCands && cfg.relaxed && firstServe) {
+      const pool = [...startCands];
+      for (const b of startCands) { const m = mirror(b); if (m) pool.push(m); }
+      let bestC = null, bestCost = Infinity;
+      for (const b of pool) {
+        const c0 = mk(b);
+        for (const c of firstServe.c) { const r = route(c0, c); if (r.ok && r.length < bestCost) { bestCost = r.length; bestC = b; } }
+      }
+      if (bestC) first = bestC;
+    }
     if (depot && firstServe) {
       let bestC = null, bestCost = Infinity;
       for (const b of all) {
@@ -212,7 +247,7 @@ export function createBus(deps = {}) {
       // a served stop the road only reaches by a long loop (a U-turn the graph lacks) is passed by,
       // and the doors open at the next one instead (the last stop always stays)
       const straight = S ? Math.hypot(S.at.x - from.at.x, S.at.z - from.at.z) : 0;
-      if (S && j < wps.length - 1 && base.length > straight * 2.5 + 300) S = null;
+      if (S && j < wps.length - 1 && base.length > (cfg.relaxed ? straight * 1.8 + 150 : straight * 2.5 + 300)) S = null;
       if (!S) { i = j + 1; dropped++; continue; }
       let cur = from, pts = [], len = 0;
       for (let k = i; k < j; k++) {
@@ -221,7 +256,7 @@ export function createBus(deps = {}) {
           const a1 = route(cur, c), a2 = route(c, S);
           if (a1.ok && a2.ok && a1.length + a2.length < cost) { pick = c; r1 = a1; cost = a1.length + a2.length; }
         }
-        if (!pick || len + cost > base.length * DETOUR) { dropped++; continue; }
+        if (!pick || len + cost > base.length * (cfg.relaxed ? 1.12 : DETOUR)) { dropped++; continue; }
         pts = pts.concat(pts.length ? r1.points.slice(1) : r1.points);
         len += r1.length;
         cur = pick;
@@ -354,7 +389,7 @@ export function createBus(deps = {}) {
     const s = S, leg = s.plan.legs[s.leg];
     s.stopMark.visible = true;
     s.stopMark.position.set(leg.to.at.x, groundY(surface, leg.to.at.x, leg.to.at.z), leg.to.at.z);
-    s.gps.guide(leg.to.at, { mode: 'car', from: deps.player.pos, arrive: 0, color: 0xffcb3d, owner: 'bus', path: leg.points });
+    s.gps.guide(leg.to.at, { mode: s.cfg.relaxed ? 'bus' : 'car', from: deps.player.pos, arrive: 0, color: 0xffcb3d, owner: 'bus', path: leg.points });
     spawnWaiters(leg);
   }
 
@@ -400,9 +435,9 @@ export function createBus(deps = {}) {
   function arrive(leg) {
     const s = S, pl = deps.player;
     const d = Math.hypot(pl.pos.x - leg.to.at.x, pl.pos.z - leg.to.at.z);
-    const late = Math.max(0, s.time - (leg.due + s.cfg.grace));
+    const late = s.cfg.relaxed ? 0 : Math.max(0, s.time - (leg.due + s.cfg.grace));
     const punct = clamp(100 - late * 2.5, 0, 100);
-    const stop = clamp(100 - Math.max(0, d - 6) * (100 / 9), 0, 100);
+    const stop = s.cfg.relaxed ? clamp(100 - Math.max(0, d - 9) * (100 / 18), 60, 100) : clamp(100 - Math.max(0, d - 6) * (100 / 9), 0, 100);
     s.stats.punct.push(punct); s.stats.stop.push(stop); s.stats.late += late;
     s.gps.clear();
     s.stopMark.visible = false;
@@ -423,7 +458,7 @@ export function createBus(deps = {}) {
     s.dwell = null;
     s.leg++;
     s.phase = 'drive';
-    if (missed) { s.stats.doorsBlock++; event('doors', s.cfg.comfort.doors, 0); }
+    if (missed && !s.cfg.relaxed) { s.stats.doorsBlock++; event('doors', s.cfg.comfort.doors, 0); }
     else s.toast(t('jobs.bus.go'));
     guide();
   }
@@ -467,10 +502,10 @@ export function createBus(deps = {}) {
       s.aboard = Math.max(0, s.aboardBase ?? s.aboard);
       if (sp > 3 && Math.hypot(pl.pos.x - leg.to.at.x, pl.pos.z - leg.to.at.z) > s.cfg.zone * 1.2) { depart(true); }
       else if (leg.terminus) { if (dw.t > 2.2) return win(); }
-      else if (allIn && dw.t >= 1.5 && s.time >= leg.depart) { s.stats.pax.boarded += boarded; depart(false); }
+      else if (allIn && dw.t >= 1.5 && (s.cfg.relaxed || s.time >= leg.depart)) { s.stats.pax.boarded += boarded; depart(false); }
       else if (!allIn && dw.t > s.cfg.dwell * 2 + 4) { s.stats.pax.boarded += boarded; depart(false); }
     }
-    if (s.comfort <= 0) return fail('comfort');
+    if (s.comfort <= 0 && !s.cfg.relaxed) return fail('comfort');
     hud();
   }
 
@@ -493,6 +528,9 @@ export function createBus(deps = {}) {
     const s = S, pl = deps.player, cc = s.cfg.comfort;
     const prev = Math.abs(s.prevSpeed), decel = (prev - sp) / dt;
     s.prevSpeed = pl.speed;
+    // Relaxed (founder, 2026-10-30: "a mission for fun, light and friendly"): no comfort damage,
+    // no speed or braking penalties.
+    if (s.cfg.relaxed) return;
     if (prev - sp > 9 && decel > 300) { synth.play('bump'); event('bump', cc.bump); }
     else if (decel > 21 && prev > 12) {
       s.hardT += dt;
@@ -521,7 +559,7 @@ export function createBus(deps = {}) {
     if (!s || !s.plan) return;
     const leg = s.plan.legs[Math.min(s.leg, s.plan.legs.length - 1)];
     const pl = deps.player;
-    const v = s.comfort / s.cfg.comfort.start;
+    const v = s.cfg.relaxed ? 1 : s.comfort / s.cfg.comfort.start;
     const bar = s.ov.$('.mg-bar i');
     bar.style.width = v * 100 + '%';
     bar.style.background = v > 0.6 ? '#2ec4b6' : v > 0.3 ? '#ffb347' : '#e8364f';
@@ -531,11 +569,12 @@ export function createBus(deps = {}) {
     const kmh = Math.round(Math.abs(pl.speed) / 1.2 * 3.6);
     const sp = s.ov.$('.bs-speed');
     sp.textContent = `${kmh} km/h`;
-    sp.classList.toggle('over', Math.abs(pl.speed) > s.cfg.speedLimit);
+    sp.classList.toggle('over', !s.cfg.relaxed && Math.abs(pl.speed) > s.cfg.speedLimit);
     s.ov.$('.bs-aboard').textContent = t('jobs.bus.aboard', { n: s.aboard });
     const slack = s.time - leg.due;
     let note = '';
-    if (s.phase === 'drive') note = slack > s.cfg.grace ? t('jobs.bus.late', { s: Math.round(slack - s.cfg.grace) }) : t('jobs.bus.onTime');
+    if (s.cfg.relaxed) note = s.phase === 'drive' ? t('jobs.bus.relaxed') : '';
+    else if (s.phase === 'drive') note = slack > s.cfg.grace ? t('jobs.bus.late', { s: Math.round(slack - s.cfg.grace) }) : t('jobs.bus.onTime');
     else if (s.phase === 'dwell' && s.time < leg.depart && !leg.terminus) note = t('jobs.bus.early', { s: Math.ceil(leg.depart - s.time) });
     s.ov.$('.bs-time').textContent = note;
     s.ov.$('.bs-doors').textContent = t(s.doorTarget ? 'jobs.bus.doorsOpen' : 'jobs.bus.doorsClosed');
@@ -547,7 +586,8 @@ export function createBus(deps = {}) {
     const s = S, st = s.stats;
     const smooth = Math.round(s.comfort), punct = Math.round(avg(st.punct)), stop = Math.round(avg(st.stop));
     const pax = st.pax.total ? Math.round(100 * st.pax.boarded / st.pax.total) : 100;
-    const score = Math.round(smooth * 0.4 + punct * 0.3 + stop * 0.2 + pax * 0.1);
+    // relaxed: finishing the line is the achievement; only the stops and the boarding count
+    const score = s.cfg.relaxed ? Math.round(70 + stop * 0.2 + pax * 0.1) : Math.round(smooth * 0.4 + punct * 0.3 + stop * 0.2 + pax * 0.1);
     const detail = { smooth, punct, stop, pax, time: +s.time.toFixed(1), brakes: st.brakes, bumps: st.bumps, kerbs: st.kerbs, slow: st.slow, doorsBlock: st.doorsBlock, boarded: st.pax.boarded, stops: s.plan.stops.length };
     if (s.lineShifts) advanceShift(s.lineShifts);
     finish({ ok: true, score, detail, summary: t('jobs.bus.summary', { smooth, punct, stop, pax }), tries: s.tries + 1 });
