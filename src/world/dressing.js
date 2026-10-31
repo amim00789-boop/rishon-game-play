@@ -27,7 +27,7 @@ const SHOP_AMENITY = /restaurant|cafe|fast_food|bank|pharmacy|ice_cream|pub|bar|
 // Draw distance per prop type (world units). Beyond this the chunk's mesh for that type is hidden.
 const DRAW = {
   lamp: 750, lamp2: 750, promLamp: 600, shelter: 700, busSign: 450, trafficLight: 600, trafficLightPed: 600, trafficHead: 600,
-  bench: 320, bin: 260, bikeRack: 260, pergola: 700, lampC: 750, railing: 300, bollard: 220, mirror: 300,
+  bench: 320, bin: 260, bikeRack: 260, pergola: 700, lampC: 750, railing: 300, bollard: 220, mirror: 300, pole: 520,
 };
 const SHADOW = new Set(['lamp', 'lamp2', 'lampC', 'promLamp', 'shelter', 'pergola', 'trafficLight', 'trafficLightPed', 'trafficHead']);
 
@@ -36,6 +36,17 @@ const SHADOW = new Set(['lamp', 'lamp2', 'lampC', 'promLamp', 'shelter', 'pergol
 // video shows them; the edge is not surveyed.
 const CENTRE = { ...project(31.9648, 34.8015), r: 950 * SCALE };
 const inCentre = (x, z) => Math.hypot(x - CENTRE.x, z - CENTRE.z) < CENTRE.r;
+
+// Older neighbourhoods (1950s-80s) keep overhead power lines on concrete poles beside the street;
+// the newer west and east estates are buried. Centres from OSM place nodes (see buildings.js
+// NEIGHBOURHOODS); the 600 m radius is an assumption read off the two drive videos, not surveyed.
+const OLD_ZONES = [
+  [31.98235, 34.78981], [31.96530, 34.77854], [31.96047, 34.79543], [31.96883, 34.80143], [31.95360, 34.80406],
+  [31.94966, 34.80742], [31.96815, 34.79463], [31.97301, 34.79409], [31.95969, 34.78997], [31.96007, 34.81136],
+  [31.96524, 34.81074], [31.95177, 34.81645], [31.98589, 34.80624],
+].map(([la, lo]) => ({ ...project(la, lo), r: 600 * SCALE }));
+const inOldZone = (x, z) => OLD_ZONES.some((q) => Math.hypot(x - q.x, z - q.z) < q.r);
+const WIRE_DRAW = 420;
 
 const hash = (n) => { n = (n ^ 61) ^ (n >>> 16); n = (n + (n << 3)) >>> 0; n ^= n >>> 4; n = Math.imul(n, 0x27d4eb2d) >>> 0; n ^= n >>> 15; return (n >>> 0) / 4294967296; };
 const hxz = (x, z, s = 0) => hash((Math.round(x * 7) * 73856093) ^ (Math.round(z * 7) * 19349663) ^ (s * 83492791));
@@ -128,6 +139,16 @@ function mirrorTemplate() {
   ]);
 }
 
+function poleTemplate() {
+  // Concrete utility pole, ~10.5 u, with a cross arm over the street and three insulators, as
+  // along the old estates in the drive videos. The cross arm runs along local z (toward the road).
+  const C = 0xa9a79f, ARM = 0x7d7468, INS = 0xd9d4c8;
+  const parts = [cyl(0.26, 0.38, 10.4, 0, 5.2, 0, C, 8), box(0.2, 0.2, 2.5, 0, 9.4, 0, ARM), box(0.2, 0.14, 0.14, 0, 9.0, 0, ARM)];
+  for (const z of [-1.0, 0, 1.0]) parts.push(cyl(0.1, 0.14, 0.38, 0, 9.69, z, INS, 6));
+  parts.push(cyl(0.1, 0.18, 0.4, 0, 10.55, 0, C, 6));
+  return merge(parts);
+}
+
 function bollardTemplate() {
   // Grey steel bollard (~0.85 m) with a darker cap band, as on shop-street corners in the videos.
   return merge([cyl(0.24, 0.26, 2.2, 0, 1.1, 0, 0x9aa1a8, 7), cyl(0.27, 0.27, 0.22, 0, 1.75, 0, 0x5d656c, 7), blob(0.24, 0, 2.2, 0, 0x9aa1a8, 0.5)]);
@@ -198,10 +219,10 @@ function busSignTemplate() {
 function trafficLightTemplate(ped) {
   // Pole with a three-aspect head facing +z (oncoming traffic) and, with `ped`, a pedestrian head
   // facing -x (across the road). The lamps themselves are drawn by signalheads.js, so the housings
-  // here are dark.
+  // here are dark. The backplate is black too: the drive videos show black heads, no yellow plate.
   const parts = [
     cyl(0.28, 0.32, 0.5, 0, 0.25, 0, 0x3b444c), cyl(0.15, 0.15, 7.4, 0, 3.7, 0, 0x606a73),
-    box(1.5, 3.0, 0.08, 0, 5.8, 0.18, 0xf2c84b),
+    box(1.5, 3.0, 0.08, 0, 5.8, 0.18, 0x2b3035),
     box(0.95, 2.7, 0.7, 0, 5.8, 0.55, 0x1e2226),
   ];
   if (ped) parts.push(box(0.6, 1.4, 0.6, -0.45, 3.2, 0, 0x1e2226));
@@ -211,7 +232,7 @@ function trafficLightTemplate(ped) {
 // A second head bolted onto a pole that already stands (back to back with its own head, or turned
 // to face another approach): the same housing as trafficLightTemplate, no pole.
 function trafficHeadTemplate() {
-  return merge([box(1.5, 3.0, 0.08, 0, 5.8, 0.18, 0xf2c84b), box(0.95, 2.7, 0.7, 0, 5.8, 0.55, 0x1e2226), box(0.3, 0.3, 0.3, 0, 5.8, 0.05, 0x606a73)]);
+  return merge([box(1.5, 3.0, 0.08, 0, 5.8, 0.18, 0x2b3035), box(0.95, 2.7, 0.7, 0, 5.8, 0.55, 0x1e2226), box(0.3, 0.3, 0.3, 0, 5.8, 0.05, 0x606a73)]);
 }
 
 function pergolaTemplate() {
@@ -866,6 +887,59 @@ export async function buildDressing(scene, city, opts = {}) {
     }
   }
 
+  // Junction corners (nodes shared by 3+ arms): poles stand outside the widest half width + 3 u.
+  const poleNodes = (Array.isArray(city.junctionNodes) ? city.junctionNodes : []).map((j) => ({ x: j.x, z: j.z, r: Math.max(...j.arms.map((a) => a.hw)) + 3 }));
+  const inMouthPole = (x, z) => poleNodes.some((n) => Math.abs(n.x - x) < n.r && Math.abs(n.z - z) < n.r && Math.hypot(n.x - x, n.z - z) < n.r);
+  // ================= 4a. overhead lines in the old estates =================
+  // A concrete pole every third slot (about 36 u) on one side of each residential-type street in
+  // an old zone, joined by three wires. Poles only go where tryPut finds the kerb strip free, and
+  // a wire is drawn only between two poles that were both placed, so none hangs from nothing.
+  const wireSegs = new Map(); // chunk key -> flat [x,y,z,x,y,z,...] line segments
+  const addWire = (ax, ay, az, bx, by, bz) => {
+    const k = `${Math.floor(((ax + bx) / 2) / CHUNK)},${Math.floor(((az + bz) / 2) / CHUNK)}`;
+    let a = wireSegs.get(k);
+    if (!a) wireSegs.set(k, (a = []));
+    a.push(ax, ay, az, bx, by, bz);
+  };
+  {
+    const placed = []; // every pole so far: { x, z, y, nx, nz, links }
+    let poles = 0, spans = 0;
+    for (const s of slots) {
+      if (s.k % 3 !== 1 || !/^(residential|unclassified|tertiary|living_street)$/.test(s.kind) || !inOldZone(s.x, s.z)) continue;
+      if (walks[s.wi] && walks[s.wi].side !== undefined && sideBit(walks[s.wi].side)) continue; // one side only
+      const [x, z] = kerbPoint(s, 0.9);
+      if (onLanding(x, z) || nearStop(x, z) || inMouthPole(x, z)) continue;
+      const rot = face(s.nx, s.nz);
+      if (!tryPut('pole', x, z, rot, 0.3, { claimR: 2.0, avoidPaths: true, collider: (px, pz, r) => rectCollider(px, pz, r, 0, 0, 0.3, 0.3, 10.4) })) continue;
+      poles++;
+      const y0 = ground(x, z) + 9.7;
+      // Join the nearest earlier pole that lies along this street (within 55 u, roughly in line)
+      // and has a free end; the line then runs unbroken across short sidewalk pieces.
+      let prev = null, bd = 55;
+      for (let i = placed.length - 1; i >= 0 && i > placed.length - 400; i--) {
+        const q = placed[i];
+        if (q.links >= 2) continue;
+        const d = Math.hypot(x - q.x, z - q.z);
+        if (d < bd && d > 8 && Math.abs(((x - q.x) * s.dx + (z - q.z) * s.dz) / d) > 0.85) { bd = d; prev = q; }
+      }
+      const me = { x, z, y: y0, nx: s.nx, nz: s.nz, links: 0 };
+      if (prev) {
+        spans++; prev.links++; me.links++;
+        for (const o of [-1.0, 0, 1.0]) {
+          const ax = prev.x + prev.nx * o, az = prev.z + prev.nz * o, bx = x + s.nx * o, bz = z + s.nz * o;
+          const N = 4, sag = 0.7;
+          const f = (t) => 1 - 4 * (t - 0.5) * (t - 0.5); // 0 at the poles, 1 mid-span
+          for (let i = 0; i < N; i++) {
+            const t0 = i / N, t1 = (i + 1) / N;
+            addWire(ax + (bx - ax) * t0, prev.y + (y0 - prev.y) * t0 - sag * f(t0), az + (bz - az) * t0, ax + (bx - ax) * t1, prev.y + (y0 - prev.y) * t1 - sag * f(t1), az + (bz - az) * t1);
+          }
+        }
+      }
+      placed.push(me);
+    }
+    stats.poleSpans = spans;
+  }
+
   // ================= 4c. convex mirrors at residential T-junctions =================
   // A third of the T-junctions between small streets get a mirror on the far kerb of the through
   // street, facing down the stem, as in the older east neighbourhoods.
@@ -913,7 +987,7 @@ export async function buildDressing(scene, city, opts = {}) {
   const mat = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap });
   const tpl = {
     lamp: lampTemplate(false), lamp2: lampTemplate(true), lampC: lampCentreTemplate(), promLamp: promLampTemplate(),
-    railing: railingTemplate(), bollard: bollardTemplate(), mirror: mirrorTemplate(),
+    railing: railingTemplate(), bollard: bollardTemplate(), mirror: mirrorTemplate(), pole: poleTemplate(),
     bench: merge(benchTemplate()), bin: binTemplate(), bikeRack: bikeRackTemplate(),
     shelter: shelterTemplate(), busSign: busSignTemplate(), trafficLight: trafficLightTemplate(false), trafficLightPed: trafficLightTemplate(true), trafficHead: trafficHeadTemplate(),
     pergola: pergolaTemplate(),
@@ -933,6 +1007,31 @@ export async function buildDressing(scene, city, opts = {}) {
       cull.push({ im, cx: c.cx, cz: c.cz, r2: (DRAW[type] + CHUNK * 0.72) ** 2 });
     }
     root.add(g);
+  }
+  // Wires: one mesh per chunk of thin crossed ribbons (a 1 px line vanishes at street distance),
+  // hidden beyond WIRE_DRAW like the props.
+  const wireMat = new THREE.MeshBasicMaterial({ color: 0x2e3236, side: THREE.DoubleSide });
+  const WW = 0.17;
+  for (const [k, arr] of wireSegs) {
+    const [ci, cj] = k.split(',').map(Number);
+    const n = arr.length / 6, pos = new Float32Array(n * 12 * 3);
+    let o = 0;
+    const tri = (a1, a2, a3) => { for (const q of [a1, a2, a3]) { pos[o++] = q[0]; pos[o++] = q[1]; pos[o++] = q[2]; } };
+    for (let i = 0; i < n; i++) {
+      const [ax, ay, az, bx, by, bz] = arr.slice(i * 6, i * 6 + 6);
+      const dx = bx - ax, dz = bz - az, l = Math.hypot(dx, dz) || 1, px = (-dz / l) * WW, pz = (dx / l) * WW;
+      const A1 = [ax, ay + WW, az], A2 = [ax, ay - WW, az], B1 = [bx, by + WW, bz], B2 = [bx, by - WW, bz];
+      const C1 = [ax + px, ay, az + pz], C2 = [ax - px, ay, az - pz], D1 = [bx + px, by, bz + pz], D2 = [bx - px, by, bz - pz];
+      tri(A1, A2, B1); tri(B1, A2, B2); tri(C1, C2, D1); tri(D1, C2, D2);
+    }
+    const g2 = new THREE.BufferGeometry();
+    g2.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g2.computeBoundingSphere();
+    const wm = new THREE.Mesh(g2, wireMat);
+    wm.name = 'wires';
+    wm.userData.outlineParameters = { visible: false };
+    root.add(wm);
+    cull.push({ im: wm, cx: (ci + 0.5) * CHUNK, cz: (cj + 0.5) * CHUNK, r2: (WIRE_DRAW + CHUNK * 0.72) ** 2 });
   }
   // Distance culling rides on the scene's render hook so it works in the game and the preview alike.
   const prevHook = scene.onBeforeRender;
