@@ -15,7 +15,7 @@
 // per-type draw distances so small props cost nothing far away.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { SCALE } from '../geo.js';
+import { SCALE, project } from '../geo.js';
 
 const CHUNK = 640;
 const CARRIAGE = /^(motorway|trunk|primary|secondary|tertiary)(_link)?$|^(residential|service|unclassified|living_street|road|busway|track|rail|tram|light_rail)$/;
@@ -27,9 +27,15 @@ const SHOP_AMENITY = /restaurant|cafe|fast_food|bank|pharmacy|ice_cream|pub|bar|
 // Draw distance per prop type (world units). Beyond this the chunk's mesh for that type is hidden.
 const DRAW = {
   lamp: 750, lamp2: 750, promLamp: 600, shelter: 700, busSign: 450, trafficLight: 600, trafficLightPed: 600, trafficHead: 600,
-  bench: 320, bin: 260, bikeRack: 260, pergola: 700,
+  bench: 320, bin: 260, bikeRack: 260, pergola: 700, lampC: 750, railing: 300, bollard: 220,
 };
-const SHADOW = new Set(['lamp', 'lamp2', 'promLamp', 'shelter', 'pergola', 'trafficLight', 'trafficLightPed', 'trafficHead']);
+const SHADOW = new Set(['lamp', 'lamp2', 'lampC', 'promLamp', 'shelter', 'pergola', 'trafficLight', 'trafficLightPed', 'trafficHead']);
+
+// The old centre gets the dark green ornamental lamps (Herzl, Jabotinsky, Rothschild and the
+// streets around Founders Square). The circle is an assumption fitted to where the east drive
+// video shows them; the edge is not surveyed.
+const CENTRE = { ...project(31.9648, 34.8015), r: 950 * SCALE };
+const inCentre = (x, z) => Math.hypot(x - CENTRE.x, z - CENTRE.z) < CENTRE.r;
 
 const hash = (n) => { n = (n ^ 61) ^ (n >>> 16); n = (n + (n << 3)) >>> 0; n ^= n >>> 4; n = Math.imul(n, 0x27d4eb2d) >>> 0; n ^= n >>> 15; return (n >>> 0) / 4294967296; };
 const hxz = (x, z, s = 0) => hash((Math.round(x * 7) * 73856093) ^ (Math.round(z * 7) * 19349663) ^ (s * 83492791));
@@ -53,16 +59,68 @@ const merge = (parts) => { const g = mergeGeometries(parts); g.computeBoundingSp
 // Sized against the ~5 u avatar. Local frame: +x runs along the street, +z faces the road
 // (or the direction the prop faces), y up, origin at the foot.
 
+// A straight piece from local point a to b (in the y-z plane), as a thin box.
+function strut(a, b, t, hex) {
+  const dy = b[1] - a[1], dz = b[2] - a[2], len = Math.hypot(dy, dz);
+  const g = new THREE.BoxGeometry(t, t, len).rotateX(-Math.atan2(dy, dz));
+  return paint(g.translate(0, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2), hex);
+}
+
 function lampTemplate(double = false) {
-  // Galvanised street lamp, ~11.5 u. The arm reaches out over the kerb toward the road.
-  const parts = [cyl(0.36, 0.42, 0.8, 0, 0.4, 0, 0x4a545e), cyl(0.13, 0.2, 11, 0, 5.5, 0, 0x8794a0)];
+  // Rishon street lamp, ~11 u: light galvanised pole whose arm bends up and out over the kerb, a
+  // slim flat luminaire tilted toward the road. Medians carry the same arm on both sides, a "Y".
+  // Reference: founder's drive videos (east 2025, west 2026), every residential street and median.
+  const POLE = 0xa3abb2, HEAD = 0x7d868e;
+  const parts = [cyl(0.32, 0.38, 0.7, 0, 0.35, 0, 0x6f7881), cyl(0.12, 0.19, 10.2, 0, 5.1, 0, POLE)];
   for (const s of double ? [1, -1] : [1]) {
-    parts.push(box(0.14, 0.14, 2.6, 0, 10.9, 1.25 * s, 0x8794a0));
-    parts.push(box(0.75, 0.32, 1.5, 0, 10.85, 2.6 * s, 0x5b6670));
-    parts.push(box(0.55, 0.1, 1.15, 0, 10.65, 2.6 * s, 0xfff0b8));
+    parts.push(strut([0, 10.0, 0], [0, 10.55, 0.9 * s], 0.15, POLE));
+    parts.push(strut([0, 10.55, 0.9 * s], [0, 11.05, 2.7 * s], 0.13, POLE));
+    const head = new THREE.BoxGeometry(0.62, 0.22, 1.45).rotateX(0.12 * s).translate(0, 11.05, 3.35 * s);
+    parts.push(paint(head, HEAD));
+    parts.push(paint(new THREE.BoxGeometry(0.46, 0.06, 1.1).rotateX(0.12 * s).translate(0, 10.92, 3.35 * s), 0xfff0b8));
   }
-  parts.push(cyl(0.2, 0.13, 0.4, 0, 11.2, 0, 0x5b6670));
+  parts.push(cyl(0.14, 0.12, 0.3, 0, 10.15, 0, POLE));
   return merge(parts);
+}
+
+function lampCentreTemplate() {
+  // Old-centre ornamental lamp: dark green fluted post, a silver wire globe at two thirds of the
+  // height and two curved arms with hanging lanterns. Seen on Herzl / Jabotinsky / Rothschild
+  // and their medians in the east drive video (40:30, 49:30).
+  const G = 0x41705a, GD = 0x2f5444, WIRE = 0xd2d6d9;
+  const parts = [
+    cyl(0.55, 0.62, 0.5, 0, 0.25, 0, GD, 8), cyl(0.38, 0.5, 1.4, 0, 1.2, 0, G, 8),
+    cyl(0.14, 0.2, 9.4, 0, 6.3, 0, G, 8), cyl(0.24, 0.24, 0.3, 0, 2.0, 0, GD, 8),
+  ];
+  for (const rot of [[0, 0], [0, Math.PI / 2], [Math.PI / 2, 0]]) {
+    const ring = new THREE.TorusGeometry(1.0, 0.055, 4, 16).rotateX(rot[0]).rotateY(rot[1]).translate(0, 7.4, 0);
+    parts.push(paint(ring, WIRE));
+  }
+  for (const s of [1, -1]) {
+    parts.push(strut([0, 10.4, 0], [0, 10.9, 0.8 * s], 0.13, G));
+    parts.push(strut([0, 10.9, 0.8 * s], [0, 10.6, 1.8 * s], 0.13, G));
+    parts.push(cyl(0.05, 0.05, 0.5, 0, 10.35, 1.8 * s, G, 5));
+    parts.push(cyl(0.12, 0.5, 0.35, 0, 9.95, 1.8 * s, GD, 8));
+    parts.push(cyl(0.38, 0.3, 0.55, 0, 9.5, 1.8 * s, 0xfff0b8, 8));
+  }
+  parts.push(blob(0.22, 0, 10.95, 0, G, 1.4));
+  return merge(parts);
+}
+
+function railingTemplate() {
+  // Galvanised pedestrian railing panel along the kerb beside a crossing, ~1 m (2.6 u) high and
+  // 6 u long: posts, top and bottom rails and vertical bars. The commonest street steel in both
+  // drive videos (busy crossings, shop streets, school gates).
+  const C = 0xa9b0b6, P = 0x8d959c;
+  const parts = [box(6.0, 0.13, 0.13, 0, 2.5, 0, C), box(6.0, 0.1, 0.1, 0, 0.55, 0, C), box(6.0, 0.08, 0.08, 0, 2.15, 0, C)];
+  for (const x of [-2.95, 0, 2.95]) parts.push(box(0.2, 2.6, 0.2, x, 1.3, 0, P));
+  for (let x = -2.6; x <= 2.61; x += 0.52) if (Math.abs(x) > 0.2) parts.push(box(0.07, 1.6, 0.07, x, 1.35, 0, C));
+  return merge(parts);
+}
+
+function bollardTemplate() {
+  // Grey steel bollard (~0.85 m) with a darker cap band, as on shop-street corners in the videos.
+  return merge([cyl(0.24, 0.26, 2.2, 0, 1.1, 0, 0x9aa1a8, 7), cyl(0.27, 0.27, 0.22, 0, 1.75, 0, 0x5d656c, 7), blob(0.24, 0, 2.2, 0, 0x9aa1a8, 0.5)]);
 }
 
 function promLampTemplate() {
@@ -647,7 +705,7 @@ export async function buildDressing(scene, city, opts = {}) {
       const sg = Math.sign(best.sd), off = hw + best.gap / 2;
       const mx = x + nx * sg * off, mz = z + nz * sg * off;
       if (k % 2 === 0) {
-        if (tryPut('lamp2', mx, mz, face(nx, nz), Math.min(0.5, best.gap / 2 - 0.1), { claimR: 3 })) {
+        if (tryPut(inCentre(mx, mz) ? 'lampC' : 'lamp2', mx, mz, face(nx, nz), Math.min(0.5, best.gap / 2 - 0.1), { claimR: 3 })) {
           stats.medianLamps = (stats.medianLamps || 0) + 1;
           if (!hops.boulevard && best.gap > 2) hops.boulevard = { x: mx - dx * 30 + nx * sg * 0.1, z: mz - dz * 30, lx: mx + dx * 20, lz: mz + dz * 20, eye: 4.5 };
         }
@@ -695,7 +753,7 @@ export async function buildDressing(scene, city, opts = {}) {
   for (const s of slots) {
     if (!s.lamp) continue;
     const [x, z] = kerbPoint(s, 0.8);
-    if (tryPut('lamp', x, z, face(s.nx, s.nz), 0.45, { claimR: 2.2 })) {
+    if (tryPut(inCentre(x, z) ? 'lampC' : 'lamp', x, z, face(s.nx, s.nz), 0.45, { claimR: 2.2 })) {
       s.placed = 'lamp';
       // Street-level preview spots: stand on the strip, look down the street.
       const hop = { x: s.x - s.dx * 18 - s.nx * 2.6, z: s.z - s.dz * 18 - s.nz * 2.6, lx: s.x + s.dx * 50 + s.nx * 4, lz: s.z + s.dz * 50 + s.nz * 4, k: s.kind };
@@ -711,13 +769,90 @@ export async function buildDressing(scene, city, opts = {}) {
       const [x, z] = kerbPoint(s, 3.4);
       tryPut('bench', x, z, face(s.nx, s.nz), 1.0, { claimR: 2.3, solidR: 2.2 });
     }
-    if (s.placed === 'lamp' && (shop || (s.big && s.k % 3 === 0))) {
-      const x = s.x + s.nx * Math.max(-4, Math.min(4, s.gap - 0.9)) + s.dx * 1.5, z = s.z + s.nz * Math.max(-4, Math.min(4, s.gap - 0.9)) + s.dz * 1.5;
+    if (s.placed === 'lamp' && (shop || (s.big && s.k % 3 === 0))) {      const x = s.x + s.nx * Math.max(-4, Math.min(4, s.gap - 0.9)) + s.dx * 1.5, z = s.z + s.nz * Math.max(-4, Math.min(4, s.gap - 0.9)) + s.dz * 1.5;
       tryPut('bin', x, z, face(-s.nx, -s.nz), 0.55, { claimR: 0.7 });
     }
     if (shop && !s.placed && s.k % 4 === 2 && hxz(s.x, s.z, 7) < 0.25) {
       const [x, z] = kerbPoint(s, 3.6);
       tryPut('bikeRack', x + s.dx * 4, z + s.dz * 4, face(s.nx, s.nz), 1.0, { claimR: 2.6, solidR: 2.4 });
+    }
+  }
+
+  // ================= 4b. crossings: railings on big roads, bollards on shop streets =================
+  // Both drive videos show steel along the kerb either side of a busy crossing, so people cross at
+  // the zebra and not beside it. Big roads get railing panels, shop streets get a few bollards.
+  // The crossing opening itself stays clear.
+  const OPEN = 3.6; // half the opening along the kerb, a little wider than the zebra stripes
+  // Never between a bus stop and its kerb: people board there.
+  const STOP_CLEAR = 13;
+  const stopGrid = new Map();
+  for (const s of stops) {
+    if (!Number.isFinite(s.x) || !Number.isFinite(s.z)) continue;
+    const k = rkey(Math.floor(s.x / STOP_CLEAR), Math.floor(s.z / STOP_CLEAR));
+    let l = stopGrid.get(k);
+    if (!l) stopGrid.set(k, (l = []));
+    l.push(s);
+  }
+  const nearStop = (px, pz) => {
+    const ci = Math.floor(px / STOP_CLEAR), cj = Math.floor(pz / STOP_CLEAR);
+    for (let i = ci - 1; i <= ci + 1; i++) for (let j = cj - 1; j <= cj + 1; j++)
+      for (const s of stopGrid.get(rkey(i, j)) || []) if (Math.hypot(s.x - px, s.z - pz) < STOP_CLEAR) return true;
+    return false;
+  };
+  // Where two zebras sit close together (dual carriageways, short arms), steel beside one must not
+  // stand on the landing of the other: every landing is kept clear in a 3.5 u radius.
+  const LAND = 3.5, landings = new Map();
+  const crossList = Array.isArray(city.crossings) ? city.crossings : [];
+  for (const c of crossList) {
+    if (!Number.isFinite(c.x) || !Number.isFinite(c.width)) continue;
+    const tx = Math.sin(c.angle), tz = Math.cos(c.angle);
+    for (const side of [1, -1]) {
+      const lx = c.x - tz * side * (c.width / 2 + 0.75), lz = c.z + tx * side * (c.width / 2 + 0.75);
+      const k = rkey(Math.floor(lx / RC), Math.floor(lz / RC));
+      let l = landings.get(k);
+      if (!l) landings.set(k, (l = []));
+      l.push([lx, lz]);
+    }
+  }
+  const onLanding = (px, pz) => {
+    const ci = Math.floor(px / RC), cj = Math.floor(pz / RC);
+    for (let i = ci - 1; i <= ci + 1; i++) for (let j = cj - 1; j <= cj + 1; j++)
+      for (const p of landings.get(rkey(i, j)) || []) if (Math.hypot(p[0] - px, p[1] - pz) < LAND) return true;
+    return false;
+  };
+  const fits = (pts, r) => pts.every(([px, pz]) => !nearStop(px, pz) && !onLanding(px, pz) && offRoad(px, pz, r, true) && clearOfSolids(px, pz, r) && free(px, pz, r));
+  for (const c of crossList) {
+    if (!Number.isFinite(c.x) || !Number.isFinite(c.width)) continue;
+    const tx = Math.sin(c.angle), tz = Math.cos(c.angle);
+    const nc = nearestCar(c.x, c.z, tx, tz, 6);
+    if (!nc) continue;
+    const big = nc.s.big, shop = nearShop(c.x, c.z, 40);
+    if (!big && !shop) continue;
+    for (const side of [1, -1]) {
+      const nx = -tz * side, nz = tx * side; // from the road centre toward this kerb
+      const off = c.width / 2 + 0.75;
+      const kx = c.x + nx * off, kz = c.z + nz * off;
+      const rot = face(-nx, -nz);
+      for (const dir of [1, -1]) {
+        if (big) {
+          const m = OPEN + 3.0;
+          const x = kx + tx * m * dir, z = kz + tz * m * dir;
+          const ends = [-2.9, -1.45, 0, 1.45, 2.9].map((o) => [x + tx * o, z + tz * o]);
+          if (!fits(ends, 0.35)) continue;
+          for (const [px, pz] of ends) claim(px, pz, 0.6);
+          put('railing', x, z, rot);
+          colliders.push(rectCollider(x, z, rot, 0, 0, 3.0, 0.15, 2.6));
+        } else {
+          for (let i = 0; i < 3; i++) {
+            const m = OPEN + 0.4 + i * 1.7;
+            const x = kx + tx * m * dir, z = kz + tz * m * dir;
+            if (!fits([[x, z]], 0.3)) break;
+            claim(x, z, 0.5);
+            put('bollard', x, z, 0);
+            colliders.push(rectCollider(x, z, 0, 0, 0, 0.26, 0.26, 2.2));
+          }
+        }
+      }
     }
   }
 
@@ -753,7 +888,8 @@ export async function buildDressing(scene, city, opts = {}) {
   })();
   const mat = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap });
   const tpl = {
-    lamp: lampTemplate(false), lamp2: lampTemplate(true), promLamp: promLampTemplate(),
+    lamp: lampTemplate(false), lamp2: lampTemplate(true), lampC: lampCentreTemplate(), promLamp: promLampTemplate(),
+    railing: railingTemplate(), bollard: bollardTemplate(),
     bench: merge(benchTemplate()), bin: binTemplate(), bikeRack: bikeRackTemplate(),
     shelter: shelterTemplate(), busSign: busSignTemplate(), trafficLight: trafficLightTemplate(false), trafficLightPed: trafficLightTemplate(true), trafficHead: trafficHeadTemplate(),
     pergola: pergolaTemplate(),
