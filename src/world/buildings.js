@@ -322,6 +322,9 @@ const PAL = {
   villaStone: [0xe2d1ac, 0xd8c39a, 0xe8dbbd, 0xd3bd92],
   villaBrick: [0xb4613f, 0xa95a3c, 0xbf6f4a],
   yardWall: [0xf4f1ea, 0xe8e2d4, 0xd9c9a3, 0xcdbb94, 0xbfc3c4, 0xe1d7c2],
+  // Jerusalem-type light stone bases and the dark metal panels above them (drive videos).
+  yardStone: [0xe6dabf, 0xdccdab, 0xe9e0cc, 0xd4c39f],
+  yardRail: [0x4b5157, 0x5a6066, 0x40464b, 0x6a6f74],
 };
 const ROOF_FLAT = [0xd9d3c7, 0xcfcac0, 0xe6e2da, 0xc8c4bb];
 const ROOF_TILE = [0xc9694b, 0xb85a3e, 0xd27a55, 0xbf6446];
@@ -947,7 +950,16 @@ function villaKit(spec, K, m, tagFloors, R) {
       spec.solar = spec.roof === 'skirt' ? 0.4 : 0;
     } else { spec.roof = 'flat'; spec.solar = 0.6; }
   }
-  if (R(55) < K.yard) spec.yardWall = { colour: pick(PAL.yardWall, R(56)), h: (1.2 + R(57) * 0.6) * V2U };
+  if (R(55) < K.yard) {
+    spec.yardWall = { colour: pick(PAL.yardWall, R(56)), h: (1.2 + R(57) * 0.6) * V2U };
+    // The commonest house fence in the east drive video (4:50, 13:50): a light stone base about a
+    // metre high with dark grey metal panels on top. Founder's drive videos, 2026-10-31.
+    if (R(58) < 0.55) {
+      spec.yardWall.colour = pick(PAL.yardStone, R(56));
+      spec.yardWall.h = (0.85 + R(57) * 0.3) * V2U;
+      spec.yardWall.rail = { colour: pick(PAL.yardRail, R(59)), h: 0.8 * V2U };
+    }
+  }
 }
 
 // Decide the archetype and every visual parameter for one footprint.
@@ -1832,6 +1844,7 @@ function offsetRing(r, d) {
 function addYardWall(ch, r, spec, R, seed, tone) {
   const n = r.length, Y = spec.yardWall, off = 1.6 * M2U, h = Y.h;
   const gc = tone(Y.colour), gl = gc.clone().multiplyScalar(0.84), cap = gc.clone().multiplyScalar(0.94);
+  const rail = Y.rail || null, rc = rail ? tone(rail.colour) : null, rl = rail ? rc.clone().multiplyScalar(0.8) : null;
   // Round 6: each corner of the wall steps in (1.6 -> 0.9 -> 0.4 m) until it is off the sidewalk and
   // outside the neighbours; a corner that never fits drops the two wall runs that meet there.
   const rings = [offsetRing(r, off), offsetRing(r, 0.9 * M2U), offsetRing(r, 0.4 * M2U)];
@@ -1853,6 +1866,12 @@ function addYardWall(ch, r, spec, R, seed, tone) {
       const A = [A0[0] + (B0[0] - A0[0]) * t0, A0[1] + (B0[1] - A0[1]) * t0], B = [A0[0] + (B0[0] - A0[0]) * t1, A0[1] + (B0[1] - A0[1]) * t1];
       ch.walls.quad([A[0], 0, A[1]], [B[0], 0, B[1]], [B[0], h, B[1]], [A[0], h, A[1]], [gl, gl, gc, gc], [nx, 0, nz], null, [ROW.plain, 0, seed]);
       ch.roofs.quad([A[0], h, A[1]], [B[0], h, B[1]], [B[0] - nx * 0.25 * M2U, h, B[1] - nz * 0.25 * M2U], [A[0] - nx * 0.25 * M2U, h, A[1] - nz * 0.25 * M2U], cap, UP);
+      if (rail) {
+        // Metal panels stand a hand's width back from the stone face, on its cap.
+        const ix = -nx * 0.1 * M2U, iz = -nz * 0.1 * M2U, h2 = h + rail.h;
+        ch.walls.quad([A[0] + ix, h, A[1] + iz], [B[0] + ix, h, B[1] + iz], [B[0] + ix, h2, B[1] + iz], [A[0] + ix, h2, A[1] + iz], [rl, rl, rc, rc], [nx, 0, nz], null, [ROW.plain, 0, seed]);
+        ch.walls.quad([B[0] + ix, h, B[1] + iz], [A[0] + ix, h, A[1] + iz], [A[0] + ix, h2, A[1] + iz], [B[0] + ix, h2, B[1] + iz], [rl, rl, rc, rc], [-nx, 0, -nz], null, [ROW.plain, 0, seed]);
+      }
     }
   }
 }

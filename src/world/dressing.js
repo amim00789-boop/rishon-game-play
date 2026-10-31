@@ -27,7 +27,7 @@ const SHOP_AMENITY = /restaurant|cafe|fast_food|bank|pharmacy|ice_cream|pub|bar|
 // Draw distance per prop type (world units). Beyond this the chunk's mesh for that type is hidden.
 const DRAW = {
   lamp: 750, lamp2: 750, promLamp: 600, shelter: 700, busSign: 450, trafficLight: 600, trafficLightPed: 600, trafficHead: 600,
-  bench: 320, bin: 260, bikeRack: 260, pergola: 700, lampC: 750, railing: 300, bollard: 220,
+  bench: 320, bin: 260, bikeRack: 260, pergola: 700, lampC: 750, railing: 300, bollard: 220, mirror: 300,
 };
 const SHADOW = new Set(['lamp', 'lamp2', 'lampC', 'promLamp', 'shelter', 'pergola', 'trafficLight', 'trafficLightPed', 'trafficHead']);
 
@@ -116,6 +116,16 @@ function railingTemplate() {
   for (const x of [-2.95, 0, 2.95]) parts.push(box(0.2, 2.6, 0.2, x, 1.3, 0, P));
   for (let x = -2.6; x <= 2.61; x += 0.52) if (Math.abs(x) > 0.2) parts.push(box(0.07, 1.6, 0.07, x, 1.35, 0, C));
   return merge(parts);
+}
+
+function mirrorTemplate() {
+  // Convex traffic mirror on a grey pole, facing +z (the side street it lets drivers see into):
+  // orange back shell, silver face. Seen at residential T-junctions in the east drive video (4:50).
+  const disc = (r, t, z, hex) => paint(new THREE.CylinderGeometry(r, r, t, 16).rotateX(Math.PI / 2).translate(0, 7.0, z), hex);
+  return merge([
+    cyl(0.1, 0.12, 7.6, 0, 3.8, 0, 0x9aa1a8), box(0.12, 0.12, 0.5, 0, 7.0, 0.2, 0x8d959c),
+    disc(1.05, 0.22, 0.48, 0xe0662c), disc(0.9, 0.06, 0.62, 0xd6e1e8),
+  ]);
 }
 
 function bollardTemplate() {
@@ -856,6 +866,20 @@ export async function buildDressing(scene, city, opts = {}) {
     }
   }
 
+  // ================= 4c. convex mirrors at residential T-junctions =================
+  // A third of the T-junctions between small streets get a mirror on the far kerb of the through
+  // street, facing down the stem, as in the older east neighbourhoods.
+  for (const j of Array.isArray(city.junctionNodes) ? city.junctionNodes : []) {
+    if (!j.arms || j.arms.length !== 3 || j.arms.some((a) => a.link || a.rank > 3 || a.rank < 2)) continue;
+    if (hxz(j.x, j.z, 41) > 0.34) continue;
+    // The stem is the arm with no partner pointing the opposite way.
+    const stem = j.arms.find((a) => !j.arms.some((b) => b !== a && a.ax * b.ax + a.az * b.az < -0.8));
+    if (!stem || j.arms.filter((a) => a !== stem).some((a) => Math.abs(a.ax * stem.ax + a.az * stem.az) > 0.5)) continue;
+    const thru = Math.max(...j.arms.filter((a) => a !== stem).map((a) => a.hw));
+    const d = thru + 1.6, x = j.x - stem.ax * d, z = j.z - stem.az * d;
+    if (tryPut('mirror', x, z, face(stem.ax, stem.az), 0.35, { claimR: 0.9, avoidPaths: true })) colliders.push(rectCollider(x, z, face(stem.ax, stem.az), 0, 0, 0.15, 0.15, 7.6));
+  }
+
   // ================= 5. promenade kit =================
   roads.forEach((rd) => {
     if (rd.kind !== 'promenade' || !rd.points || rd.points.length < 2) return;
@@ -889,7 +913,7 @@ export async function buildDressing(scene, city, opts = {}) {
   const mat = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap });
   const tpl = {
     lamp: lampTemplate(false), lamp2: lampTemplate(true), lampC: lampCentreTemplate(), promLamp: promLampTemplate(),
-    railing: railingTemplate(), bollard: bollardTemplate(),
+    railing: railingTemplate(), bollard: bollardTemplate(), mirror: mirrorTemplate(),
     bench: merge(benchTemplate()), bin: binTemplate(), bikeRack: bikeRackTemplate(),
     shelter: shelterTemplate(), busSign: busSignTemplate(), trafficLight: trafficLightTemplate(false), trafficLightPed: trafficLightTemplate(true), trafficHead: trafficHeadTemplate(),
     pergola: pergolaTemplate(),
