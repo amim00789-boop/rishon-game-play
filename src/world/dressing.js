@@ -27,7 +27,7 @@ const SHOP_AMENITY = /restaurant|cafe|fast_food|bank|pharmacy|ice_cream|pub|bar|
 // Draw distance per prop type (world units). Beyond this the chunk's mesh for that type is hidden.
 const DRAW = {
   lamp: 750, lamp2: 750, promLamp: 600, shelter: 700, busSign: 450, trafficLight: 600, trafficLightPed: 600, trafficHead: 600,
-  bench: 320, bin: 260, bikeRack: 260, pergola: 700, lampC: 750, railing: 300, bollard: 220, mirror: 300, pole: 520,
+  bench: 320, bin: 260, bikeRack: 260, pergola: 700, lampC: 750, railing: 300, bollard: 220, mirror: 300, pole: 520, pylon: 900,
 };
 const SHADOW = new Set(['lamp', 'lamp2', 'lampC', 'promLamp', 'shelter', 'pergola', 'trafficLight', 'trafficLightPed', 'trafficHead']);
 
@@ -146,6 +146,49 @@ function poleTemplate() {
   const parts = [cyl(0.26, 0.38, 10.4, 0, 5.2, 0, C, 8), box(0.2, 0.2, 2.5, 0, 9.4, 0, ARM), box(0.2, 0.14, 0.14, 0, 9.0, 0, ARM)];
   for (const z of [-1.0, 0, 1.0]) parts.push(cyl(0.1, 0.14, 0.38, 0, 9.69, z, INS, 6));
   parts.push(cyl(0.1, 0.18, 0.4, 0, 10.55, 0, C, 6));
+  return merge(parts);
+}
+
+// A straight strut between two 3-D points (local frame), as a thin box.
+function strut3(a, b, t, hex) {
+  const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b), len = A.distanceTo(B);
+  const o = new THREE.Object3D();
+  o.position.copy(A).add(B).multiplyScalar(0.5);
+  o.lookAt(B);
+  o.updateMatrix();
+  return paint(new THREE.BoxGeometry(t, t, len).applyMatrix4(o.matrix), hex);
+}
+
+function pylonTemplate() {
+  // Galvanised lattice tower, ~24 u: four tapering legs, square rungs every 3 u, one diagonal per
+  // face per bay, two cross arms with hanging insulators. The type beside the road at the west
+  // end of the second drive video (4:32). Cross arms run along local z.
+  const C = 0xb3b8bc, H = 24, hb = 1.3, ht = 0.45, N = 8;
+  const half = (y) => hb + (ht - hb) * (y / H);
+  const corner = (y, i) => [[1, 1], [-1, 1], [-1, -1], [1, -1]][i].map((q) => q * half(y));
+  const parts = [];
+  for (let i = 0; i < 4; i++) {
+    const [x0, z0] = corner(0, i), [x1, z1] = corner(H, i);
+    parts.push(strut3([x0, 0, z0], [x1, H, z1], 0.22, C));
+  }
+  for (let l = 0; l <= N; l++) {
+    const y = (H * l) / N;
+    for (let i = 0; i < 4; i++) {
+      const [ax, az] = corner(y, i), [bx, bz] = corner(y, (i + 1) % 4);
+      parts.push(strut3([ax, y, az], [bx, y, bz], 0.1, C));
+      if (l < N) {
+        const y2 = (H * (l + 1)) / N;
+        const [cx, cz] = corner(y2, i), [dx, dz] = corner(y2, (i + 1) % 4);
+        if ((l + i) % 2) parts.push(strut3([ax, y, az], [dx, y2, dz], 0.09, C));
+        else parts.push(strut3([bx, y, bz], [cx, y2, cz], 0.09, C));
+      }
+    }
+  }
+  for (const y of [19.5, 22.5]) {
+    parts.push(box(0.2, 0.2, 7.0, 0, y, 0, C));
+    for (const z of [-3.2, 0, 3.2]) parts.push(cyl(0.1, 0.1, 1.0, 0, y - 0.6, z, 0xdad6cc, 6));
+  }
+  parts.push(cyl(0.12, 0.2, 1.2, 0, H + 0.4, 0, C, 6));
   return merge(parts);
 }
 
@@ -910,6 +953,16 @@ export async function buildDressing(scene, city, opts = {}) {
       const [x, z] = kerbPoint(s, 0.9);
       if (onLanding(x, z) || nearStop(x, z) || inMouthPole(x, z)) continue;
       const rot = face(s.nx, s.nz);
+      // About one slot in twenty takes a steel lattice tower instead of a pole, set a little
+      // further back, behind the sidewalk, so its wider base never blocks the walking line.
+      let placedPylon = false;
+      if (hxz(x, z, 51) < 0.05) {
+        for (const back of [6.2, 8.0]) {
+          const [qx, qz] = kerbPoint(s, back);
+          if (!onLanding(qx, qz) && tryPut('pylon', qx, qz, rot, 1.3, { claimR: 3.2, avoidPaths: true, collider: (px, pz, r) => rectCollider(px, pz, r, 0, 0, 1.2, 1.2, 24) })) { stats.pylons = (stats.pylons || 0) + 1; placedPylon = true; break; }
+        }
+        if (placedPylon) continue;
+      }
       if (!tryPut('pole', x, z, rot, 0.3, { claimR: 2.0, avoidPaths: true, collider: (px, pz, r) => rectCollider(px, pz, r, 0, 0, 0.3, 0.3, 10.4) })) continue;
       poles++;
       const y0 = ground(x, z) + 9.7;
@@ -987,7 +1040,7 @@ export async function buildDressing(scene, city, opts = {}) {
   const mat = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap });
   const tpl = {
     lamp: lampTemplate(false), lamp2: lampTemplate(true), lampC: lampCentreTemplate(), promLamp: promLampTemplate(),
-    railing: railingTemplate(), bollard: bollardTemplate(), mirror: mirrorTemplate(), pole: poleTemplate(),
+    railing: railingTemplate(), bollard: bollardTemplate(), mirror: mirrorTemplate(), pole: poleTemplate(), pylon: pylonTemplate(),
     bench: merge(benchTemplate()), bin: binTemplate(), bikeRack: bikeRackTemplate(),
     shelter: shelterTemplate(), busSign: busSignTemplate(), trafficLight: trafficLightTemplate(false), trafficLightPed: trafficLightTemplate(true), trafficHead: trafficHeadTemplate(),
     pergola: pergolaTemplate(),
