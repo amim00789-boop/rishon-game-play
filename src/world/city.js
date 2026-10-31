@@ -1415,6 +1415,119 @@ function buildNetwork(data, ctx) {
       if (!w.ys.some((v) => v > 0.05)) { w.ya = null; w.ys = null; }
     }
   }
+  // ---- merge zones (2026-10-30) ----
+  // A slip road meets its deck at one shared node, but OSM draws it alongside the deck at a shallow
+  // angle for the last tens of units, overlapping it sideways while still metres lower (Route 4 onto
+  // Moshe Dayan: ramp 92.4 under a deck edge at 95.7, 26 u before the node; the Tashach links). The
+  // car drove into the deck's edge. Where a link overlaps the way it shares an end with, it takes
+  // that way's height, and eases back to its own profile at MERGE_GRADE behind the overlap.
+  {
+    const MERGE_REACH = 70, MERGE_GRADE = 0.08;
+    const byEnd = new Map();
+    for (const w of all) {
+      if (w.tunnel || !w.cls || w.rail) continue;
+      for (const p of [w.pts[0], w.pts[w.pts.length - 1]]) { const k = keyOf(p); if (!byEnd.has(k)) byEnd.set(k, []); byEnd.get(k).push(w); }
+    }
+    // also ways that pass through the node (a link ending on a deck vertex)
+    const vtx = new Map();
+    for (const w of all) {
+      if (w.tunnel || !w.cls || w.rail) continue;
+      for (const p of w.pts) { const k = keyOf(p); if (!vtx.has(k)) vtx.set(k, new Set()); vtx.get(k).add(w); }
+    }
+    const nearOn = (d, x, z) => {
+      let best = Infinity, y = 0, px = 0, pz = 0;
+      const arr = d.ya || d.g;
+      for (let i = 0; i < d.pts.length - 1; i++) {
+        const a = d.pts[i], b = d.pts[i + 1], sg = mkSeg(a, b, {});
+        const dd = segDist(sg, x, z);
+        if (dd < best) { best = dd; y = arr[i] + (arr[i + 1] - arr[i]) * segT; px = a[0] + (b[0] - a[0]) * segT; pz = a[1] + (b[1] - a[1]) * segT; }
+      }
+      return { d: best, y, px, pz };
+    };
+    // Whatever passes overhead: a link that dips under another deck must not be lifted into it
+    // (the ramp at 8029,-3216 under the Jerusalem-Tel Aviv overpass, 2026-10-30).
+    const over = new SegGrid(25);
+    for (const d of all) if (!d.tunnel && d.ya && d.cls) for (let i = 0; i < d.pts.length - 1; i++) over.add(mkSeg(d.pts[i], d.pts[i + 1], { d, i }), d.hw2 + 8);
+    // y0: the old height at point i, y: the new one
+    const headroom = (w, i, y0, y, skip) => {
+      const x = w.pts[i][0], z = w.pts[i][1];
+      let ok = true;
+      over.each(x - 1, z - 1, x + 1, z + 1, (sg) => {
+        if (sg.d === w || (skip && skip.includes(sg.d))) return true;
+        if (segDist(sg, x, z) > sg.d.hw2) return true; // the deck must actually cover this point
+        const yd = sg.d.ya[sg.i] + (sg.d.ya[sg.i + 1] - sg.d.ya[sg.i]) * segT;
+        // a deck clearly above the old profile that the new height would no longer clear
+        if (yd > y0 + 4.5 && yd - y < DECK - SLAB) { ok = false; return false; }
+        return true;
+      });
+      return ok;
+    };
+    let merged = 0, mergedMax = 0, blocked = 0;
+    // links that merge into links that themselves rose: repeat until the heights settle
+    for (let it = 0; it < 3; it++) for (const w of all) {
+      if (w.tunnel || !w.cls || !w.cls.link || w.rail || !w.ya) continue;
+      for (const end of [0, 1]) {
+        const n = w.pts.length, ei = end ? n - 1 : 0;
+        const partners = [...(vtx.get(keyOf(w.pts[ei])) || [])].filter((d) => d !== w && (d.ya || d.g));
+        if (!partners.length) continue;
+        const ya = w.ya, orig = ya.slice();
+        let last = -1; // furthest index (from the end) inside a merge zone
+        const set = new Set([0]);
+        for (let step = 0; step < n; step++) {
+          const i = end ? n - 1 - step : step;
+          if (Math.abs(w.cum[i] - w.cum[ei]) > MERGE_REACH) break;
+          let target = null;
+          for (const d of partners) {
+            const q = nearOn(d, w.pts[i][0], w.pts[i][1]);
+            // side by side only: a way that simply continues from the shared node is no merge
+            if (Math.hypot(q.px - w.pts[ei][0], q.pz - w.pts[ei][1]) < 4) continue;
+            // only where a car on the link's centre line would meet the other road's edge (car half
+            // width + parapet + play): a link merely running near a deck keeps its own profile
+            if (q.d > d.hw2 + 3.5) continue;
+            // two links splitting: only the lower one rises, never pulled down
+            if (d.cls && d.cls.link && q.y < ya[i]) continue;
+            if (target === null || Math.abs(q.y - ya[i]) > Math.abs(target - ya[i])) target = q.y;
+          }
+          if (target === null) continue;
+          if (Math.abs(target - ya[i]) > 0.05) { mergedMax = Math.max(mergedMax, Math.abs(target - ya[i])); ya[i] = target; }
+          set.add(step);
+          last = step;
+        }
+        if (last < 1) continue;
+        // a point inside the zone that did not overlap: between its set neighbours, no dip
+        for (let step = 1; step < last; step++) {
+          if (set.has(step)) continue;
+          let a = step - 1; while (a > 0 && !set.has(a)) a--;
+          let b = step + 1; while (b < last && !set.has(b)) b++;
+          const ia = end ? n - 1 - a : a, ib = end ? n - 1 - b : b, i = end ? n - 1 - step : step;
+          const t = (w.cum[i] - w.cum[ia]) / ((w.cum[ib] - w.cum[ia]) || 1);
+          ya[i] = ya[ia] + (ya[ib] - ya[ia]) * t;
+        }
+        // Ease back to the original profile behind the zone, gently if the clearance under any deck
+        // passing over allows it, else steeper (a short 12% is still drivable); if neither keeps
+        // the clearance, this end keeps its old profile.
+        const zone = ya.slice();
+        let clear = false;
+        for (const grade of [MERGE_GRADE, 0.12]) {
+          for (let i = 0; i < n; i++) ya[i] = zone[i];
+          for (let step = last + 1; step < n; step++) {
+            const i = end ? n - 1 - step : step, j = end ? i + 1 : i - 1;
+            const ds = Math.abs(w.cum[i] - w.cum[j]), lo = ya[j] - grade * ds, hi = ya[j] + grade * ds;
+            const v = Math.max(lo, Math.min(hi, orig[i]));
+            if (Math.abs(v - orig[i]) < 1e-3) break;
+            ya[i] = v;
+          }
+          clear = true;
+          for (let step = 0; step < n && clear; step++) { const i = end ? n - 1 - step : step; if (ya[i] > orig[i] + 0.05 && !headroom(w, i, orig[i], ya[i], partners)) clear = false; }
+          if (clear) break;
+        }
+        if (!clear) { for (let i = 0; i < n; i++) ya[i] = orig[i]; blocked++; continue; }
+        if (ya.some((v, i) => Math.abs(v - orig[i]) > 0.05)) merged++;
+      }
+      w.ys = w.ya.map((y, i) => Math.max(0, y - w.g[i]));
+    }
+    if (rampStats) { rampStats.merged = merged; rampStats.mergedMax = +mergedMax.toFixed(2); rampStats.mergeBlocked = blocked; }
+  }
   const yOf = (w, i) => (w.ys ? w.ys[i] : 0);
   const isUp = (w) => !!w.ys && w.ys.some((y) => y > 0.05);
 
