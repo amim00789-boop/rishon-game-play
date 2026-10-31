@@ -33,17 +33,17 @@
     "shiri": {
       "archetype": "secular_woman",
       "at": {
-        "poi": "gan_hair_palms",
-        "dx": 4,
-        "dz": 0
+        "poi": "city_hall_plaza",
+        "dx": -14,
+        "dz": 6
       }
     },
     "orit": {
       "archetype": "dati_leumi_woman",
       "at": {
-        "poi": "gan_hair_palms",
-        "dx": 7,
-        "dz": 1
+        "poi": "city_hall_plaza",
+        "dx": -11,
+        "dz": 7
       }
     }
   },

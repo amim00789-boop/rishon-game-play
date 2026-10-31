@@ -8,18 +8,18 @@
     "ronit": {
       "archetype": "office_worker",
       "at": {
-        "poi": "gan_hair",
-        "dx": 40,
-        "dz": -34
+        "poi": "city_hall_plaza",
+        "dx": 3,
+        "dz": -21
       },
       "fallback": "secular_woman"
     },
     "ofir": {
       "archetype": "ofir",
       "at": {
-        "poi": "gan_hair",
-        "dx": 46,
-        "dz": -28
+        "poi": "city_hall_plaza",
+        "dx": 8,
+        "dz": -18
       },
       "fallback": "mizrahi_street_guy",
       "look": {

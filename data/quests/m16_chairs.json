@@ -8,45 +8,45 @@
     "malul": {
       "archetype": "malul",
       "at": {
-        "poi": "gan_hair",
-        "dx": -6,
-        "dz": 30
+        "poi": "city_hall_plaza",
+        "dx": 10,
+        "dz": -31
       },
       "fallback": "beach_guy"
     },
     "dekel": {
       "archetype": "dekel",
       "at": {
-        "poi": "gan_hair",
-        "dx": 0,
-        "dz": 34
+        "poi": "city_hall_plaza",
+        "dx": 7.5,
+        "dz": -28
       },
       "fallback": "dati_leumi_man"
     },
     "ofir": {
       "archetype": "ofir",
       "at": {
-        "poi": "gan_hair",
-        "dx": 6,
-        "dz": 30
+        "poi": "city_hall_plaza",
+        "dx": 12.5,
+        "dz": -28
       },
       "fallback": "mizrahi_street_guy"
     },
     "adir": {
       "archetype": "adir",
       "at": {
-        "poi": "gan_hair",
-        "dx": 12,
-        "dz": 34
+        "poi": "city_hall_plaza",
+        "dx": 10,
+        "dz": -25
       },
       "fallback": "beach_guy"
     },
     "ronit": {
       "archetype": "office_worker",
       "at": {
-        "poi": "gan_hair",
-        "dx": -14,
-        "dz": 22
+        "poi": "city_hall_plaza",
+        "dx": 3,
+        "dz": -21
       },
       "fallback": "secular_woman"
     },
@@ -113,19 +113,19 @@
       "params": {
         "item": "chair",
         "stack": 5,
-        "slots": 40,
+        "slots": 15,
         "pile": {
-          "poi": "gan_hair",
-          "dx": -30,
-          "dz": 10
+          "poi": "city_hall_plaza",
+          "dx": 36,
+          "dz": -22
         },
         "rows": {
           "at": {
-            "poi": "gan_hair",
-            "dx": 0,
-            "dz": 50
+            "poi": "city_hall_plaza",
+            "dx": 21.6,
+            "dz": -24
           },
-          "cols": 8,
+          "cols": 5,
           "spacing": 3
         },
         "limit": 240,
@@ -147,10 +147,12 @@
           "show": "chair_rows",
           "id": "rows",
           "at": {
-            "poi": "gan_hair",
-            "dx": 0,
-            "dz": 36
-          }
+            "poi": "city_hall_plaza",
+            "dx": 21.6,
+            "dz": -24
+          },
+          "rows": 3,
+          "cols": 5
         }
       ]
     },
@@ -159,9 +161,9 @@
       "if": "trust.haredi<1",
       "npc": "yanki",
       "at": {
-        "poi": "gan_hair",
-        "dx": -20,
-        "dz": 40
+        "poi": "city_hall_plaza",
+        "dx": 2,
+        "dz": -14
       },
       "modes": [
         "car"
@@ -176,9 +178,9 @@
       "if": "trust.secular<1",
       "npc": "shiri",
       "at": {
-        "poi": "gan_hair",
-        "dx": -20,
-        "dz": 40
+        "poi": "city_hall_plaza",
+        "dx": 2,
+        "dz": -14
       },
       "modes": [
         "car"
@@ -193,9 +195,9 @@
       "if": "trust.russian<1",
       "npc": "grisha",
       "at": {
-        "poi": "gan_hair",
-        "dx": -20,
-        "dz": 40
+        "poi": "city_hall_plaza",
+        "dx": 2,
+        "dz": -14
       },
       "modes": [
         "car"
@@ -210,9 +212,9 @@
       "if": "trust.street<1",
       "npc": "moshiko",
       "at": {
-        "poi": "gan_hair",
-        "dx": -20,
-        "dz": 40
+        "poi": "city_hall_plaza",
+        "dx": 2,
+        "dz": -14
       },
       "modes": [
         "car"
@@ -227,9 +229,9 @@
       "if": "trust.dati<1",
       "npc": "avi",
       "at": {
-        "poi": "gan_hair",
-        "dx": -20,
-        "dz": 40
+        "poi": "city_hall_plaza",
+        "dx": 2,
+        "dz": -14
       },
       "modes": [
         "car"
@@ -244,9 +246,9 @@
       "if": "passed_shimon",
       "npc": "shimon",
       "at": {
-        "poi": "gan_hair",
-        "dx": -20,
-        "dz": 40
+        "poi": "city_hall_plaza",
+        "dx": 2,
+        "dz": -14
       },
       "modes": [
         "car"
@@ -272,27 +274,27 @@
       "show": "chair_stack",
       "id": "stack1",
       "at": {
-        "poi": "gan_hair",
-        "dx": -30,
-        "dz": 10
+        "poi": "city_hall_plaza",
+        "dx": 36,
+        "dz": -22
       }
     },
     {
       "show": "chair_stack",
       "id": "stack2",
       "at": {
-        "poi": "gan_hair",
-        "dx": -27,
-        "dz": 11
+        "poi": "city_hall_plaza",
+        "dx": 39,
+        "dz": -21
       }
     },
     {
       "show": "chair_stack",
       "id": "stack3",
       "at": {
-        "poi": "gan_hair",
-        "dx": -24,
-        "dz": 10
+        "poi": "city_hall_plaza",
+        "dx": 42,
+        "dz": -22
       }
     }
   ],
@@ -301,10 +303,12 @@
       "show": "chair_rows",
       "id": "rows",
       "at": {
-        "poi": "gan_hair",
-        "dx": 0,
-        "dz": 36
-      }
+        "poi": "city_hall_plaza",
+        "dx": 21.6,
+        "dz": -24
+      },
+      "rows": 3,
+      "cols": 5
     }
   ]
 }

@@ -8,45 +8,45 @@
     "malul": {
       "archetype": "malul",
       "at": {
-        "poi": "gan_hair",
-        "dx": -6,
-        "dz": 30
+        "poi": "city_hall_plaza",
+        "dx": 10,
+        "dz": -31
       },
       "fallback": "beach_guy"
     },
     "dekel": {
       "archetype": "dekel",
       "at": {
-        "poi": "gan_hair",
-        "dx": 0,
-        "dz": 34
+        "poi": "city_hall_plaza",
+        "dx": 7.5,
+        "dz": -28
       },
       "fallback": "dati_leumi_man"
     },
     "ofir": {
       "archetype": "ofir",
       "at": {
-        "poi": "gan_hair",
-        "dx": 6,
-        "dz": 30
+        "poi": "city_hall_plaza",
+        "dx": 12.5,
+        "dz": -28
       },
       "fallback": "mizrahi_street_guy"
     },
     "adir": {
       "archetype": "adir",
       "at": {
-        "poi": "gan_hair",
-        "dx": 12,
-        "dz": 34
+        "poi": "city_hall_plaza",
+        "dx": 10,
+        "dz": -25
       },
       "fallback": "beach_guy"
     },
     "ronit": {
       "archetype": "office_worker",
       "at": {
-        "poi": "gan_hair",
-        "dx": -14,
-        "dz": 22
+        "poi": "city_hall_plaza",
+        "dx": 3,
+        "dz": -21
       },
       "fallback": "secular_woman"
     }
@@ -225,9 +225,9 @@
       "show": "stage",
       "id": "stage",
       "at": {
-        "poi": "gan_hair",
-        "dx": 0,
-        "dz": 18
+        "poi": "city_hall_plaza",
+        "dx": 21.6,
+        "dz": -32.6
       }
     }
   ],
@@ -236,9 +236,9 @@
       "show": "stage",
       "id": "stage",
       "at": {
-        "poi": "gan_hair",
-        "dx": 0,
-        "dz": 18
+        "poi": "city_hall_plaza",
+        "dx": 21.6,
+        "dz": -32.6
       }
     }
   ]

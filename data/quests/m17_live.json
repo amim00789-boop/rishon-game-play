@@ -184,31 +184,11 @@
           }
         }
       ],
-      "seat": "rows"
+      "seat": "m16_chairs:rows"
     }
   ],
   "after": "page",
   "scene": [
-    {
-      "show": "stage",
-      "id": "stage",
-      "at": {
-        "poi": "city_hall_plaza",
-        "dx": 21.6,
-        "dz": -32.6
-      }
-    },
-    {
-      "show": "chair_rows",
-      "id": "rows",
-      "rows": 3,
-      "cols": 5,
-      "at": {
-        "poi": "city_hall_plaza",
-        "dx": 21.6,
-        "dz": -24
-      }
-    },
     {
       "show": "speaker",
       "id": "spkL",
@@ -251,7 +231,6 @@
   "onStage": true,
   "dismantle": true,
   "clear": [
-    "m09_flag:alex_table",
-    "m09_flag:avi_table"
+    "m16_chairs:rows"
   ]
 }
