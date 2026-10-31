@@ -1,7 +1,7 @@
 {
   "id": "q1_speaker",
   "requires": [
-    "m17_live"
+    "mq1_speaker"
   ],
   "hum": 12,
   "npcs": {

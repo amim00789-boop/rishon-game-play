@@ -1,7 +1,7 @@
 {
   "id": "q3_tomatoes",
   "requires": [
-    "q2_parking"
+    "mq3_tomatoes"
   ],
   "hum": 12,
   "npcs": {

@@ -1,0 +1,100 @@
+{
+  "ui": {
+    "mayorCalls": "The mayor is waiting at City Hall Plaza. He has jobs for you around town.",
+    "sentTo": "The mayor sent you to {name}. Look for the ! on the map."
+  },
+  "mq1_speaker": {
+    "title": "The mayor sends you: the speaker on the beach",
+    "d": {
+      "offer": [
+        [
+          "mayor",
+          "Ah, you're here! Hold on, I'm on the line. ...Yes, yes, he's here. I'm sending him."
+        ],
+        [
+          "mayor",
+          "Listen, since the show the whole city wants your help. I'm the mayor, so I hand out the queue."
+        ],
+        [
+          "mayor",
+          "First: Moshiko at the beach kiosk. His speaker hums, and the neighbours hum about him. Go make peace."
+        ]
+      ]
+    }
+  },
+  "mq2_parking": {
+    "title": "The mayor sends you: parking before Shabbat",
+    "d": {
+      "offer": [
+        [
+          "mayor",
+          "The beach is quiet? Great. I got three thank-you messages and one about parking. There's always one about parking."
+        ],
+        [
+          "mayor",
+          "Speaking of which: Yanki at Founders' Square. He has a spreadsheet and a problem. Start with the problem."
+        ]
+      ]
+    }
+  },
+  "mq3_tomatoes": {
+    "title": "The mayor sends you: tomatoes at the market",
+    "d": {
+      "offer": [
+        [
+          "mayor",
+          "I heard you sorted the parking. I don't know how. I've been trying for twenty years."
+        ],
+        [
+          "mayor",
+          "Now the market by the water tower. Orit and Shiri, stall facing stall, and tomatoes rolling. Save the tomatoes."
+        ]
+      ]
+    }
+  },
+  "mq4_bbq": {
+    "title": "The mayor sends you: barbecue at the lake",
+    "d": {
+      "offer": [
+        [
+          "mayor",
+          "Orit sent me a salad. That means you did it. At City Hall a salad is a certificate."
+        ],
+        [
+          "mayor",
+          "Avi is at the swan lake. A barbecue, a neighbour, and an argument about smoke. Get everyone onto one plate."
+        ]
+      ]
+    }
+  },
+  "mq5_whatsapp": {
+    "title": "The mayor sends you: the group is stuck",
+    "d": {
+      "offer": [
+        [
+          "mayor",
+          "Look at my phone. Three hundred messages in the group and none of them open. The whole city is typing \"what happened to the group?\""
+        ],
+        [
+          "mayor",
+          "Yanki at the mall is already making a spreadsheet about it. Get there before he makes a chart too."
+        ]
+      ]
+    }
+  },
+  "mq6_together": {
+    "title": "The mayor sends you: Savta Rachel",
+    "d": {
+      "offer": [
+        [
+          "mayor",
+          "The group is back. Everyone sent \"good morning\" at the same moment and the server nearly fell again. That's called success."
+        ],
+        [
+          "mayor",
+          "Last one: Savta Rachel asked to see you. I don't ask Savta Rachel why. Nobody does."
+        ]
+      ]
+    }
+  }
+}

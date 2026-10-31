@@ -1,7 +1,7 @@
 {
   "id": "q2_parking",
   "requires": [
-    "q1_speaker"
+    "mq2_parking"
   ],
   "hum": 12,
   "npcs": {

@@ -1,0 +1,21 @@
+{
+  "id": "mq5_whatsapp",
+  "dispatch": true,
+  "requires": [
+    "q4_bbq"
+  ],
+  "giver": "mayor",
+  "npcs": {
+    "mayor": {
+      "archetype": "mayor",
+      "fallback": "office_worker",
+      "at": {
+        "poi": "city_hall_plaza",
+        "dx": 21.6,
+        "dz": -33.8
+      }
+    }
+  },
+  "offer": "d.offer",
+  "steps": []
+}

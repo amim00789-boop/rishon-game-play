@@ -4,7 +4,8 @@
     "strings.{lang}.json",
     "story.{lang}.json",
     "cinema.{lang}.json",
-    "skate_shikma.{lang}.json"
+    "skate_shikma.{lang}.json",
+    "mayor_errands.{lang}.json"
   ],
   "quests": [
     "m01_soundcheck",
@@ -44,11 +45,17 @@
     "sm11_sarah"
   ],
   "side": [
+    "mq1_speaker",
     "q1_speaker",
+    "mq2_parking",
     "q2_parking",
+    "mq3_tomatoes",
     "q3_tomatoes",
+    "mq4_bbq",
     "q4_bbq",
+    "mq5_whatsapp",
     "q5_whatsapp",
+    "mq6_together",
     "q7_together"
   ],
   "minigames": "./engine/minigames/index.js",

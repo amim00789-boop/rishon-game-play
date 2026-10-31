@@ -1056,6 +1056,18 @@ export class QuestSystem {
 
   // ---------------- quest flow ----------------
   accept(q) {
+    // A mayor's errand (docs/MAYOR_ERRANDS.md): the talk is the whole thing. It is marked done on
+    // the spot, which unlocks the side quest it sends the player to, and the toast names who waits.
+    if (q.dispatch) {
+      if (!this.state.done.includes(q.id)) this.state.done.push(q.id);
+      this.applyEffects(q.effects);
+      this.save();
+      const next = this.quests.find((x) => (x.requires || []).includes(q.id));
+      if (next && this.hud) this.hud.toastMsg(this.t('ui.sentTo', { name: this.name(next.giver) }));
+      this.refreshScene();
+      this.refreshHud();
+      return;
+    }
     this.state.active = { id: q.id, step: -1 };
     this.hud && this.hud.banner(this.t('ui.newQuest'), this.qt(q, 'title'));
     this.nextStep();
@@ -1248,7 +1260,8 @@ export class QuestSystem {
     const after = q.clue ? `${this.t('ui.clue')}: ${this.qt(q, 'clue')}` : q.after ? this.qt(q, this.pick(q.after)) : '';
     if (q.finale) this.hud && this.hud.banner(this.t('ui.theEnd'), this.qt(q, 'title'), this.t('ui.thanks'));
     else this.hud && this.hud.banner(this.t('ui.questDone'), this.qt(q, 'title'), after);
-    if (q.finale && this.quests.some((x) => x.side)) setTimeout(() => this.hud && this.hud.toastMsg(this.t('ui.sideOpen')), 6000);
+    // The side quests are the mayor's errands now: once the first errand opens, say where he waits.
+    if (this.quests.some((x) => x.dispatch && (x.requires || []).includes(q.id))) setTimeout(() => this.hud && this.hud.toastMsg(this.t('ui.mayorCalls')), 6000);
     this.refreshHud();
   }
 

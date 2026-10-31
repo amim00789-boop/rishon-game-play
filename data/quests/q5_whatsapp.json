@@ -1,7 +1,7 @@
 {
   "id": "q5_whatsapp",
   "requires": [
-    "q4_bbq"
+    "mq5_whatsapp"
   ],
   "hum": 21,
   "npcs": {

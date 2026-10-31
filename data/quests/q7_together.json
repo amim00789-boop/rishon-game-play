@@ -1,7 +1,7 @@
 {
   "id": "q7_together",
   "requires": [
-    "q5_whatsapp",
+    "mq6_together",
     "m05b_wedding"
   ],
   "hum": 31,
