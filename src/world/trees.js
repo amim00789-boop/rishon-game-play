@@ -54,6 +54,13 @@ const GROVE_RUN = 30;     // a grove row is cut into hedge/collider pieces of at
 const WB_MAX_W = 30, WB_NARROW = 13, FARM_NEAR = 40;
 const WB_STEP = { cypress: 3.6, eucalyptus: 6 };
 const ROW_STEP = { palm: 9, default: 10 };
+// Inferred street trees (founder, 2026-10-31, after the drive videos: Rishon's residential streets
+// are lined with trees, mostly ficus). They fill the kerb-side tree line of residential streets
+// where the map has none: one every STREET_STEP units, a share left as gaps, one species per street.
+const STREET_STEP = 14;
+const STREET_RATE = { residential: 0.78, living_street: 0.78, tertiary: 0.5, unclassified: 0.3 };
+const STREET_KEEP = 3.2; // minimum distance to any other tree, mapped or inferred
+const STREET_FAR = 760;  // their far stand-ins stop sooner: buildings hide side streets anyway
 const PARK_AREA_PER_TREE = 1100; // modest: at most one scattered tree per ~760 m2 of park
 const PARK_GROVE_SCALE = 70;      // groves: value noise at this wavelength decides where they cluster
 
@@ -529,7 +536,8 @@ export async function buildTrees(scene, city, data, opts = {}) {
     q.setFromAxisAngle(up, hxz(x, z, 2) * Math.PI * 2);
     m4.compose(v.set(x, y, z), q, sc.set(s, s, s));
     const tint = 0.88 + hxz(x, z, 6) * 0.22;
-    (c.lists[sp] || (c.lists[sp] = [])).push([m4.clone(), tint]);
+    const key = opt.street ? `${sp}@street` : sp;
+    (c.lists[key] || (c.lists[key] = [])).push([m4.clone(), tint]);
     if (onWalk) {
       m4.compose(v.set(x, y - 0.02, z), q, sc.set(1, 1, 1));
       (c.lists.pit || (c.lists.pit = [])).push([m4.clone(), 1]);
@@ -690,6 +698,39 @@ export async function buildTrees(scene, city, data, opts = {}) {
   }
 
   lap('rows');
+  // ================= 2b. inferred street trees =================
+  // Walk each residential sidewalk and plant on its kerb-side tree line, after the mapped trees so
+  // those keep their places. Kept clear: zebra landings, bus stops, junction mouths (the sidewalk
+  // strip already stops there), driveways and everything veto() rules out.
+  {
+    const keepOut = new Grid(32);
+    const addKeep = (x, z, r) => keepOut.add([x, z, r], x - r, z - r, x + r, z + r);
+    for (const c of (city && city.crossings) || []) {
+      if (!Number.isFinite(c.x) || !Number.isFinite(c.width)) continue;
+      const tx = Math.sin(c.angle), tz = Math.cos(c.angle), o = c.width / 2 + 1;
+      addKeep(c.x - tz * o, c.z + tx * o, 6);
+      addKeep(c.x + tz * o, c.z - tx * o, 6);
+    }
+    for (const b of (city && city.busStops) || []) if (Number.isFinite(b.x)) addKeep(b.x, b.z, 10);
+    const keptOut = (x, z) => keepOut.at(x, z).some(([kx, kz, r]) => Math.hypot(kx - x, kz - z) < r);
+    stats.street = 0;
+    for (const [wi, w] of ((city && city.sidewalks) || []).entries()) {
+      const rate = STREET_RATE[w.roadKind];
+      if (!rate || !w.points || w.points.length < 2) continue;
+      // One species per street side, ficus most of the time (as in the videos).
+      const hs = hash(wi * 2654435761 + 977);
+      const sp = hs < 0.62 ? 'ficus' : hs < 0.76 ? 'jacaranda' : hs < 0.86 ? 'poinciana' : 'broad';
+      for (const [x0, z0] of along(w.points, STREET_STEP, STREET_STEP / 2)) {
+        if (hxz(x0, z0, 31) >= rate || keptOut(x0, z0)) continue;
+        const walk = nearestSeg(walkGrid, x0, z0, 3);
+        if (!walk || walk.s.wi !== wi) continue;
+        const p = kerbLine(walk, x0, z0);
+        if (!p || keptOut(p.x, p.z) || !occFree(p.x, p.z, STREET_KEEP) || onPath(p.x, p.z, 0.6) || onCarriage(p.x, p.z, 0.6)) continue;
+        emit(sp, p.x, p.z, { source: 'street', sidewalk: true, street: true, claim: 2.0 });
+      }
+    }
+  }
+  lap('street');
   // Windbreak rows down a thin wood strip: walk both long sides, step inward to the middle (one
   // row) or 3 u in from each side (two rows in a wide strip), and let occupancy merge the points
   // the two sides agree on.
@@ -1044,7 +1085,9 @@ export async function buildTrees(scene, city, data, opts = {}) {
   for (const [ck, c] of chunks) {
     const g = new THREE.Group();
     g.name = `trees ${ck}`;
-    for (const [sp, list] of Object.entries(c.lists)) {
+    for (const [key, list] of Object.entries(c.lists)) {
+      const [sp, tag] = key.split('@');
+      const farD = tag === 'street' ? STREET_FAR : FAR;
       for (const lod of ['near', 'far']) {
         const geo = lod === 'near' ? tplNear(sp) : tplFar(sp);
         if (!geo) continue;
@@ -1056,7 +1099,7 @@ export async function buildTrees(scene, city, data, opts = {}) {
         im.castShadow = lod === 'near' && sp !== 'pit';
         im.name = `${sp}-${lod}`;
         g.add(im);
-        cull.push({ im, cx: c.cx, cz: c.cz, lod, near2: ((sp === 'grove' ? GROVE_NEAR : NEAR) + CHUNK * 0.72) ** 2, far2: (FAR + CHUNK * 0.72) ** 2 });
+        cull.push({ im, cx: c.cx, cz: c.cz, lod, near2: ((sp === 'grove' ? GROVE_NEAR : NEAR) + CHUNK * 0.72) ** 2, far2: (farD + CHUNK * 0.72) ** 2 });
       }
     }
     group.add(g);

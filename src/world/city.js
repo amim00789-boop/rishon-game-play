@@ -241,7 +241,7 @@ function walker(pts, ys = 0) {
       return {
         x: a[0] + (b[0] - a[0]) * t, z: a[1] + (b[1] - a[1]) * t,
         y: val(ys, lo) + (val(ys, hi) - val(ys, lo)) * t,
-        dx: (b[0] - a[0]) / sl, dz: (b[1] - a[1]) / sl,
+        dx: (b[0] - a[0]) / sl, dz: (b[1] - a[1]) / sl, i: lo,
       };
     },
   };
@@ -873,6 +873,50 @@ function buildNetwork(data, ctx) {
     if (ctx.terrain) w.pts = densify(w.pts, 12);
     w.len = polylineLength(w.pts); w.level = 0; w.ys = null;
   }
+  // Lane drops (round 10): where a one-way interurban road continues as a narrower way of the
+  // same road, the wider way used to end in a full lane-width step. Now it narrows over a taper of
+  // 65 lengths per unit of width lost (Israeli rule for ~100 km/h, docs/research table 3), capped
+  // at 60% of the way, and its lane lines slide over with it. Urban roads keep the step: their
+  // sidewalks and medians follow the full width.
+  {
+    const endKey = (p) => `${Math.round(p[0] * 2)},${Math.round(p[1] * 2)}`;
+    const starts = new Map(), ends = new Map();
+    for (const w of ways) {
+      if (!w.cls || w.tunnel) continue;
+      for (const [map, p] of [[starts, w.pts[0]], [ends, w.pts[w.pts.length - 1]]]) {
+        const k = endKey(p);
+        if (!map.has(k)) map.set(k, []);
+        map.get(k).push(w);
+      }
+    }
+    for (const w of ways) {
+      if (!w.cls || !w.oneway || w.cls.urban || w.tunnel || w.roundabout) continue;
+      for (const atEnd of [true, false]) {
+        const k = endKey(atEnd ? w.pts[w.pts.length - 1] : w.pts[0]);
+        // Every other way meeting this end must be narrower: a plain lane drop (one way on), or a
+        // slip road that splits into wider roads (431 / Ayalon: a 1-lane link becomes a 1-lane link
+        // and a 2-lane carriageway, whose square end stuck out sideways like a block).
+        const others = [...(starts.get(k) || []), ...(ends.get(k) || [])].filter((u) => u !== w);
+        if (!others.length || others.some((u) => u.hw2 > w.hw2 - 0.5)) continue;
+        const to = Math.max(...others.map((u) => u.hw2));
+        const lostMetres = (2 * (w.hw2 - to)) / (SCALE * WIDEN);
+        const T = Math.min(0.6 * w.len, 65 * lostMetres * SCALE);
+        if (T < 20) continue;
+        (w.tapers || (w.tapers = [])).push({ atEnd, T, hw2: to });
+      }
+    }
+  }
+  // Half width of a tapering way at arc length s (smoothstep so the edge bends in, not kinks).
+  const taperAt = (w, s, full) => {
+    let h = full;
+    for (const t of w.tapers || []) {
+      const d = t.atEnd ? w.len - s : s;
+      if (d >= t.T) continue;
+      const f = 1 - d / t.T, k = f * f * (3 - 2 * f);
+      h = Math.min(h, full + (t.hw2 - w.hw2) * k);
+    }
+    return h;
+  };
 
   // Railway stations without OSM platform polygons nearby (their side platforms are built here).
   const bareStations = (data.amenities || []).filter((a) => a[0] === 'station')
@@ -2227,13 +2271,29 @@ function buildNetwork(data, ctx) {
       entry.edges = w.edge;
     }
     if (w.cls) { entry.lanes = w.lanes; entry.oneway = w.oneway; entry.rank = w.rank; if (w.roundabout) entry.roundabout = true; }
+    // Drawn half width per vertex where the way tapers into a narrower one (round 10).
+    if (w.tapers) {
+      // A taper ends before the way starts to rise: parapets and deck walls keep the full width.
+      const cum = cumulative(w.pts);
+      for (const t of w.tapers) {
+        if (!w.ys) continue;
+        const idx = w.ys.map((y, i) => (y > 0.05 ? i : -1)).filter((i) => i >= 0);
+        if (!idx.length) continue;
+        const room = t.atEnd ? w.len - cum[idx[idx.length - 1]] : cum[idx[0]];
+        t.T = Math.min(t.T, room * 0.9);
+      }
+      w.tapers = w.tapers.filter((t) => t.T >= 20);
+      if (!w.tapers.length) w.tapers = null;
+      else entry.halfWidths = w.halfWidths = cum.map((sv) => taperAt(w, sv, w.hw2));
+    }
     roads.push(entry);
     if (w.tunnel) continue; // tunnels stay hidden under the flat ground
     const N = vnormals(w.pts);
     if (w.cls) {
       const y = roadY(w.rank);
-      if (w.ys) absolute(() => strip(layers.asphalt, w.pts, w.edge[0], -w.hw2, w.hw2, C(w.cls.color), N, null, w.edge[1]));
-      else strip(layers.asphalt, w.pts, y, -w.hw2, w.hw2, C(w.cls.color), N);
+      const hv = w.tapers ? w.halfWidths : null;
+      if (w.ys) absolute(() => strip(layers.asphalt, w.pts, w.edge[0], hv ? hv.map((h) => -h) : -w.hw2, hv || w.hw2, C(w.cls.color), N, null, w.edge[1]));
+      else strip(layers.asphalt, w.pts, y, hv ? hv.map((h) => -h) : -w.hw2, hv || w.hw2, C(w.cls.color), N);
       structure(w, w.hw2 + 0.5, y);
     } else {
       const y = Y.path + (w.path === 'promenade' ? 0.01 : 0);
@@ -2259,6 +2319,125 @@ function buildNetwork(data, ctx) {
     });
   }
 
+  lap('merge zones');
+  // ---- merge and diverge zones (round 10) ----
+  // Where a slip road leaves or joins a motorway, trunk or main road at grade, the two ways were
+  // two strips that overlapped near the shared node and then parted: a grass wedge with ragged
+  // ends showed between them, and both roads painted their own edge lines through the overlap
+  // (founder, round 10: "blocks in the road", "the lanes are not clear" at 431 / Ayalon).
+  // Israeli practice (docs/research/ISRAEL_ROAD_STANDARDS.md, marking 808 and 815): while the
+  // slip road runs against the main road it is an auxiliary lane, split from the through lanes by
+  // long rectangles (3 m x 0.3 m, 1.5 m gaps); where the edges part, the wedge up to the nose is a
+  // marked island (white, 45-degree stripes). So the wedge is filled with asphalt and hatched, the
+  // main road's edge line gives way to rectangles along the overlap, and the slip road paints no
+  // lines while it is still inside the main carriageway.
+  const ML = (metres) => metres * SCALE; // lengths along a road are not widened
+  const GORE_W = U(4), MERGE_REACH = ML(260), MSTEP = 2;
+  const mainGrid = new SegGrid(40);
+  for (const w of cars) {
+    if (!w.oneway || w.cls.link || w.rank < 7 || w.roundabout) continue;
+    for (let i = 0; i < w.pts.length - 1; i++) mainGrid.add(mkSeg(w.pts[i], w.pts[i + 1], { w, i }), w.hw2 + GORE_W + 24);
+  }
+  // Nearest main carriageway running the same way as (dx, dz) through (x, z) at grade.
+  const nearestMain = (x, z, dx, dz, self) => {
+    let best = null;
+    for (const s of mainGrid.at(x, z) || []) {
+      if (s.w.idx === self || dx * s.ux + dz * s.uz < 0.5) continue;
+      if (yOf(s.w, s.i) > 0.3 || yOf(s.w, s.i + 1) > 0.3) continue;
+      const d = segDist(s, x, z);
+      if (!best || d < best.d) best = { s, t: segT, d };
+    }
+    return best;
+  };
+  const edgeOff = (w) => Math.min(w.hw2 - 0.5, (w.lanes * LANE) / 2 + 0.4);
+  const rectGrid = new SegGrid(20);   // main-road edge stretches painted as rectangles
+  const mergeLinks = new Set();       // slip roads that start or end on a main road
+  const mergeStats = { zones: 0, gores: 0, rectLen: 0, goreLen: 0, raisedSkipped: 0 };
+  const goreC = C(PALETTE.line);
+  for (const w of cars) {
+    if (!w.cls.link || w.rank < 5 || w.tunnel) continue;
+    for (const atStart of [true, false]) {
+      const n = w.pts.length, ei = atStart ? 0 : n - 1;
+      if (yOf(w, ei) > 0.3) { mergeStats.raisedSkipped++; continue; }
+      const pts = atStart ? w.pts : [...w.pts].reverse();
+      const travel = atStart ? 1 : -1; // the walk runs with (diverge) or against (merge) traffic
+      const wk = walker(pts);
+      const first = wk.at(0);
+      const m0 = nearestMain(first.x, first.z, first.dx * travel, first.dz * travel, w.idx);
+      if (!m0 || m0.d > m0.s.w.hw2 + 1) continue;
+      const main = m0.s.w;
+      const rect = [], gore = [];
+      let side = 0;
+      for (let s = 0; s <= Math.min(MERGE_REACH, wk.L); s += MSTEP) {
+        const p = wk.at(s);
+        const li = atStart ? p.i : n - 2 - p.i;
+        if (yOf(w, li) > 0.3 || yOf(w, li + 1) > 0.3) break;
+        const m = nearestMain(p.x, p.z, p.dx * travel, p.dz * travel, w.idx);
+        if (!m || (m.s.w !== main && (!main.ref || m.s.w.ref !== main.ref))) break;
+        const sg = m.s, mw = sg.w;
+        const qx = sg.ax + sg.ux * sg.len * m.t, qz = sg.az + sg.uz * sg.len * m.t;
+        const nx = -sg.uz, nz = sg.ux;
+        const sd = Math.sign((p.x - qx) * nx + (p.z - qz) * nz) || side || 1;
+        if (!side) side = sd; else if (sd !== side && m.d > 1) break;
+        const g = m.d - mw.hw2 - w.hw2;
+        if (g >= GORE_W) break;
+        const e = edgeOff(mw);
+        if (g < 0) rect.push([qx + nx * side * e, qz + nz * side * e]);
+        else gore.push({ A: [qx + nx * side * mw.hw2, qz + nz * side * mw.hw2], B: [p.x - nx * side * w.hw2, p.z - nz * side * w.hw2], wid: g, rank: Math.min(mw.rank, w.rank), y: roadY(Math.min(mw.rank, w.rank)) });
+      }
+      if (rect.length < 3 && gore.length < 3) continue;
+      mergeLinks.add(w.idx);
+      mergeStats.zones++;
+      // Rectangles between the auxiliary lane and the through lanes (808 long: 3 m x 0.3 m, 1.5 m gap).
+      if (rect.length >= 3) {
+        const line = atStart ? rect : rect.reverse();
+        for (let i = 0; i < line.length - 1; i++) rectGrid.add(mkSeg(line[i], line[i + 1], {}), 3);
+        const rw = walker(line), y = roadY(main.rank) + MARK_LIFT + 0.004, hw = U(0.3) / 2;
+        mergeStats.rectLen += rw.L;
+        for (let s = 0; s + ML(3) <= rw.L; s += ML(4.5)) {
+          const a = rw.at(s), b = rw.at(s + ML(3));
+          const nx = -a.dz * hw, nz = a.dx * hw;
+          layers.marks.at(a.x, a.z).quad([a.x + nx, y, a.z + nz], [b.x + nx, y, b.z + nz], [b.x - nx, y, b.z - nz], [a.x - nx, y, a.z - nz], WHITE, UP);
+        }
+      }
+      // The wedge up to the nose: asphalt, then the marked island's 45-degree stripes.
+      if (gore.length >= 3) {
+        mergeStats.gores++;
+        // The wedge opens from a point where the overlap ends.
+        if (rect.length) gore.unshift({ A: gore[0].A, B: gore[0].A, wid: 0, rank: gore[0].rank, y: gore[0].y });
+        for (let k = 0; k < gore.length - 1; k++) {
+          const a = gore[k], b = gore[k + 1], y = Math.min(a.y, b.y) - 0.003;
+          layers.asphalt.at(a.A[0], a.A[1]).quad([a.A[0], y, a.A[1]], [b.A[0], y, b.A[1]], [b.B[0], y, b.B[1]], [a.B[0], y, a.B[1]], C(main.cls.color), UP);
+        }
+        const ga = walker(gore.map((q) => q.A)), gb = walker(gore.map((q) => q.B));
+        mergeStats.goreLen += ga.L;
+        const y = roadY(main.rank) + MARK_LIFT + 0.004, sw = U(0.3) / 2;
+        for (let s = ML(1); s < ga.L; s += ML(1.3)) {
+          // Each stripe leaves the main road's edge and reaches the slip road's edge one gore
+          // width further on, so the stripes slant 45 degrees and point with the traffic.
+          const fa = s / ga.L, k = Math.min(gore.length - 2, Math.floor(fa * (gore.length - 1)));
+          const wid = gore[k].wid + (gore[k + 1].wid - gore[k].wid) * (fa * (gore.length - 1) - k);
+          const a = ga.at(s), bs = (travel > 0 ? s + wid : s - wid) * (gb.L / ga.L);
+          if (bs < 0 || bs > gb.L || wid < 0.6) continue;
+          const b = gb.at(bs);
+          const L = Math.hypot(b.x - a.x, b.z - a.z) || 1, nx = (-(b.z - a.z) / L) * sw, nz = ((b.x - a.x) / L) * sw;
+          layers.marks.at(a.x, a.z).quad([a.x + nx, y, a.z + nz], [b.x + nx, y, b.z + nz], [b.x - nx, y, b.z - nz], [a.x - nx, y, a.z - nz], goreC, UP);
+        }
+      }
+    }
+  }
+  prof.mergeZones = { ...mergeStats, rectLen: Math.round(mergeStats.rectLen), goreLen: Math.round(mergeStats.goreLen) };
+  // A slip road is still inside the main carriageway it leaves or joins: it paints nothing there.
+  // Only at grade (a slip road crossing over a main road on a bridge keeps its lines), and only
+  // a main road running the slip road's own way.
+  const insideMain = (w, x, z, dx, dz, h) => {
+    if (!mergeLinks.has(w.idx) || h > 0.3) return false;
+    const m = nearestMain(x, z, dx, dz, w.idx);
+    return !!m && m.d < m.s.w.hw2 - 0.3;
+  };
+  // A right edge line (of whichever main-road way) on a stretch painted with rectangles.
+  const onRect = (w, x, z) => (rectGrid.at(x, z) || []).some((s) => segDist(s, x, z) < 1.6);
+
   lap('lane markings');
   // ---- lane markings ----
   const markW = 0.32;
@@ -2266,12 +2445,19 @@ function buildNetwork(data, ctx) {
     const c = w.cls;
     if (!c || (w.rank < 4 && !c.link && (w.oneway || w.rank < 3))) return []; // one-way residential streets and smaller ways stay unpainted
     const out = [], n = w.lanes;
-    const dash = w.rank >= 8 || w.hw === 'motorway_link' ? [5, 8] : [3, 4.5];
+    // Lane lines by Israeli rule (round 10, docs/research/ISRAEL_ROAD_STANDARDS.md table 4):
+    // divided interurban roads 3 m line / 12 m gap, single-carriageway interurban 2 / 4,
+    // urban 1 / 2. Lengths run along the road, so they are not widened.
+    const fast = w.rank >= 8 || w.hw === 'motorway_link' || w.hw === 'trunk_link';
+    const dash = fast ? [ML(3), ML(12)] : c.urban ? [ML(1), ML(2)] : [ML(2), ML(4)];
     if (w.oneway) {
       for (let k = 1; k < n; k++) out.push({ off: -(n * LANE) / 2 + k * LANE, dash, color: WHITE });
       if (!c.urban || c.link) {
+        // Right edge: solid yellow (807). Left edge of a divided road, by the median: solid
+        // double white (803). Single white on slip roads.
         const e = Math.min(w.hw2 - 0.5, (n * LANE) / 2 + 0.4);
-        out.push({ off: e, color: WHITE }, { off: -e, color: w.rank >= 8 ? YELLOW : WHITE });
+        out.push({ off: e, color: YELLOW, edge: 1 }, { off: -e, color: WHITE, edge: -1 });
+        if (w.rank >= 8 && -e - 0.42 > -w.hw2 + 0.1) out.push({ off: -e - 0.42, color: WHITE, edge: -1 });
       }
     } else {
       const m = w.median / 2, per = Math.max(1, Math.floor(n / 2));
@@ -2286,17 +2472,21 @@ function buildNetwork(data, ctx) {
     const lines = lineSet(w);
     if (!lines.length) continue;
     const N = vnormals(w.pts), lift = roadY(w.rank) + MARK_LIFT, minRank = Math.max(3, w.rank - 1);
-    const ok = (p) => !inCarriage(p.x, p.z, w.idx, p.y, p.dx, p.dz, minRank, 0.3) && !nearJunction(p.x, p.z, w.idx, minRank);
+    const ok = (p, ln) => !inCarriage(p.x, p.z, w.idx, p.y, p.dx, p.dz, minRank, 0.3) && !nearJunction(p.x, p.z, w.idx, minRank)
+      && !(ln.edge > 0 && onRect(w, p.x, p.z)) && !insideMain(w, p.x, p.z, p.dx, p.dz, p.y);
     // Raised ways paint in absolute heights; the predicate still tests the height above ground.
     ABS = !!w.ys;
+    // A tapering way pulls its lines in with its edges; lane lines stop where the lane has gone.
+    const tap = w.tapers ? w.halfWidths.map((h) => h / w.hw2) : null;
+    const tapAt = (sv) => (tap ? taperAt(w, sv, w.hw2) / w.hw2 : 1);
     for (const ln of lines) {
-      const op = offsetLine(w.pts, ln.off, N);
+      const op = offsetLine(w.pts, tap ? tap.map((f) => ln.off * f) : ln.off, N);
       const wk = walker(op, w.ys || 0), wa = w.ys ? walker(op, w.ya) : null;
       if (ln.dash) {
         const [len, gap] = ln.dash;
         for (let s = gap / 2; s + len <= wk.L; s += len + gap) {
           const a = wk.at(s), b = wk.at(s + len), m = wk.at(s + len / 2);
-          if (!ok(m)) continue;
+          if (!ok(m, ln) || tapAt(s + len / 2) < 0.8) continue;
           const ya = wa ? wa.at(s).y : a.y, yb = wa ? wa.at(s + len).y : b.y;
           const nx = (-m.dz * markW) / 2, nz = (m.dx * markW) / 2;
           layers.marks.at(m.x, m.z).quad([a.x + nx, ya + lift, a.z + nz], [b.x + nx, yb + lift, b.z + nz], [b.x - nx, yb + lift, b.z - nz], [a.x - nx, ya + lift, a.z - nz], ln.color, UP);
@@ -2310,7 +2500,7 @@ function buildNetwork(data, ctx) {
         for (let s = 0; s <= wk.L + 2.9; s += 3) {
           const sc = Math.min(s, wk.L), p = wk.at(sc);
           p.ya = wa ? wa.at(sc).y : p.y;
-          if (ok(p)) run.push(p); else flush();
+          if (ok(p, ln)) run.push(p); else flush();
         }
         flush();
       }
