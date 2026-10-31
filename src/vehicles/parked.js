@@ -20,9 +20,7 @@ const STREET_KINDS = { residential: 1, living_street: 0.8, unclassified: 0.9, te
 // How full a parked row is, by street class: quiet residential streets have the most gaps,
 // busy shopping streets (Rothschild is tertiary/secondary) stay fuller (founder, round 3: a third fewer cars).
 // (x0.81 after the 0.85 vehicle scale, so shorter cars do not raise the count: same ~34.6k total.)
-// Founder, 2026-10-31 (after the drive videos): residential streets full of parked cars on both sides,
-// as in Rishon; this supersedes the 2026-10-24 cut for quiet streets only.
-const STREET_FILL = { residential: 0.9, living_street: 0.8, unclassified: 0.6, tertiary: 0.69, secondary: 0.81 };
+const STREET_FILL = { residential: 0.34, living_street: 0.34, unclassified: 0.38, tertiary: 0.69, secondary: 0.81 };
 // Founder, 2026-10-24: too many cars in the whole game; parked ones a third fewer too.
 const PARKED_SHARE = 0.67;
 // Never park beside these. OSM parking:lane / parking:both tags could allow exceptions, but our
@@ -172,22 +170,6 @@ export function buildParked({ scene, city, lots = [], collision = null, net, rnd
       if (Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t) < e.hw + halfW + (e.link ? 5 : 1)) bad = true;
     });
     return !bad;
-  }
-
-  // A kerbside car belongs to its own street's parking strip: it may not reach into the
-  // carriageway of any other road (a parallel street, a road it meets at an angle).
-  function inOtherRoad(x, z, halfW, own) {
-    let bad = false;
-    net.grid.near(x, z, 30, ({ e, i }) => {
-      if (bad || e.road === own.road) return;
-      const a = e.pts[i], b = e.pts[i + 1];
-      const dx = b[0] - a[0], dz = b[1] - a[1], l2 = dx * dx + dz * dz || 1e-9;
-      let t = ((x - a[0]) * dx + (z - a[1]) * dz) / l2;
-      t = t < 0 ? 0 : t > 1 ? 1 : t;
-      const hw = Math.max(e.hw, ((e.road && e.road.width) || 0) / 2);
-      if (Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t) < hw + halfW - 0.2) bad = true;
-    });
-    return bad;
   }
 
   // Group edges by street (city road entry) so a street keeps one layout.
@@ -346,7 +328,7 @@ export function buildParked({ scene, city, lots = [], collision = null, net, rnd
       if (!blocked && rr() < fill) {
         const off = side * (e.hw - 0.12 - K.W / 2);
         net.pointAt(e, mid, off, tmp);
-        if (!nearDriveway(tmp.x, tmp.z, e.hw + 3.5) && !forbidden(tmp.x, tmp.z, K.W / 2) && !inOtherRoad(tmp.x, tmp.z, K.W / 2, e) && kerbOk(tmp.x, tmp.z, len / 2, K.W / 2) && !onRamp(tmp.x, tmp.z, K.W / 2) && !nearStall(tmp.x, tmp.z, len / 2 + 3) && !nearSidewalk(tmp.x, tmp.z, SW_HALF + K.W / 2 - 0.2)) {
+        if (!nearDriveway(tmp.x, tmp.z, e.hw + 3.5) && !forbidden(tmp.x, tmp.z, K.W / 2) && kerbOk(tmp.x, tmp.z, len / 2, K.W / 2) && !onRamp(tmp.x, tmp.z, K.W / 2) && !nearStall(tmp.x, tmp.z, len / 2 + 3) && !nearSidewalk(tmp.x, tmp.z, SW_HALF + K.W / 2 - 0.2)) {
           // Two-way streets: each kerb faces its own traffic; one-ways all face along the street.
           const flip = !e.oneway && side < 0;
           const yaw = Math.atan2(flip ? -tmp.dx : tmp.dx, flip ? -tmp.dz : tmp.dz) + (rr() - 0.5) * 0.04;
