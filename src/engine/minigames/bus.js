@@ -357,7 +357,7 @@ export function createBus(deps = {}) {
     if (pl.mode !== 'car') pl.setMode('car');
     Object.assign(MODE_PARAMS.car, BUS_PARAMS);
     if (!s.vis) {
-      s.vis = buildPlayerBus(0x2e6db4);
+      s.vis = buildPlayerBus();
       pl.root.add(s.vis.group);
     }
     if (s.chase) s.chase.wantDist = 34;

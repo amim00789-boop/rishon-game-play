@@ -31,13 +31,15 @@ const C = {
 
 // Israel's street mix is mostly white, silver and grey, with a few dark and coloured cars.
 const W = (hex, w) => ({ hex, w });
+export const BUS_GREEN = 0x3f9b4a;
 export const PAINTS = {
   car: [W(0xf4f4f2, 30), W(0xc4c8cc, 20), W(0x8a8f96, 14), W(0x4a4f57, 7), W(0x25272b, 6), W(0x2c3e66, 4),
     W(0xc0392b, 4), W(0x8fb8d8, 3), W(0xd8c9a8, 3), W(0x2f7d6d, 2), W(0x7b2d3b, 2), W(0xf2c14e, 1), W(0xe67e22, 1)],
   van: [W(0xf6f6f3, 70), W(0xc4c8cc, 14), W(0x8a8f96, 7), W(0x2c3e66, 4), W(0xc0392b, 3), W(0xf2c14e, 2)],
   taxi: [W(0xf4f4f2, 50), W(0xc4c8cc, 25), W(0x8a8f96, 10), W(0x25272b, 10), W(0x2c3e66, 5)],
-  bus: [W(0x3f9b4a, 40), W(0x7cc242, 15), W(0xf0f0f0, 15), W(0x2e6db4, 15), W(0xd64541, 10), W(0x2bb3a6, 5)],
-  coach: [W(0xf6f6f3, 60), W(0xc4c8cc, 20), W(0xefe3c4, 10), W(0x2e6db4, 10)],
+  // Every bus in town is green (founder, 2026-10-31): city buses and intercity coaches alike.
+  bus: [W(BUS_GREEN, 100)],
+  coach: [W(BUS_GREEN, 100)],
   truck: [W(0xf6f6f3, 50), W(0xc0392b, 14), W(0x2e6db4, 14), W(0x3f9b4a, 10), W(0xe67e22, 7), W(0x8a8f96, 5)],
   semi: [W(0xf6f6f3, 35), W(0xc0392b, 20), W(0x2e6db4, 18), W(0x8a8f96, 12), W(0xf2c14e, 10), W(0x25272b, 5)],
   moto: [W(0x25272b, 30), W(0xc0392b, 18), W(0x2e6db4, 15), W(0xf4f4f2, 15), W(0x8a8f96, 12), W(0xf2c14e, 10)],
@@ -495,7 +497,7 @@ export function triangleCount(kind, lod = 0) {
 // panels on the kerb side (local -x; the driver sits on the left, Israel drives on the right) that
 // slide open over a dark doorway. `setDoors(0..1)` opens or closes them. Origin at the centre of the
 // footprint on the ground, front is +z, like the player's car group.
-export function buildPlayerBus(colorHex = 0x2e6db4) {
+export function buildPlayerBus(colorHex = BUS_GREEN) {
   const k = KINDS.bus, s = k.s;
   const group = new THREE.Group();
   group.name = 'player-bus';
