@@ -1493,15 +1493,20 @@ function buildNetwork(data, ctx) {
     const over = new SegGrid(25);
     for (const d of all) if (!d.tunnel && d.ya && d.cls) for (let i = 0; i < d.pts.length - 1; i++) over.add(mkSeg(d.pts[i], d.pts[i + 1], { d, i }), d.hw2 + 8);
     // y0: the old height at point i, y: the new one
-    const headroom = (w, i, y0, y, skip) => {
+    let lastBlock = null; const blockLog = [];
+    // goal: the height the merge is heading for; a deck at about that level is the road being
+    // joined (another way of it), not one passing overhead (Tashach, Moshe Dayan, Jerusalem Blvd:
+    // 24 slip roads were held below the deck they join, round 10).
+    const headroom = (w, i, y0, y, skip, goal = null) => {
       const x = w.pts[i][0], z = w.pts[i][1];
       let ok = true;
       over.each(x - 1, z - 1, x + 1, z + 1, (sg) => {
         if (sg.d === w || (skip && skip.includes(sg.d))) return true;
         if (segDist(sg, x, z) > sg.d.hw2) return true; // the deck must actually cover this point
         const yd = sg.d.ya[sg.i] + (sg.d.ya[sg.i + 1] - sg.d.ya[sg.i]) * segT;
+        if (goal !== null && Math.abs(yd - goal) < 2) return true;
         // a deck clearly above the old profile that the new height would no longer clear
-        if (yd > y0 + 4.5 && yd - y < DECK - SLAB) { ok = false; return false; }
+        if (yd > y0 + 4.5 && yd - y < DECK - SLAB) { ok = false; lastBlock = [Math.round(x), Math.round(z), sg.d.hw, sg.d.name || '', +yd.toFixed(1), +y0.toFixed(1), +y.toFixed(1)]; return false; }
         return true;
       });
       return ok;
@@ -1527,10 +1532,14 @@ function buildNetwork(data, ctx) {
         let target = ya[i];
         over.each(x - 1, z - 1, x + 1, z + 1, (sg) => {
           const d = sg.d;
-          if (d === w || !d.oneway || d.rail) return true;
-          if (Math.abs(tx * sg.ux + tz * sg.uz) < 0.85) return true; // crossing, not alongside
+          if (d === w || d.rail) return true;
           const dd = segDist(sg, x, z);
-          if (dd > w.hw2 + d.hw2 - 0.5) return true; // the carriageways do not overlap here
+          // Side by side (one-way decks overlapping), or a way whose centre line already runs
+          // inside a deck it meets at an angle (Tashach, Kiryat Rishon: it was drawn 1.2-1.7 u
+          // under that deck, a hole a car dropped through).
+          const along = d.oneway && Math.abs(tx * sg.ux + tz * sg.uz) >= 0.85 && dd <= w.hw2 + d.hw2 - 0.5;
+          const into = dd <= d.hw2 - 0.5; // any way whose centre runs inside a deck at about its level
+          if (!along && !into) return true;
           const yd = d.ya[sg.i] + (d.ya[sg.i + 1] - d.ya[sg.i]) * segT;
           const gd = d.g[sg.i] + (d.g[sg.i + 1] - d.g[sg.i]) * segT;
           if (yd - gd < 2) return true; // the other one is not on a deck here either
@@ -1612,15 +1621,16 @@ function buildNetwork(data, ctx) {
             ya[i] = v;
           }
           clear = true;
-          for (let step = 0; step < n && clear; step++) { const i = end ? n - 1 - step : step; if (ya[i] > orig[i] + 0.05 && !headroom(w, i, orig[i], ya[i], partners)) clear = false; }
+          const goal = Math.max(...[...set].map((st) => zone[end ? n - 1 - st : st]));
+          for (let step = 0; step < n && clear; step++) { const i = end ? n - 1 - step : step; if (ya[i] > orig[i] + 0.05 && !headroom(w, i, orig[i], ya[i], partners, goal)) clear = false; }
           if (clear) break;
         }
-        if (!clear) { for (let i = 0; i < n; i++) ya[i] = orig[i]; blocked++; continue; }
+        if (!clear) { for (let i = 0; i < n; i++) ya[i] = orig[i]; blocked++; if (blockLog.length < 40) blockLog.push([w.hw, w.name || '', ...(lastBlock || [])]); continue; }
         if (ya.some((v, i) => Math.abs(v - orig[i]) > 0.05)) merged++;
       }
       w.ys = w.ya.map((y, i) => Math.max(0, y - w.g[i]));
     }
-    if (rampStats) { rampStats.merged = merged; rampStats.mergedMax = +mergedMax.toFixed(2); rampStats.mergeBlocked = blocked; }
+    if (rampStats) { rampStats.merged = merged; rampStats.mergedMax = +mergedMax.toFixed(2); rampStats.mergeBlocked = blocked; rampStats.mergeBlockLog = blockLog; }
 
   }
   const yOf = (w, i) => (w.ys ? w.ys[i] : 0);
