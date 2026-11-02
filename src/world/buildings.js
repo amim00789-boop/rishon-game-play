@@ -268,7 +268,9 @@ const PROFILES = {
     villaKit: { pal: 'katzVilla', tile: 0.45, modern: 0.15, stone: 0.05, brick: 0.03, floors1: 0.4, yard: 0.9 } },
   // Far east (Neve Hadarim, Revivim, Kalaniyot, Kfar Arye, HaRakafot ...): 1990s-2010s cottages and
   // apartment blocks; the towers there carry OSM levels (medians 15-26), so untagged = blocks.
-  eastNew: { villaMax: 300, blocks: true, slabFloors: [4, 7], towerFloors: [8, 12], palette: 'tower90',
+  // glassRails: share of mid-rise blocks and towers with glass balcony rails instead of white plaster
+  // (the 2010s blocks in the east drive video, 9:20 and 10:50, nearly all have them).
+  eastNew: { glassRails: 0.7, villaMax: 300, blocks: true, slabFloors: [4, 7], towerFloors: [8, 12], palette: 'tower90',
     villaKit: { pal: 'nyVilla', tile: 0.6, modern: 0.3, stone: 0.2, brick: 0, floors3: 0.1, yard: 0.85 } },
   industrial: { industrial: true, slabFloors: [2, 3], towerFloors: [5, 10], villaMax: 0, palette: 'industrial' },
   // Industrial zones by OSM landuse polygon (data/rishon.extras.json `industrial`). `style` picks
@@ -323,6 +325,8 @@ const PAL = {
   villaBrick: [0xb4613f, 0xa95a3c, 0xbf6f4a],
   yardWall: [0xf4f1ea, 0xe8e2d4, 0xd9c9a3, 0xcdbb94, 0xbfc3c4, 0xe1d7c2],
   // Jerusalem-type light stone bases and the dark metal panels above them (drive videos).
+  // Glass balcony rails: pale blue-green panes, a little darker than the sky so they read as glass.
+  glassRail: [0x9fd0e6, 0xb3d9e2, 0x8fc2d4, 0xa8cfd0],
   yardStone: [0xe6dabf, 0xdccdab, 0xe9e0cc, 0xd4c39f],
   yardRail: [0x4b5157, 0x5a6066, 0x40464b, 0x6a6f74],
 };
@@ -1045,7 +1049,7 @@ function specFor(prof, profId, kind, hm, m, R, cluster, extra) {
       spec.pilotis = spec.ground === GROUND.pilotis;
       spec.solar = 0.8; spec.stairBox = true;
       spec.roof = floors >= 5 && R(8) < 0.55 ? 'setback' : 'flat';
-      spec.balconies = { faces: 2, perFloor: 2, width: 0.3, rail: 0xffffff, p: 0.9 };
+      spec.balconies = { faces: 2, perFloor: 2, width: 0.3, rail: prof.glassRails && R(60) < prof.glassRails ? pick(PAL.glassRail, R(61)) : 0xffffff, p: 0.9 };
       break;
     }
     case 'tower90': {
@@ -1066,7 +1070,7 @@ function specFor(prof, profId, kind, hm, m, R, cluster, extra) {
         // this is what makes the real towers read wide and heavy (Mapillary 769716300409432).
         spec.balconies = { faces: 4, perFloor: 2, corner: true, depth: 1.5, width: 0.3, rail: R(19) < 0.5 ? 0xf4f1ea : 0x6fa58a, p: 1 };
       } else {
-        spec.balconies = { faces: 2, perFloor: 2, width: 0.28, rail: prof.darkRails ? 0x4a5560 : prof.awnings ? 0x6fa58a : 0xffffff, p: 1 };
+        spec.balconies = { faces: 2, perFloor: 2, width: 0.28, rail: prof.darkRails ? 0x4a5560 : prof.awnings ? 0x6fa58a : prof.glassRails && R(60) < prof.glassRails ? pick(PAL.glassRail, R(61)) : 0xffffff, p: 1 };
       }
       break;
     }
