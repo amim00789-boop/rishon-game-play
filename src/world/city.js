@@ -727,9 +727,11 @@ function buildStreetSigns(signs, toon) {
   names.forEach(([name, nameEn], k) => {
     const i = k + 1;
     const x0 = (i % cols) * sw, y0 = Math.floor(i / cols) * sh;
+    // Blue plate with a white border and white lettering, as on the street-name signs in the
+    // drive videos (the board's sides and back stay white: the margin texel below).
     g.fillStyle = '#ffffff'; g.fillRect(x0, y0, sw, sh);
-    g.strokeStyle = '#1f4e8c'; g.lineWidth = 5; g.strokeRect(x0 + 5, y0 + 5, sw - 10, sh - 10);
-    g.fillStyle = '#1f4e8c';
+    g.fillStyle = '#1f55a0'; g.fillRect(x0 + 6, y0 + 6, sw - 12, sh - 12);
+    g.fillStyle = '#ffffff';
     g.direction = 'rtl';
     let size = 31;
     const font = (px) => `bold ${px}px "Arial Hebrew", "Noto Sans Hebrew", Arial, sans-serif`;
