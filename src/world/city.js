@@ -1506,6 +1506,56 @@ function buildNetwork(data, ctx) {
       });
       return ok;
     };
+    // ---- side-by-side decks (round 10) ----
+    // Runs before the slip-road merge below, so a slip road meets the deck at its final height.
+    // Parallel raised carriageways whose drawn widths overlap (the twins of Moshe Dayan over Route
+    // 4: OSM centre lines 10.8 u apart, half widths 9.7 + 11.6) each kept their own profile, so the
+    // surface stepped 0.6-1.4 u where one deck ran into the other, and cars fell or stuck there
+    // (founder, round 10: "the interchanges are like stairs"). Where they overlap at about the same
+    // level, the lower deck rises to the higher one and eases back at MERGE_GRADE outside the
+    // overlap; a deck passing overhead keeps its clearance (headroom), or the point stays as it was.
+    let paired = 0, pairedMax = 0, pairBlocked = 0;
+    for (let it = 0; it < 3; it++) for (const w of all) {
+      if (w.tunnel || !w.cls || w.rail || !w.ya || !w.oneway) continue;
+      const n = w.pts.length, ya = w.ya, orig = ya.slice(), raised = [];
+      for (let i = 0; i < n; i++) {
+        // Decks only: approaches still near the ground keep their own grading.
+        if (ya[i] - w.g[i] < 2) continue;
+        const x = w.pts[i][0], z = w.pts[i][1];
+        const a = w.pts[Math.max(0, i - 1)], b = w.pts[Math.min(n - 1, i + 1)];
+        const tl = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, tx = (b[0] - a[0]) / tl, tz = (b[1] - a[1]) / tl;
+        let target = ya[i];
+        over.each(x - 1, z - 1, x + 1, z + 1, (sg) => {
+          const d = sg.d;
+          if (d === w || !d.oneway || d.rail) return true;
+          if (Math.abs(tx * sg.ux + tz * sg.uz) < 0.85) return true; // crossing, not alongside
+          const dd = segDist(sg, x, z);
+          if (dd > w.hw2 + d.hw2 - 0.5) return true; // the carriageways do not overlap here
+          const yd = d.ya[sg.i] + (d.ya[sg.i + 1] - d.ya[sg.i]) * segT;
+          const gd = d.g[sg.i] + (d.g[sg.i + 1] - d.g[sg.i]) * segT;
+          if (yd - gd < 2) return true; // the other one is not on a deck here either
+          if (yd > target && yd - ya[i] < 3) target = yd; // same level, not a deck stacked above
+          return true;
+        });
+        if (target - ya[i] > 0.05) {
+          if (!headroom(w, i, orig[i], target, null)) { pairBlocked++; continue; }
+          pairedMax = Math.max(pairedMax, target - ya[i]);
+          ya[i] = target;
+          raised.push(i);
+        }
+      }
+      if (!raised.length) continue;
+      paired++;
+      // Ease back: every point stays at least as high as a MERGE_GRADE slope down from any raised one.
+      for (let j = 0; j < n; j++) {
+        let env = -Infinity;
+        for (const k of raised) env = Math.max(env, ya[k] - MERGE_GRADE * Math.abs(w.cum[j] - w.cum[k]));
+        if (env > ya[j] && headroom(w, j, orig[j], env, null)) ya[j] = env;
+      }
+      w.ys = ya.map((y, i) => Math.max(0, y - w.g[i]));
+    }
+    if (rampStats) { rampStats.pairedDecks = paired; rampStats.pairedMax = +pairedMax.toFixed(2); rampStats.pairBlocked = pairBlocked; }
+
     let merged = 0, mergedMax = 0, blocked = 0;
     // links that merge into links that themselves rose: repeat until the heights settle
     for (let it = 0; it < 3; it++) for (const w of all) {
@@ -1571,6 +1621,7 @@ function buildNetwork(data, ctx) {
       w.ys = w.ya.map((y, i) => Math.max(0, y - w.g[i]));
     }
     if (rampStats) { rampStats.merged = merged; rampStats.mergedMax = +mergedMax.toFixed(2); rampStats.mergeBlocked = blocked; }
+
   }
   const yOf = (w, i) => (w.ys ? w.ys[i] : 0);
   const isUp = (w) => !!w.ys && w.ys.some((y) => y > 0.05);
