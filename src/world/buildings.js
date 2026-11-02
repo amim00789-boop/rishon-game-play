@@ -1049,7 +1049,7 @@ function specFor(prof, profId, kind, hm, m, R, cluster, extra) {
       spec.pilotis = spec.ground === GROUND.pilotis;
       spec.solar = 0.8; spec.stairBox = true;
       spec.roof = floors >= 5 && R(8) < 0.55 ? 'setback' : 'flat';
-      spec.balconies = { faces: 2, perFloor: 2, width: 0.3, rail: prof.glassRails && R(60) < prof.glassRails ? pick(PAL.glassRail, R(61)) : 0xffffff, p: 0.9 };
+      spec.balconies = { faces: 2, perFloor: 2, width: 0.3, rail: prof.glassRails && R(60) < prof.glassRails ? pick(PAL.glassRail, R(61)) : 0xffffff, p: 0.9, street: !!prof.glassRails };
       break;
     }
     case 'tower90': {
@@ -1070,7 +1070,7 @@ function specFor(prof, profId, kind, hm, m, R, cluster, extra) {
         // this is what makes the real towers read wide and heavy (Mapillary 769716300409432).
         spec.balconies = { faces: 4, perFloor: 2, corner: true, depth: 1.5, width: 0.3, rail: R(19) < 0.5 ? 0xf4f1ea : 0x6fa58a, p: 1 };
       } else {
-        spec.balconies = { faces: 2, perFloor: 2, width: 0.28, rail: prof.darkRails ? 0x4a5560 : prof.awnings ? 0x6fa58a : prof.glassRails && R(60) < prof.glassRails ? pick(PAL.glassRail, R(61)) : 0xffffff, p: 1 };
+        spec.balconies = { faces: 2, perFloor: 2, width: 0.28, rail: prof.darkRails ? 0x4a5560 : prof.awnings ? 0x6fa58a : prof.glassRails && R(60) < prof.glassRails ? pick(PAL.glassRail, R(61)) : 0xffffff, p: 1, street: !!prof.glassRails };
       }
       break;
     }
@@ -1936,6 +1936,18 @@ function addBalconies(ch, r, spec, bodyFloors, R, haze) {
   const edges = [];
   for (let i = 0; i < n; i++) { const p = r[i], q = r[(i + 1) % n]; edges.push([Math.hypot(q[0] - p[0], q[1] - p[1]), i]); }
   edges.sort((a, c) => c[0] - a[0]);
+  // Blocks flagged `street` put their balconies on the faces that look onto a street (founder's
+  // drive videos: balconies stack along the street fronts), longest street face first.
+  if (b.street && SITE && SITE.roadAhead) {
+    const onStreet = (e) => {
+      const [len, i] = e, p = r[i], q = r[(i + 1) % n];
+      if (len < 6 * M2U) return false;
+      const ux = (q[0] - p[0]) / len, uz = (q[1] - p[1]) / len; // outward normal for CCW rings: (uz, -ux)
+      return SITE.roadAhead((p[0] + q[0]) / 2 + uz * 0.5, (p[1] + q[1]) / 2 - ux * 0.5, uz, -ux) < Infinity;
+    };
+    const st = edges.slice(0, 4).filter(onStreet); // only the four longest faces are tested
+    if (st.length) edges.splice(0, edges.length, ...st, ...edges.filter((e) => !st.includes(e)));
+  }
   const rail = col(b.rail);
   if (haze) rail.lerp(HAZE, 0.45);
   for (let f = 0; f < Math.min(b.faces, edges.length); f++) {
@@ -2127,7 +2139,13 @@ export function buildBuildings(scene, data, opts = {}) {
   };
   const msPre = performance.now() - tPre;
   let msSite = 0;
-  SITE = { ok: (x, z) => { const t = performance.now(); const v = streetAt(x, z).need <= 0 && !occupied(x, z, SITE.self); msSite += performance.now() - t; return v; }, self: -1 };
+  SITE = {
+    ok: (x, z) => { const t = performance.now(); const v = streetAt(x, z).need <= 0 && !occupied(x, z, SITE.self); msSite += performance.now() - t; return v; },
+    // Metres from (x, z) along (nx, nz) to the first carriageway within maxM, or Infinity. Used to
+    // tell which face of a block looks onto a street (balconies go there).
+    roadAhead: (x, z, nx, nz, maxM = 25) => { for (let d = 5; d <= maxM; d += 5) if (streetAt(x + nx * d * SCALE, z + nz * d * SCALE, null).onCar) return d; return Infinity; },
+    self: -1,
+  };
   // Push every vertex that stands on a street back to its edge; if the result is not a simple
   // polygon or lost most of its area, shrink about the centroid until it clears instead. Returns
   // null when nothing needed moving, 'drop' when the centroid stands on a carriageway.
