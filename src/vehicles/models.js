@@ -224,6 +224,14 @@ function partsOf(kind, { rider = true } = {}) {
         box(0.62, 0.34, 0.12, -Wd / 2 + 0.5, 1.7, L / 2 + 0.02, C.light, { r: 0.08, detail: true }),
         box(0.5, 0.7, 0.12, Wd / 2 - 0.4, 2.1, -L / 2 - 0.02, C.tail, { r: 0.08, detail: true }),
         box(0.5, 0.7, 0.12, -Wd / 2 + 0.4, 2.1, -L / 2 - 0.02, C.tail, { r: 0.08, detail: true }),
+        // Rear advertisement covering the whole back above the lights, as on every city bus in the
+        // drive videos: an orange-red field, a white caption band, a dark product block, and the
+        // yellow-and-red reflective strip below it. One fixed design (instances cannot vary it).
+        box(Wd - 0.3, 2.7, 0.12, 0, 4.35, -L / 2 - 0.05, 0xe2572b, { r: 0.04 }),
+        box(Wd - 0.9, 0.55, 0.14, 0, 3.35, -L / 2 - 0.06, 0xfaf6ee, { r: 0.03 }),
+        box(1.25, 1.1, 0.14, -0.55, 4.75, -L / 2 - 0.06, 0x2b2f35, { r: 0.05 }),
+        box(0.9, 0.55, 0.14, 0.85, 4.95, -L / 2 - 0.06, 0xf6d84a, { r: 0.04 }),
+        box(Wd - 0.2, 0.32, 0.14, 0, 2.62, -L / 2 - 0.05, 0xf2c14e, { r: 0.03 }),
         ...axle(1.15, 0.75, Wd / 2 - 0.35, 1.15, L / 2 - 3.2), ...axle(1.15, 0.75, Wd / 2 - 0.35, 1.15, -L / 2 + 4.2),
       ];
     }
