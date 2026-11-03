@@ -25,6 +25,7 @@ const STREET_KINDS = { residential: 1, living_street: 0.8, unclassified: 0.9, te
 const STREET_FILL = { residential: 0.9, living_street: 0.8, unclassified: 0.6, tertiary: 0.69, secondary: 0.81 };
 // Founder, 2026-10-24: too many cars in the whole game; parked ones a third fewer too.
 const PARKED_SHARE = 0.67;
+const PLAYER_HALF_W = 1.5; // half the player car's width plus a little slack (units)
 // Never park beside these. OSM parking:lane / parking:both tags could allow exceptions, but our
 // extract carries none, so there are no exceptions (founder, round 3).
 const NO_PARK = /^(motorway|trunk|primary)(_link)?$/;
@@ -344,6 +345,11 @@ export function buildParked({ scene, city, lots = [], collision = null, net, rnd
       const blocked = e.crossings.some((c) => Math.abs(c.s - mid) < len / 2 + CLEAR)
         || e.stops.some((b) => (e.oneway || b.dir === side) && Math.abs(b.s - mid) < len / 2 + 12);
       if (!blocked && rr() < fill) {
+        // Main roads (secondary): the player's car drives the right-hand lane, whose centre is half a
+        // half-width in from the kerb on a two-way road. A parked car whose inner edge reaches that
+        // lane (plus the player car's half width) would block it, so it is not placed. Found by the
+        // round-10 drive test (tools/drive_highways.js): 8 stuck spots on secondaries.
+        if (!e.oneway && e.kind === 'secondary' && e.hw - 0.12 - K.W < e.hw / 2 + PLAYER_HALF_W) { s += len + 0.8 + rr() * 1.6; continue; }
         const off = side * (e.hw - 0.12 - K.W / 2);
         net.pointAt(e, mid, off, tmp);
         if (!nearDriveway(tmp.x, tmp.z, e.hw + 3.5) && !forbidden(tmp.x, tmp.z, K.W / 2) && !inOtherRoad(tmp.x, tmp.z, K.W / 2, e) && kerbOk(tmp.x, tmp.z, len / 2, K.W / 2) && !onRamp(tmp.x, tmp.z, K.W / 2) && !nearStall(tmp.x, tmp.z, len / 2 + 3) && !nearSidewalk(tmp.x, tmp.z, SW_HALF + K.W / 2 - 0.2)) {
