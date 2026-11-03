@@ -751,6 +751,44 @@ export async function buildDressing(scene, city, opts = {}) {
     }
   }
 
+  // Coverage (round 10, founder 2026-11-02: "every light you add must serve all the traffic, not
+  // one direction"). Every approach with a stop line ends up with at least two heads its drivers
+  // face, deck junctions included (the Moshe Dayan / Jabotinsky / HaYovel junction at the east end
+  // of the Route 4 bridge had one head on an approach). Heads facing an approach within 70 u of its
+  // stop line count, whichever arm placed them; missing ones go, in order, on a pole already
+  // standing across the junction or beside it (back to back, as on Israeli junctions), then on the
+  // far kerb straight ahead, then the median, then further back on the right kerb.
+  let coverHeads = 0, coverShort = 0;
+  if (plan) {
+    const facing = (arm, toMe, sx, sz) => heads.filter((h) => Math.hypot(h.x - sx, h.z - sz) < 70 && sameRot(h.rot, toMe)).length;
+    for (const site of plan.sites) {
+      for (const arm of site.arms) {
+        if (!arm.stop) continue;
+        plan.armPoint(arm, 0, 0, R0);
+        plan.armPoint(arm, 0, 1, R1);
+        const tx = R0.tx, tz = R0.tz, rx = R1.x - R0.x, rz = R1.z - R0.z;
+        const toMe = face(-tx, -tz);
+        let have = facing(arm, toMe, R0.x, R0.z);
+        if (have >= 2) continue;
+        const yAt = (x, z, dd) => (site.deck ? plan.armY(arm, Math.max(0, dd)) : null);
+        const tries = [];
+        // across the junction: straight ahead, a little left and right of my lanes
+        const across = Math.max(arm.stopD * 2 + 2, 10);
+        for (const extra of [0, 3, 6, 10]) for (const lat of [-arm.e.hw - 1.5, arm.e.hw + 1.5, -arm.e.hw * 0.5, arm.e.hw * 0.5]) tries.push([R0.x + tx * (across + extra) + rx * lat, R0.z + tz * (across + extra) + rz * lat, -(across + extra), 4]);
+        // my median (left of my carriageway) and further back on my right kerb
+        for (const dd of [1.2, 3, 6]) { plan.armPoint(arm, dd, -(arm.e.hw + 1.2), PT); tries.push([PT.x, PT.z, dd, 1.6]); }
+        for (const dd of [8, 12, 16]) for (const ds of [0.9, 2.2]) { plan.armPoint(arm, dd, arm.e.hw + ds, PT); tries.push([PT.x, PT.z, dd, 2.6]); }
+        // last resorts: wider out on either side (no sidewalk, a verge), then further back
+        for (const side of [1, -1]) for (const dd of [1.2, 5, 10, 18, 25]) for (const ds of [3.8, 5.6, 8]) { plan.armPoint(arm, dd, side * (arm.e.hw + ds), PT); tries.push([PT.x, PT.z, dd, 3.5]); }
+        for (const [x, z, dd, mount] of tries) {
+          if (have >= 2) break;
+          if (headAt(site, arm, x, z, toMe, mount, yAt(x, z, dd))) { have++; coverHeads++; extraHeads++; }
+        }
+        if (have < 2) coverShort++;
+      }
+    }
+  }
+
   // ================= 3. boulevard medians: double-arm lamps =================
   roads.forEach((rd, ri) => {
     if (!BIG.test(rd.kind || '') || !rd.points || rd.bridge || rd.tunnel) return;
@@ -1102,7 +1140,7 @@ export async function buildDressing(scene, city, opts = {}) {
     } catch (e) { console.warn('[dressing] signal lamps failed', e); }
   }
 
-  root.userData.stats = { ...stats, junctions, signals: plan ? { ...plan.stats, heads: heads.length, extraHeads, farHeads, medianHeads, ...(signalMeshes ? signalMeshes.stats : {}) } : null, chunks: chunks.size, meshes: cull.length, colliders: colliders.length, sidewalks: walksReal ? 'city' : 'derived', busStops: stopsReal ? 'city' : 'derived', ms: Math.round(performance.now() - t0) };
+  root.userData.stats = { ...stats, junctions, signals: plan ? { ...plan.stats, heads: heads.length, extraHeads, farHeads, medianHeads, coverHeads, coverShort, ...(signalMeshes ? signalMeshes.stats : {}) } : null, chunks: chunks.size, meshes: cull.length, colliders: colliders.length, sidewalks: walksReal ? 'city' : 'derived', busStops: stopsReal ? 'city' : 'derived', ms: Math.round(performance.now() - t0) };
   root.userData.hops = hops;
   root.userData.lightsNoRoom = noRoom;
   root.userData.droppedStops = dropped;
