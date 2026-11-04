@@ -42,6 +42,7 @@ const LANE = U(3.5);
 const SW = U(2.8); // sidewalk strip width
 const DECK = 9.5; // deck height per bridge level: a coach (7.45 u) clears every underpass with margin (free height >= 8.6)
 const SLAB = 1.3; // deck thickness
+const PARAPET_FROM = 1.2; // a ramp edge lower than this above the ground is a kerb, not a parapet
 const RAMP_SLOPE = 0.075; // absolute grade of every ramp (Israeli interchange ramps are 5-8 %)
 const RAIL_SLOPE = 0.035;
 const DECK_SMOOTH = 30;   // deck profile follows the ground smoothed over this many units
@@ -1521,7 +1522,62 @@ function buildNetwork(data, ctx) {
     // (founder, round 10: "the interchanges are like stairs"). Where they overlap at about the same
     // level, the lower deck rises to the higher one and eases back at MERGE_GRADE outside the
     // overlap; a deck passing overhead keeps its clearance (headroom), or the point stays as it was.
-    let paired = 0, pairedMax = 0, pairBlocked = 0;
+    let paired = 0, pairedMax = 0, pairBlocked = 0, pairCapped = 0;
+    // Landing cone. A node where ways meet at ground level (a ramp landing on a street) must not
+    // move, so no lift may reach it: from every such node the lift is
+    // capped by a MERGE_GRADE slope measured along the road network. Without it the ease-back
+    // carried the lift down whole ramps; the twin Moshe Dayan carriageways east of Route 4 climbed
+    // on each other's ease-back, 6 u in three passes, and ended 1.2 u (east) and 3.5 u (west)
+    // above the Jabotinsky / HaYovel junction, a ramp in the air (founder, 2026-11-03). Measured
+    // along the network, both ways meeting at a node get the same cap, so nodes keep meeting.
+    const cone = new Map(); // node key -> highest lift allowed there
+    const CONE_GRADE = MERGE_GRADE;
+    {
+      const adj = new Map();
+      const link = (a, b, d) => { if (!adj.has(a)) adj.set(a, []); adj.get(a).push([b, d]); };
+      for (const w of all) {
+        if (w.tunnel || !w.cls || w.rail) continue;
+        for (let i = 0; i + 1 < w.pts.length; i++) {
+          const a = keyOf(w.pts[i]), b = keyOf(w.pts[i + 1]), d = w.cum[i + 1] - w.cum[i];
+          link(a, b, d); link(b, a, d);
+        }
+      }
+      const heap = []; // [cap, key], binary min-heap
+      const push = (v, k) => {
+        heap.push([v, k]);
+        for (let i = heap.length - 1; i > 0;) { const p = (i - 1) >> 1; if (heap[p][0] <= heap[i][0]) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; }
+      };
+      const pop = () => {
+        const top = heap[0], last = heap.pop();
+        if (heap.length) {
+          heap[0] = last;
+          for (let i = 0; ;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; }
+        }
+        return top;
+      };
+      // Sources: every node where two or more ways meet within LANDING of the ground (a street at
+      // grade, or ramps that have already touched down), at the height they meet at.
+      const LANDING = 1.0;
+      for (const [k, ws] of vtx) {
+        if (ws.size < 2) continue;
+        let top = -Infinity, low = true;
+        for (const o of ws) {
+          const j = o.pts.findIndex((p) => keyOf(p) === k);
+          const y = o.ya ? o.ya[j] : o.g[j];
+          if (y - o.g[j] >= LANDING) { low = false; break; }
+          top = Math.max(top, y);
+        }
+        if (low) push(top, k);
+      }
+      while (heap.length) {
+        const [v, k] = pop();
+        if (cone.has(k)) continue;
+        cone.set(k, v);
+        if (v - groundAt(...k.split(',').map(Number)) > 3 * DECK) continue; // no longer a limit
+        for (const [b, d] of adj.get(k) || []) if (!cone.has(b)) push(v + CONE_GRADE * d, b);
+      }
+    }
+    const capAt = (w, i) => { const c = cone.get(keyOf(w.pts[i])); return c === undefined ? Infinity : c; };
     for (let it = 0; it < 3; it++) for (const w of all) {
       if (w.tunnel || !w.cls || w.rail || !w.ya || !w.oneway) continue;
       const n = w.pts.length, ya = w.ya, orig = ya.slice(), raised = [];
@@ -1548,8 +1604,9 @@ function buildNetwork(data, ctx) {
           if (yd > target && yd - ya[i] < 3) target = yd; // same level, not a deck stacked above
           return true;
         });
+        if (target - ya[i] > 0.05 && target > capAt(w, i)) { target = Math.max(ya[i], capAt(w, i)); pairCapped++; }
         if (target - ya[i] > 0.05) {
-          if (!headroom(w, i, orig[i], target, null)) { pairBlocked++; continue; }
+          if (!headroom(w, i, orig[i], target, null, target)) { pairBlocked++; continue; }
           pairedMax = Math.max(pairedMax, target - ya[i]);
           ya[i] = target;
           raised.push(i);
@@ -1561,11 +1618,15 @@ function buildNetwork(data, ctx) {
       for (let j = 0; j < n; j++) {
         let env = -Infinity;
         for (const k of raised) env = Math.max(env, ya[k] - MERGE_GRADE * Math.abs(w.cum[j] - w.cum[k]));
-        if (env > ya[j] && headroom(w, j, orig[j], env, null)) ya[j] = env;
+        env = Math.min(env, Math.max(ya[j], capAt(w, j)));
+        // goal: a deck at about the new height is the one this way runs into (Route 4 link under
+        // the Moshe Dayan westbound deck at 2147,-281), not one passing overhead; without it the
+        // point stayed 5.6 u below its neighbours, a notch cars fell into.
+        if (env > ya[j] && headroom(w, j, orig[j], env, null, env)) ya[j] = env;
       }
       w.ys = ya.map((y, i) => Math.max(0, y - w.g[i]));
     }
-    if (rampStats) { rampStats.pairedDecks = paired; rampStats.pairedMax = +pairedMax.toFixed(2); rampStats.pairBlocked = pairBlocked; }
+    if (rampStats) { rampStats.pairedDecks = paired; rampStats.pairedMax = +pairedMax.toFixed(2); rampStats.pairBlocked = pairBlocked; rampStats.pairCapped = pairCapped; rampStats.coneNodes = cone.size; }
 
     let merged = 0, mergedMax = 0, blocked = 0;
     // links that merge into links that themselves rose: repeat until the heights settle
@@ -1972,7 +2033,10 @@ function buildNetwork(data, ctx) {
               const A = ep(rp, RN, k, s * hs(s), 0), B = ep(rp, RN, k + 1, s * hs(s), 0);
               return !filledAt((A[0] + B[0]) / 2, (A[2] + B[2]) / 2);
             };
-            const drawn = (k) => edgeShut(k) && gap(k, s) && gap(k + 1, s) && !hasCut(k);
+            // A ramp foot has no parapet: where the embankment is lower than PARAPET_FROM the edge
+            // is a kerb, as on the real ramps. Drawn down to the ground, the parapet stood as a
+            // concrete wall inside the Jabotinsky / HaYovel junction (founder, 2026-11-03).
+            const drawn = (k) => Math.max(ry[k], ry[k + 1]) >= PARAPET_FROM && edgeShut(k) && gap(k, s) && gap(k + 1, s) && !hasCut(k);
             slab(layers.solid, rp, top, s * (hs(s) - 0.5), s * hs(s), top.map((y) => y + 1.1), parapetTop, concrete, { N: RN, caps: false, segIf: drawn });
             // The parapet is solid for walkers on a free-standing deck: it used to be only drawn,
             // so anyone walking at the edge of the Moshe Dayan bridge dropped 11 u to the road.
