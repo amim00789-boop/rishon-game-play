@@ -876,6 +876,52 @@ function buildNetwork(data, ctx) {
     if (ctx.terrain) w.pts = densify(w.pts, 12);
     w.len = polylineLength(w.pts); w.level = 0; w.ys = null;
   }
+  // Slip-road ends that join a road without a shared node (round 10, 2026-11-04). The OSM bake
+  // simplifies every line, and drops the node a slip road joins its road at: 418 link ends sat
+  // on a road (three in four within 0.5 u) yet counted as dead ends, so the ramp solver brought
+  // them down to the ground. The Tashach link to Route 4 joins the other link 15 u above the ground; the merge
+  // pass lifted its first half back to the deck and left its second half below, an 8 u cliff
+  // (drive test stuck), and the Ayalon link onto Komemiyut fell 1.3 u where it ends. Such an end
+  // now gets a vertex on the road it joins, so every later pass sees the junction. Only a merge or
+  // a diverge (a shallow angle): a street crossing under a deck must not be joined to it.
+  let joinSnaps = 0;
+  {
+    const SNAP = 1.0, MERGE_COS = 0.7, AT_VERTEX = 0.3;
+    const used = new Set();
+    for (const w of ways) if (w.cls && !w.tunnel) for (const p of w.pts) { const k = keyOf(p); if (used.has(k)) used.add(k + '#'); else used.add(k); }
+    const grid = new SegGrid(25);
+    for (const w of ways) if (w.cls && !w.tunnel) for (let i = 0; i < w.pts.length - 1; i++) grid.add(mkSeg(w.pts[i], w.pts[i + 1], { w, i }), SNAP);
+    const snaps = [];
+    for (const w of ways) {
+      if (!w.cls || !w.cls.link || w.tunnel) continue;
+      for (const end of [0, 1]) {
+        const n = w.pts.length, e = w.pts[end ? n - 1 : 0], f = w.pts[end ? n - 2 : 1];
+        if (used.has(keyOf(e) + '#')) continue; // already shares its node
+        const ul = Math.hypot(e[0] - f[0], e[1] - f[1]) || 1, ux = (e[0] - f[0]) / ul, uz = (e[1] - f[1]) / ul;
+        let best = null;
+        for (const s of grid.at(e[0], e[1]) || []) {
+          if (s.w === w || s.w.tunnel) continue;
+          const d = segDist(s, e[0], e[1]);
+          if (d > SNAP || Math.abs(ux * s.ux + uz * s.uz) < MERGE_COS) continue;
+          if (!best || d < best.d) best = { d, h: s.w, i: s.i, t: segT };
+        }
+        if (!best) continue;
+        const a = best.h.pts[best.i], b = best.h.pts[best.i + 1], seg = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        const at = best.t * seg < AT_VERTEX ? a : (1 - best.t) * seg < AT_VERTEX ? b : null;
+        snaps.push({ w, end, ...best, at, p: at || [a[0] + (b[0] - a[0]) * best.t, a[1] + (b[1] - a[1]) * best.t] });
+      }
+    }
+    // Insert from the far end of each host segment backwards, so earlier indices stay valid.
+    snaps.sort((a, b) => a.h.idx - b.h.idx || b.i - a.i || b.t - a.t);
+    const touched = new Set();
+    for (const { h, i, w, end, at, p } of snaps) {
+      if (!at) { h.pts.splice(i + 1, 0, p); touched.add(h); }
+      w.pts[end ? w.pts.length - 1 : 0] = [p[0], p[1]];
+      touched.add(w);
+    }
+    for (const w of touched) w.len = polylineLength(w.pts);
+    joinSnaps = snaps.length;
+  }
   // Lane drops (round 10): where a one-way interurban road continues as a narrower way of the
   // same road, the wider way used to end in a full lane-width step. Now it narrows over a taper of
   // 65 lengths per unit of width lost (Israeli rule for ~100 km/h, docs/research table 3), capped
@@ -1437,7 +1483,7 @@ function buildNetwork(data, ctx) {
       w.ys = w.ya.map((y, i) => Math.max(0, y - w.g[i]));
       if (!w.ys.some((y) => y > 0.05)) { w.ya = null; w.ys = null; }
     }
-    if (rampStats) rampStats.attached = attached;
+    if (rampStats) { rampStats.attached = attached; rampStats.joinSnaps = joinSnaps; }
   }
   for (const k of NODE_MEETS) {
     const hit = [];
