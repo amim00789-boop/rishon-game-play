@@ -86,7 +86,7 @@ function eyeShape(g, f, expr) {
       g.beginPath();
       g.ellipse(x, ey, rx, ry, 0, 0, Math.PI * 2);
       g.fill();
-      // eye colour (e.g. blue): a coloured ring inside the ink, the pupil stays dark
+      // eye colour (e.g. green): a coloured ring inside the ink, the pupil stays dark
       if (f.iris && !f.sleepy) {
         g.fillStyle = f.iris;
         g.beginPath();

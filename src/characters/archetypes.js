@@ -808,12 +808,12 @@ export const ARCHETYPES = {
   },
 
   // ---- round 9 cast (founder request 2026-10-26) ----
-  // Sarah, from New York: fire-red long hair, very fair skin, blue eyes. The only one who knows
+  // Sarah, from New York: fire-red long hair, very fair skin, green eyes. The only one who knows
   // who is under Super Malul's mask; the two are a secret couple (docs/NEW_CAST.md).
   sarah: {
     label: 'Sarah',
     skin: '#fbe6d8',
-    face: { lashes: true, mouth: 'grin', brows: 'up', bigEyes: true, iris: '#1f7fe0' },
+    face: { lashes: true, mouth: 'grin', brows: 'up', bigEyes: true, iris: '#2fa84f' },
     // deep red, not orange-red: the founder asked for a slightly darker red (2026-10-30)
     hair: { style: 'long', color: '#b3170f' },
     shirt: { color: '#141414', neck: 'crew', sleeves: 'short', print: 'text', text: 'NYC', textColor: '#ffffff' },
