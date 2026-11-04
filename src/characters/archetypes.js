@@ -813,7 +813,7 @@ export const ARCHETYPES = {
   sarah: {
     label: 'Sarah',
     skin: '#fbe6d8',
-    face: { lashes: true, mouth: 'grin', brows: 'up', bigEyes: true, iris: '#2fa84f' },
+    face: { lashes: true, mouth: 'grin', brows: 'up', bigEyes: true, iris: '#1fd15a' },
     // deep red, not orange-red: the founder asked for a slightly darker red (2026-10-30)
     hair: { style: 'long', color: '#b3170f' },
     shirt: { color: '#141414', neck: 'crew', sleeves: 'short', print: 'text', text: 'NYC', textColor: '#ffffff' },
