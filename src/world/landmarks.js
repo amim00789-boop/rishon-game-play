@@ -5886,7 +5886,7 @@ function buildEmergencySite(id, flags) {
 // Parked emergency vehicles, nose out from the front or along it ('along'), in world space so
 // settle() grounds each one. t is the fraction along the front edge, d its distance out.
 const EMG_VEHICLES = {
-  police: [{ kind: 'police', t: 0.25, along: true, color: 0x16191f }, { kind: 'police', t: 0.45, along: true, color: 0x16191f }],
+  police: [{ kind: 'police', t: 0.16, along: true, color: 0x16191f }, { kind: 'police', t: 0.31, along: true, color: 0x16191f }],
   mda: [{ kind: 'ambulance', bay: 0, color: 0xe6f03c }, { kind: 'ambulance', bay: 1, color: 0xe6f03c }],
   fire: [{ kind: 'firetruck', bay: 1, color: 0xc8102e }],
   school: [{ kind: 'firetruck', bay: 0, color: 0xc8102e }, { kind: 'firetruck', bay: 2, color: 0xc8102e }],

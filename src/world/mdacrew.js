@@ -5,8 +5,9 @@
 //
 //   createMdaCrew({ scene, player, crowd, quests, surface, city, makeAvatar }) -> { crew, update } | null
 //
-// The uniform is ASSUMED (white shirt, red collar, navy trousers) until the look research
-// (docs/research/EMERGENCY_BUILDINGS.md) says otherwise; no emblem is drawn.
+// The white shirt is from a 2026 description of the MDA uniform (Kipa, March 2026: a white shirt
+// with the red emblem and sleeve stripes); the red collar stands in for the stripes and the navy
+// trousers are ASSUMED. No emblem is drawn (MDA Law 1950 s.7).
 import * as THREE from 'three';
 import { EMG_PARKED } from './landmarks.js';
 import { groundY, surfaceFn } from '../engine/minigames/common.js';
