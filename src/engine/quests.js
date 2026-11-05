@@ -2077,7 +2077,7 @@ export class QuestSystem {
     this.refreshHud();
   }
 
-  static GAME_MODULE = { rhythm: 'rhythm', cue: 'rhythm', race: 'race', calm: 'passenger', photo: 'photo', parking: 'parking', crowd: 'crowdguide', debate: 'debate', surf: 'surf', skate: 'skate', cinema: 'cinema', grapes: 'grapes', well: 'well', matkot: 'matkot' };
+  static GAME_MODULE = { rhythm: 'rhythm', cue: 'rhythm', race: 'race', calm: 'passenger', photo: 'photo', parking: 'parking', crowd: 'crowdguide', debate: 'debate', surf: 'surf', skate: 'skate', cinema: 'cinema', grapes: 'grapes', well: 'well', matkot: 'matkot', handball: 'handball', wedding: 'wedding' };
 
   hasGame(kind) {
     const m = QuestSystem.GAME_MODULE[kind];

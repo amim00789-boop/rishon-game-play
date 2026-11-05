@@ -22,10 +22,12 @@ import { createBus } from './bus.js';
 import { createBakery } from './bakery.js';
 import { createJobs, loadJobStrings, loadJobDefs } from './jobs.js';
 import { createGrapes, createWell, createMatkot, loadCityStrings } from './citygames.js';
+import { createHandball, loadHandballStrings } from './handball.js';
+import { createWedding, loadWeddingStrings } from './wedding.js';
 import { jumpToStart } from './common.js';
 import { getGps } from '../gps.js';
 
-export { createRhythm, createRace, createPassenger, createPhoto, createParking, createCrowdGuide, createDebate, createSurf, loadSurfStrings, createSkate, loadSkateStrings, createCinema, loadCinemaStrings, createBus, createBakery, createJobs, loadJobStrings, loadJobDefs, createGrapes, createWell, createMatkot, loadCityStrings };
+export { createRhythm, createRace, createPassenger, createPhoto, createParking, createCrowdGuide, createDebate, createSurf, loadSurfStrings, createSkate, loadSkateStrings, createCinema, loadCinemaStrings, createBus, createBakery, createJobs, loadJobStrings, loadJobDefs, createGrapes, createWell, createMatkot, loadCityStrings, createHandball, loadHandballStrings, createWedding, loadWeddingStrings };
 export { createStory, STORY_KEY, SECTORS } from './story.js';
 export { loadMinigameStrings, mergeEffects, jumpToStart } from './common.js';
 export { getGps, createGps, gpsMode } from '../gps.js';
@@ -54,6 +56,10 @@ export function createMinigames(deps) {
     grapes: createGrapes(deps),
     well: createWell(deps),
     matkot: createMatkot(deps),
+    // Handball at Beit Maccabi: free play with coach Ilan and the story's city league (docs/ROUND10_HANDBALL.md).
+    handball: createHandball(deps),
+    // Sapir's garden wedding: set it all up before the guests arrive (docs/ROUND10_WEDDING.md).
+    wedding: createWedding(deps),
   };
   games.jobs = createJobs({ ...deps, games });
   const list = Object.values(games);

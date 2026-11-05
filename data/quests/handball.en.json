@@ -1,0 +1,333 @@
+{
+  "npc": {
+    "ilan": "Coach Ilan",
+    "yoni": "Yoni"
+  },
+  "act_handball": {
+    "title": "Handball at Beit Maccabi",
+    "c": {
+      "play": "Let's play",
+      "about": "What's this place?",
+      "bye": "Later"
+    },
+    "d": {
+      "hello": [
+        [
+          "ilan",
+          "Beit Maccabi! Fancy a game of handball? I'm always one player short."
+        ]
+      ],
+      "first": [
+        [
+          "ilan",
+          "Arrows to run, {k:Space} to pass, {k:Enter} to shoot. The yellow marker on the goal shows where the ball goes."
+        ],
+        [
+          "ilan",
+          "In defence {k:Q} puts you on the player nearest the ball. Stick to the man with the ball and steal it."
+        ],
+        [
+          "ilan",
+          "And the blue area belongs to the keeper. That line is not a suggestion."
+        ]
+      ],
+      "go": [
+        [
+          "ilan",
+          "Two and a half minutes. I'm blowing the whistle."
+        ]
+      ],
+      "after": [
+        [
+          "ilan",
+          "{score} goals. Your best: {best}. Another game?"
+        ]
+      ],
+      "best": [
+        [
+          "ilan",
+          "{score} goals! A new record. That's going on the board by the door."
+        ]
+      ],
+      "quit": [
+        [
+          "ilan",
+          "The court isn't going anywhere. I'm here till the lights go off."
+        ]
+      ],
+      "about": [
+        [
+          "ilan",
+          "A sports hall. Handball, basketball, and every evening somebody's training here."
+        ]
+      ],
+      "bye": [
+        [
+          "ilan",
+          "Go on. I'm here till the lights go off."
+        ]
+      ]
+    }
+  },
+  "hb1_home": {
+    "title": "City league: home game 1",
+    "obj": {
+      "play": "Beat the Kiryat Ganim Hedgehogs at Beit Maccabi"
+    },
+    "d": {
+      "offer": [
+        [
+          "ilan",
+          "You're Malul? From the skate park? They say you've got quick hands."
+        ],
+        [
+          "malul",
+          "I'm a drummer."
+        ],
+        [
+          "ilan",
+          "Perfect. A drummer is a keeper who doesn't know it yet. I'm a player short for the city league."
+        ],
+        [
+          "ilan",
+          "Rishonim Stars. Three home games, a semi-final and a final. First up, the Kiryat Ganim Hedgehogs."
+        ],
+        [
+          "yoni",
+          "I'm Yoni, the captain. Don't worry, I started as a drummer too. On my school desk."
+        ]
+      ],
+      "pre": [
+        [
+          "ilan",
+          "Arrows to run, {k:Space} to pass, {k:Enter} to shoot. The yellow marker on the goal shows where the ball goes."
+        ],
+        [
+          "ilan",
+          "And keep out of the blue area. You can shoot over it, not step in it."
+        ]
+      ],
+      "won": [
+        [
+          "ilan",
+          "First win! The Hedgehogs are going back to Kiryat Ganim with their heads down."
+        ],
+        [
+          "malul",
+          "They're hedgehogs. That's how they always walk."
+        ],
+        [
+          "yoni",
+          "See? I told you, quick hands."
+        ]
+      ]
+    },
+    "fail": "We lost. Ilan is waiting for a rematch",
+    "cheer": "We beat the Kiryat Ganim Hedgehogs!",
+    "page": "📱 Rishon Unfiltered: a drummer joined the Rishonim Stars and they won his first game. (640 likes.)"
+  },
+  "hb2_home": {
+    "title": "City league: home game 2",
+    "obj": {
+      "play": "Beat the Neve Hof Dolphins at Beit Maccabi"
+    },
+    "d": {
+      "offer": [
+        [
+          "ilan",
+          "Second home game: the Neve Hof Dolphins. They come straight from the sea, wet and slippery."
+        ],
+        [
+          "malul",
+          "Is that allowed?"
+        ],
+        [
+          "ilan",
+          "It's Neve Hof."
+        ],
+        [
+          "yoni",
+          "They keep a towel on the bench, too. It doesn't help them."
+        ]
+      ],
+      "pre": [
+        [
+          "ilan",
+          "They pass fast. Stand between the passer and the catcher and cut it off. {k:Q} puts you on the nearest player."
+        ]
+      ],
+      "won": [
+        [
+          "ilan",
+          "Two out of two. One more win and we're in the semi-final."
+        ],
+        [
+          "yoni",
+          "The Dolphins want a rematch at the beach. I told them we're an indoor team."
+        ]
+      ]
+    },
+    "fail": "The Dolphins won. Ilan is waiting for a rematch",
+    "cheer": "We beat the Neve Hof Dolphins!",
+    "page": "📱 Rishon Unfiltered: the Rishonim Stars beat the Neve Hof Dolphins. The Dolphins went back to the sea. (810 likes.)"
+  },
+  "hb3_home": {
+    "title": "City league: home game 3",
+    "obj": {
+      "play": "Beat the Ramat Eliyahu Eagles at Beit Maccabi"
+    },
+    "d": {
+      "offer": [
+        [
+          "ilan",
+          "Last home game: the Ramat Eliyahu Eagles. They're tall, and their keeper sees everything from up there."
+        ],
+        [
+          "malul",
+          "So what do we do?"
+        ],
+        [
+          "ilan",
+          "Shoot for the corners. Eagles don't like corners."
+        ],
+        [
+          "yoni",
+          "The tall one with number 21? He's the keeper's brother. Neither of them likes corners."
+        ]
+      ],
+      "pre": [
+        [
+          "ilan",
+          "Their keeper is quick. Wait for the marker to reach the edge of the goal, then shoot."
+        ]
+      ],
+      "won": [
+        [
+          "ilan",
+          "Three out of three! We're in the semi-final."
+        ],
+        [
+          "malul",
+          "I need to tell the band I'll be late for rehearsal."
+        ],
+        [
+          "ilan",
+          "Tell them to bring drums to the stands."
+        ],
+        [
+          "yoni",
+          "I'm bringing my sister with the big drum."
+        ]
+      ]
+    },
+    "fail": "The Eagles won. Ilan is waiting for a rematch",
+    "cheer": "We beat the Ramat Eliyahu Eagles! On to the semi-final",
+    "page": "📱 Rishon Unfiltered: three wins in three games. Someone at Beit Maccabi is already printing shirts. (1,200 likes.)"
+  },
+  "hb4_semi": {
+    "title": "City league: the semi-final",
+    "obj": {
+      "play": "Beat the Neot Eshelim Foxes in the semi-final"
+    },
+    "d": {
+      "offer": [
+        [
+          "ilan",
+          "Semi-final. The Neot Eshelim Foxes. They're sly: they look like they're passing, then they shoot."
+        ],
+        [
+          "malul",
+          "I can look like I'm doing something too."
+        ],
+        [
+          "ilan",
+          "You're a drummer. You can't look like you're being quiet."
+        ],
+        [
+          "yoni",
+          "I'll mark their captain. You mark everybody else."
+        ]
+      ],
+      "pre": [
+        [
+          "ilan",
+          "In defence, stick to the man with the ball. Stay close long enough and you'll steal it."
+        ]
+      ],
+      "won": [
+        [
+          "ilan",
+          "The final! The Rishonim Stars are in the final!"
+        ],
+        [
+          "malul",
+          "Who's on the other side?"
+        ],
+        [
+          "ilan",
+          "The Nahalat Yehuda Lions. Nobody has beaten them in three seasons."
+        ],
+        [
+          "yoni",
+          "Then we'll be the first."
+        ]
+      ]
+    },
+    "fail": "The Foxes won. Ilan is waiting for a rematch",
+    "cheer": "We beat the Neot Eshelim Foxes! On to the final",
+    "page": "📱 Rishon Unfiltered: the Rishonim Stars are in the final! The Neot Eshelim Foxes couldn't fool them. (1,900 likes.)"
+  },
+  "hb5_final": {
+    "title": "City league: the final",
+    "obj": {
+      "play": "Beat the Nahalat Yehuda Lions in the final"
+    },
+    "d": {
+      "offer": [
+        [
+          "ilan",
+          "This is the final. The Nahalat Yehuda Lions. Three seasons unbeaten."
+        ],
+        [
+          "ilan",
+          "I won't tell you it doesn't matter. It's all that matters."
+        ],
+        [
+          "malul",
+          "You're really good at calming people down."
+        ],
+        [
+          "yoni",
+          "The whole neighbourhood is in the stands. Even the Hedgehogs from Kiryat Ganim came."
+        ]
+      ],
+      "pre": [
+        [
+          "ilan",
+          "A draw when time runs out means golden goal: whoever scores first takes the cup. Now go."
+        ]
+      ],
+      "won": [
+        [
+          "ilan",
+          "Champions! The Rishonim Stars are city champions!"
+        ],
+        [
+          "malul",
+          "I'm just a drummer."
+        ],
+        [
+          "ilan",
+          "Now you're a drummer with a cup. Come and play whenever you like, the door's open."
+        ],
+        [
+          "yoni",
+          "I'm calling my mum. She won't believe it."
+        ]
+      ]
+    },
+    "fail": "The Lions won. Ilan is waiting for a rematch",
+    "cheer": "The Rishonim Stars are city league champions!",
+    "page": "📱 Rishon Unfiltered: the Nahalat Yehuda Lions lost for the first time in three seasons. Malul lifted the cup and drummed on it. (3,400 likes.)"
+  }
+}

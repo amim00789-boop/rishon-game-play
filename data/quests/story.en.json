@@ -34,7 +34,9 @@
       "surf": "Surf",
       "grapes": "Winery harvest",
       "well": "We found water",
-      "matkot": "Matkot"
+      "matkot": "Matkot",
+      "handball": "Handball",
+      "wedding": "Wedding setup"
     },
     "deduceNo": "Not there. Read the clues again and mark another spot on the map.",
     "markMap": "{k:M} map · mark where it is ({n} options)",
@@ -1460,6 +1462,7 @@
   "act_sapir": {
     "title": "Sapir from Nahalat Yehuda",
     "c": {
+      "wedding": "Need a hand setting up?",
       "job": "What do you do, exactly?",
       "jeep": "What a jeep!",
       "tip": "Any tip for a good party?",
@@ -1510,6 +1513,50 @@
         [
           "sapir",
           "Right, I have a wedding at the Laguna at seven. If you see a black jeep going fast, that's me, and it's because of the desserts."
+        ]
+      ],
+      "weddingFirst": [
+        [
+          "sapir",
+          "A hand? You're an angel. I've got a garden wedding in two and a half minutes and the waiters are stuck in traffic on Herzl."
+        ],
+        [
+          "sapir",
+          "It's all in the jeep. Tables, poles for the string lights, speakers and stage pieces. Everything on its own mark, you've seen my plan on the lawn."
+        ],
+        [
+          "sapir",
+          "The stage is heavy, so start with that. And if the wind knocks something over, stand it back up. A bride never forgets a fallen table."
+        ]
+      ],
+      "weddingGo": [
+        [
+          "sapir",
+          "Same garden, different bride. Two and a half minutes. Run!"
+        ]
+      ],
+      "weddingAfter": [
+        [
+          "sapir",
+          "Everything's standing! {score} points. Your best: {best}. Do you want a job?"
+        ]
+      ],
+      "weddingFail": [
+        [
+          "sapir",
+          "The guests are here and the uncles' table is still on the grass. Fine, we'll fix it as we go. Next time?"
+        ]
+      ],
+      "weddingBest": [
+        [
+          "sapir",
+          "{score}?! A new record. I'm putting you down as my regular crew."
+        ]
+      ],
+      "weddingQuit": [
+        [
+          "sapir",
+          "Fine, fine. I'll call my cousin. He's slow, but he shows up."
         ]
       ]
     }

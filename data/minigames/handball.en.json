@@ -1,0 +1,36 @@
+{
+  "title": "Handball at Beit Maccabi",
+  "keys": "Arrows / WASD: run · Space: pass · Enter / K: shoot · Q: switch player · Esc: quit",
+  "how": "Four court players and a keeper a side. Stay out of the blue area. A shot goes where the yellow marker on the goal is. On a phone: tap the court to run, a team-mate to pass, the goal to shoot.",
+  "vs": "{a} vs {b}",
+  "stat": "{a} {x} : {y} {b} · ⏱ {t}",
+  "whistle": "Kick-off!",
+  "out": "Out",
+  "goal": "Goal!",
+  "theyScore": "They score",
+  "intercept": "Intercepted!",
+  "saved": "Saved!",
+  "steal": "You stole the ball!",
+  "lost": "Ball lost",
+  "golden": "A draw! Golden goal: the next goal wins",
+  "goldenShort": "Golden goal",
+  "win": "You won!",
+  "loss": "You lost",
+  "result": "{a} vs {b}",
+  "lineWin": "Beit Maccabi is on its feet",
+  "lineRetry": "Ilan is waiting for a rematch",
+  "lineLoss": "Next time",
+  "ui": {
+    "start": "Whistle {k:Enter}",
+    "later": "Later {k:Esc}",
+    "done": "Done {k:Enter}"
+  },
+  "teams": {
+    "rishonim": "Rishonim Stars",
+    "kiryat_ganim": "Kiryat Ganim Hedgehogs",
+    "neve_hof": "Neve Hof Dolphins",
+    "ramat_eliyahu": "Ramat Eliyahu Eagles",
+    "neot_eshelim": "Neot Eshelim Foxes",
+    "nahalat_yehuda": "Nahalat Yehuda Lions"
+  }
+}

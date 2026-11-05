@@ -1,0 +1,23 @@
+{
+  "title": "Sapir's wedding",
+  "keys": "Arrows / WASD: walk · Space: pick up, set down, stand up what fell · Esc: quit",
+  "how": "The guests arrive in two and a half minutes. Carry tables, light poles, speakers and stage pieces from Sapir's jeep, and set each one on its mark on the lawn.",
+  "how2": "Heavy things go slowly. The wind can knock over a table or a pole: run over and stand it up. On a phone, tap a pile, a mark or whatever fell.",
+  "go": "Go, the guests are on their way!",
+  "stat": "✅ {n}/{total} · ⏱ {t}",
+  "fixed": "Back up!",
+  "handsFull": "Your hands are full",
+  "noneLeft": "All of those are out already",
+  "allReady": "Everything's ready!",
+  "gustTable": "Wind! A table went over",
+  "gustLight": "Wind! A light pole fell",
+  "win": "The wedding is ready!",
+  "loss": "The guests are here",
+  "lineWin": "{s} seconds to spare. Sapir switches on the lights. ({score} points)",
+  "lineLoss": "Not everything is ready. Sapir will sort out the rest, but she'll remember.",
+  "ui": {
+    "start": "Start {k:Enter}",
+    "later": "Later {k:Esc}",
+    "done": "Done {k:Enter}"
+  }
+}

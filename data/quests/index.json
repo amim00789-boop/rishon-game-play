@@ -5,7 +5,8 @@
     "story.{lang}.json",
     "cinema.{lang}.json",
     "skate_shikma.{lang}.json",
-    "mayor_errands.{lang}.json"
+    "mayor_errands.{lang}.json",
+    "handball.{lang}.json"
   ],
   "quests": [
     "m01_soundcheck",
@@ -42,7 +43,12 @@
     "sm08_practice",
     "sm09_key",
     "sm10_tournament",
-    "sm11_sarah"
+    "sm11_sarah",
+    "hb1_home",
+    "hb2_home",
+    "hb3_home",
+    "hb4_semi",
+    "hb5_final"
   ],
   "side": [
     "mq1_speaker",
@@ -73,6 +79,7 @@
     "act_sapir",
     "act_grapes",
     "act_well",
-    "act_matkot"
+    "act_matkot",
+    "act_handball"
   ]
 }

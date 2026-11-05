@@ -25,6 +25,19 @@
   "dialogue": "d.hello",
   "options": [
     {
+      "text": "c.wedding",
+      "game": "wedding",
+      "params": {
+        "seconds": 150
+      },
+      "introFirst": "d.weddingFirst",
+      "intro": "d.weddingGo",
+      "after": "d.weddingAfter",
+      "afterFail": "d.weddingFail",
+      "afterBest": "d.weddingBest",
+      "afterQuit": "d.weddingQuit"
+    },
+    {
       "text": "c.job",
       "reply": "d.job"
     },

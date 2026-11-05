@@ -1,0 +1,72 @@
+{
+  "id": "act_handball",
+  "needsPoi": "emg_maccabi",
+  "icon": "🤾",
+  "yieldsToQuests": true,
+  "npcs": {
+    "ilan": {
+      "archetype": "older_man",
+      "fallback": "older_man",
+      "at": {
+        "poi": "emg_maccabi",
+        "dx": 0,
+        "dz": 0
+      },
+      "look": {
+        "skin": "#c98e62",
+        "hair": {
+          "style": "short",
+          "color": "#3a3a3a"
+        },
+        "shirt": {
+          "color": "#1f3b73",
+          "neck": "collar",
+          "collarColor": "#ffffff",
+          "sleeves": "long",
+          "print": null
+        },
+        "pants": {
+          "kind": "long",
+          "color": "#1f3b73"
+        },
+        "accessories": [
+          {
+            "type": "lanyard",
+            "color": "#d7263d"
+          }
+        ],
+        "shoes": {
+          "kind": "sneakers",
+          "color": "#ffffff",
+          "stripe": "#d7263d"
+        }
+      }
+    }
+  },
+  "host": "ilan",
+  "dialogue": "d.hello",
+  "options": [
+    {
+      "text": "c.play",
+      "game": "handball",
+      "params": {
+        "opponent": "random",
+        "level": 2,
+        "seconds": 150
+      },
+      "introFirst": "d.first",
+      "intro": "d.go",
+      "after": "d.after",
+      "afterBest": "d.best",
+      "afterQuit": "d.quit"
+    },
+    {
+      "text": "c.about",
+      "reply": "d.about"
+    },
+    {
+      "text": "c.bye",
+      "reply": "d.bye"
+    }
+  ]
+}

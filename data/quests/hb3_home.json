@@ -1,0 +1,91 @@
+{
+  "id": "hb3_home",
+  "act": 2,
+  "requires": [
+    "hb2_home"
+  ],
+  "giver": "ilan",
+  "npcs": {
+    "ilan": {
+      "archetype": "older_man",
+      "fallback": "older_man",
+      "at": {
+        "poi": "emg_maccabi",
+        "dx": 0,
+        "dz": 0
+      },
+      "look": {
+        "skin": "#c98e62",
+        "hair": {
+          "style": "short",
+          "color": "#3a3a3a"
+        },
+        "shirt": {
+          "color": "#1f3b73",
+          "neck": "collar",
+          "collarColor": "#ffffff",
+          "sleeves": "long",
+          "print": null
+        },
+        "pants": {
+          "kind": "long",
+          "color": "#1f3b73"
+        },
+        "accessories": [
+          {
+            "type": "lanyard",
+            "color": "#d7263d"
+          }
+        ],
+        "shoes": {
+          "kind": "sneakers",
+          "color": "#ffffff",
+          "stripe": "#d7263d"
+        }
+      }
+    },
+    "yoni": {
+      "archetype": "jogger",
+      "fallback": "teen_phone",
+      "at": {
+        "poi": "emg_maccabi",
+        "dx": 2.5,
+        "dz": 1
+      },
+      "look": {
+        "shirt": {
+          "color": "#2e86de",
+          "neck": "crew",
+          "sleeves": "short",
+          "print": "text",
+          "text": "7",
+          "textColor": "#ffffff"
+        },
+        "pants": {
+          "kind": "shorts",
+          "color": "#1f3b73"
+        }
+      }
+    }
+  },
+  "offer": "d.offer",
+  "steps": [
+    {
+      "type": "minigame",
+      "game": "handball",
+      "npc": "ilan",
+      "intro": "d.pre",
+      "params": {
+        "opponent": "ramat_eliyahu",
+        "level": 3,
+        "seconds": 150,
+        "mustWin": true
+      },
+      "failText": "fail",
+      "cheer": "cheer",
+      "obj": "obj.play",
+      "dialogue": "d.won"
+    }
+  ],
+  "after": "page"
+}
