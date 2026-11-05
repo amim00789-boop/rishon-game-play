@@ -1302,6 +1302,17 @@ function buildNetwork(data, ctx) {
             else if (fo) { sl = cap; forced++; }
             else for (const host of inner.get(farKey) || []) if (host !== w && !host.P) midPush(host, farKey, h - w.len * slope, w);
           }
+          // A ramp that passes a ground-level junction on its way down (a traffic light on it and on
+          // a crossing road) touches down there, at up to MAX_FORCED (see `pins` below).
+          if (w.pins && !w.P) {
+            const L = w.cum[n - 1];
+            for (const q of w.pins) {
+              const d = end ? L - pinArc(w, q) : pinArc(w, q);
+              if (d < 1 || h - sl * d <= q[2] - SAG_K) continue;
+              const need = (h - q[2] + SAG_K) / d;
+              if (need <= MAX_FORCED) { sl = need; forced++; pinHits++; }
+            }
+          }
           w.cones[end] = { h, sl, crest: cr && cr.deck.P && h - floorAt(w, near) > 1.5 ? cr.grade : null };
           if (cr) { const d = cr.deck; d.crestEnds = d.crestEnds || [false, false]; d.crestEnds[cr.end] = d.crestEnds[cr.end] || h - floorAt(w, near) > 1.5; }
           const rem = h - w.len * sl;
@@ -1385,11 +1396,53 @@ function buildNetwork(data, ctx) {
   };
   // Decks, then ramps; then check clearance again against the final profiles (a ramp can pass
   // under a deck) and lift any structure that still comes short.
+  // Ground-level junctions on approach roads (round 10, 2026-11-04). The OSM bake drops the node
+  // where two roads cross (2,427 crossings of untagged roads have none), so the solver did not
+  // know that the Ayalon slip road crosses Moshe Dayan eastbound at a traffic light 114 u east of
+  // the bridge: the carriageway came down from the deck at ramp grade and was still 7 u up at the
+  // lights, and the slip road drove into its side (walls in the lanes, a 4.06 u step). A traffic
+  // light standing on two or more untagged car ways is a junction at the ground: each of them gets
+  // a pin there, and a ramp coming down past it touches down at the pin, at up to MAX_FORCED.
+  let pinHits = 0;
+  {
+    const sg = new SegGrid(25);
+    for (const w of ways) if (w.cls && !w.tunnel && !w.elevated) for (let i = 0; i < w.pts.length - 1; i++) sg.add(mkSeg(w.pts[i], w.pts[i + 1], { w }), 2);
+    for (const [kind, x, z] of data.signals || []) {
+      if (kind !== 'signals') continue;
+      const on = new Set();
+      for (const s of sg.at(x, z) || []) if (segDist(s, x, z) < 2) on.add(s.w);
+      if (on.size < 2) continue;
+      const q = [x, z, groundAt(x, z)];
+      q.ways = [...on];
+      for (const w of on) (w.pins = w.pins || []).push(q);
+    }
+  }
+  const pinArc = (w, q) => {
+    let best = Infinity, s0 = 0;
+    for (let i = 0; i < w.pts.length - 1; i++) {
+      const d = segDist(mkSeg(w.pts[i], w.pts[i + 1], {}), q[0], q[1]);
+      if (d < best) { best = d; s0 = w.cum[i] + (w.cum[i + 1] - w.cum[i]) * segT; }
+    }
+    return s0;
+  };
+  // absolute height of a way at a pin (the ground where it is not raised)
+  const yOfAt = (w, q) => {
+    if (!w.ya) return q[2];
+    const s0 = pinArc(w, q);
+    let j = 0;
+    while (j < w.pts.length - 2 && w.cum[j + 1] < s0) j++;
+    const t = (s0 - w.cum[j]) / ((w.cum[j + 1] - w.cum[j]) || 1);
+    return w.ya[j] + (w.ya[j + 1] - w.ya[j]) * t;
+  };
+  // A pin is a landing only where every road through it came down: OSM has lights where Route 423
+  // meets the 431 slip roads, but 423 is still 11 u up on its bridge approach there, and capping
+  // the slip road alone at those lights set it 0.7 u under its neighbour's barrier (4564,4868).
+  const landedPin = (q) => q.ways.every((o) => yOfAt(o, q) - q[2] < 2.5);
   let rampStats = null;
   for (let pass = 0; pass < 4; pass++) {
     setPlateaus();
     const a = ramps(ways, RAMP_SLOPE), b = ramps(rails, RAIL_SLOPE);
-    rampStats = { forced: a.forced + b.forced, humps: a.humps + b.humps, passes: pass + 1 };
+    rampStats = { forced: a.forced + b.forced, humps: a.humps + b.humps, passes: pass + 1, pinHits };
     let again = false;
     for (const grp of deckGroups) {
       if (!grp[0].level) continue;
@@ -1484,6 +1537,95 @@ function buildNetwork(data, ctx) {
       if (!w.ys.some((y) => y > 0.05)) { w.ya = null; w.ys = null; }
     }
     if (rampStats) { rampStats.attached = attached; rampStats.joinSnaps = joinSnaps; }
+  }
+  // Height of way o's centre line nearest (x, z), and the distance to it. The nearest segment
+  // only: within a wide carriageway's half width lie segments metres along it, and on a grade the
+  // farthest uphill one set the slip road 0.6 u high.
+  const surfAt = (o, x, z) => {
+    let best = Infinity, oy = 0;
+    for (let k = 0; k < o.pts.length - 1; k++) {
+      const d = segDist(mkSeg(o.pts[k], o.pts[k + 1], {}), x, z);
+      if (d >= best) continue;
+      best = d;
+      oy = o.ya ? o.ya[k] + (o.ya[k + 1] - o.ya[k]) * segT : o.g[k] + (o.g[k + 1] - o.g[k]) * segT;
+    }
+    return [best, oy];
+  };
+  // Roads crossing at a pin meet there. Each came down on its own profile and the solver's sag
+  // rounding leaves them up to a unit apart (Moshe Dayan eastbound 42.3, the Ayalon slip road
+  // crossing it 41.9: a 1.2 u step at the lights). Where every way at a pin has landed, they
+  // meet across each other's asphalt, and the change fades out beyond it.
+  {
+    const groups = new Map();
+    for (const w of ways) if (w.pins) for (const q of w.pins) { const k = `${q[0]},${q[1]}`; if (!groups.has(k)) groups.set(k, []); groups.get(k).push({ w, q }); }
+    let met = 0;
+    for (const list of groups.values()) {
+      if (list.length < 2) continue;
+      const at = list.map(({ w, q }) => ({ w, q, y: yOfAt(w, q), s0: pinArc(w, q) }));
+      if (at.some((a) => a.y - a.q[2] >= 2.5)) continue; // lights on a deck: not a landing
+      // Carriageways only ever rise to the highest of them. A slip road then takes the
+      // carriageways' height across their asphalt, down as well as up: where it climbs towards
+      // westbound it stood above eastbound's lanes, a 1.3 u lip for eastbound traffic.
+      const top = Math.max(...at.filter((a) => !a.w.cls.link).map((a) => a.y), -Infinity);
+      at.sort((a, b) => (a.w.cls.link ? 1 : 0) - (b.w.cls.link ? 1 : 0));
+      for (const { w, y, s0 } of at) {
+        const slip = !!w.cls.link;
+        if (!slip && (top - y < 0.02 || top - y > 1.5)) continue;
+        // Inside the other roads' asphalt the way takes their height point by point (the slip road
+        // climbs along itself, so a uniform lift left it 0.6 u under eastbound's edge, 12 u before
+        // the lights); beyond, that lift fades out.
+        const others = at.filter((o) => o.w !== w && !o.w.cls.link).map((o) => o.w);
+        if (!others.length) continue;
+        // all on the ground already: the city surface is one there, and matching centre lines
+        // across a wide road on a slope raised a slip road 0.7 u off it (486,2753)
+        if (!w.ya && others.every((o) => !o.ya)) continue;
+        if (!w.ya) w.ya = w.g.slice();
+        const R = Math.max(...others.map((o) => o.hw2));
+        const n = w.pts.length, lift = new Float64Array(n).fill(slip ? -Infinity : 0), inside = new Uint8Array(n);
+        for (let j = 0; j < n; j++) {
+          if (Math.abs(w.cum[j] - s0) > R + 5) continue;
+          for (const o of others) {
+            const [best, oy] = surfAt(o, w.pts[j][0], w.pts[j][1]);
+            if (best > o.hw2) continue;
+            inside[j] = 1;
+            lift[j] = Math.max(lift[j], oy - w.ya[j]);
+          }
+        }
+        const idx = [...inside.keys()].filter((j) => inside[j]);
+        const most = idx.length ? Math.max(...idx.map((j) => Math.abs(lift[j]))) : 0;
+        if (most < 0.02 || most > 1.5) continue;
+        const j0 = idx[0], j1 = idx[idx.length - 1];
+        // A slip road crossing a carriageway on a grade meets that grade side-on: at the edge of
+        // its asphalt the uphill lane stood 0.65 u under the carriageway. The two edge rows take
+        // the highest carriageway point across the slip road's width instead of its centre's.
+        if (slip) for (const j of j0 === j1 ? [j0] : [j0, j1]) {
+          if (j === 0 || j === n - 1) continue; // an end sits on the carriageway's own node
+          const a = w.pts[Math.max(0, j - 1)], b = w.pts[Math.min(n - 1, j + 1)];
+          const L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, nx = -(b[1] - a[1]) / L, nz = (b[0] - a[0]) / L;
+          let hi = -Infinity;
+          for (const o of others) for (const f of [-1, -0.5, 0.5, 1]) {
+            const x = w.pts[j][0] + nx * w.hw2 * f, z = w.pts[j][1] + nz * w.hw2 * f;
+            const [d, oy] = surfAt(o, x, z);
+            if (d <= o.hw2) hi = Math.max(hi, oy);
+          }
+          if (hi > -Infinity) lift[j] = Math.max(lift[j], hi - w.ya[j]);
+        }
+        // A smoothstep fade adds up to 1.5 x lift / length to the grade the way already has; a slip
+        // road climbing at 0.1 to meet a carriageway 0.8 u higher reached 0.125 over NODE_FADE.
+        const fadeOf = (v) => Math.max(NODE_FADE, (1.5 * Math.abs(v)) / 0.025);
+        const f0 = fadeOf(lift[j0]), f1 = fadeOf(lift[j1]);
+        for (let j = 0; j < n; j++) {
+          let d;
+          if (j < j0) { const u = Math.min(1, (w.cum[j0] - w.cum[j]) / f0); d = lift[j0] * (1 - u * u * (3 - 2 * u)); }
+          else if (j > j1) { const u = Math.min(1, (w.cum[j] - w.cum[j1]) / f1); d = lift[j1] * (1 - u * u * (3 - 2 * u)); }
+          else d = lift[j];
+          if (d > 0 || (slip && d < 0)) w.ya[j] += d;
+        }
+        w.ys = w.ya.map((v, m) => Math.max(0, v - w.g[m]));
+        met++;
+      }
+    }
+    if (rampStats) rampStats.pinsMet = met;
   }
   for (const k of NODE_MEETS) {
     const hit = [];
@@ -1623,7 +1765,23 @@ function buildNetwork(data, ctx) {
         for (const [b, d] of adj.get(k) || []) if (!cone.has(b)) push(v + CONE_GRADE * d, b);
       }
     }
-    const capAt = (w, i) => { const c = cone.get(keyOf(w.pts[i])); return c === undefined ? Infinity : c; };
+    // A traffic-light pin is a landing too, though no node marks it: the pairing pass lifted Moshe
+    // Dayan eastbound back from 42.3 to 47.5 u at the Ayalon slip-road lights (2026-11-04).
+    const pinCaps = new Map();
+    const pinCap = (w, i) => {
+      if (!w.pins) return Infinity;
+      if (!pinCaps.has(w)) {
+        // only where every road through the lights came down: lights on a deck are a junction
+        // up there
+        const list = [];
+        for (const q of w.pins) if (landedPin(q)) list.push([pinArc(w, q), Math.max(yOfAt(w, q), q[2] + 1.0)]);
+        pinCaps.set(w, list);
+      }
+      let c = Infinity;
+      for (const [s0, h] of pinCaps.get(w)) c = Math.min(c, h + CONE_GRADE * Math.abs(w.cum[i] - s0));
+      return c;
+    };
+    const capAt = (w, i) => { const c = cone.get(keyOf(w.pts[i])); return Math.min(c === undefined ? Infinity : c, pinCap(w, i)); };
     for (let it = 0; it < 3; it++) for (const w of all) {
       if (w.tunnel || !w.cls || w.rail || !w.ya || !w.oneway) continue;
       const n = w.pts.length, ya = w.ya, orig = ya.slice(), raised = [];
@@ -2961,6 +3119,13 @@ function buildNetwork(data, ctx) {
     return best;
   };
   const divStats = { walks: 0, up: 0, barrier: 0, kerb: 0, twoway: 0 };
+  const PIN_CLEAR = 40;
+  const pinLanded = new Map(); // heights are final here, so each pin is judged once
+  const nearPin = (w, x, z) => !!w && !!w.pins && w.pins.some((q) => {
+    if (Math.hypot(q[0] - x, q[1] - z) >= PIN_CLEAR) return false;
+    if (!pinLanded.has(q)) pinLanded.set(q, landedPin(q));
+    return pinLanded.get(q);
+  });
   const placeDivider = (pts, ys, raised, ground) => {
     if (pts.length < 2 || polylineLength(pts) < 4) return;
     divStats[raised ? 'up' : ground]++;
@@ -3020,6 +3185,10 @@ function buildNetwork(data, ctx) {
           // Twins mapped closer than two cars side by side (Etzel bridge, OSM centre lines 2 u
           // apart): a barrier on the midline stands in both driving lines. No barrier there.
           if (tw.d < TWIN_MIN) return null;
+          // Twins still coming down to a ground-level junction with lights (`pins`) are no decks
+          // there: a barrier stood in Moshe Dayan's inner eastbound lane by the Ayalon slip-road
+          // lights, where both carriageways are within 1.5 u of the ground (2026-11-04).
+          if (nearPin(w, x, z) || nearPin(ways[tw.ri], x, z)) return null;
           const off = s * Math.max(0.1, (w.hw2 - tw.hw + tw.d) / 2), mx = x - dz * off, mz = z + dx * off;
           if (inCarriage(mx, mz, w.idx, h, dx, dz, 1, 0.5)) return null;
           return { off, mode: 'up' };
