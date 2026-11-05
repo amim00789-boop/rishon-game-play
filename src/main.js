@@ -431,6 +431,8 @@ async function boot() {
 
     // Job start points: a marker and a talking NPC per job in data/jobs/jobs.json (docs/JOBS.md).
     await stage('jobspots', async () => { (await tryImport('./world/jobspots.js', 'jobspots'))?.createJobSpots?.({ scene, player, collision, city, hud, t, quests, surface, makeAvatar }); });
+    // Round 10 phase 7: Ofir and Dekel on shift at the MDA station (shown only while the wandering pair is far).
+    await stage('mdacrew', async () => { const mc = (await tryImport('./world/mdacrew.js', 'mdacrew'))?.createMdaCrew?.({ scene, player, crowd, quests, city, surface, makeAvatar }); if (quests && mc) quests.mdaCrew = mc; });
 
     // Full-screen map (M or minimap click). Optional: the game runs without it.
     await stage('bigmap', async () => {

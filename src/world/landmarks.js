@@ -22,6 +22,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { project, SCALE } from '../geo.js';
 import { bowlSpec, bowlGeometry, bowlColor, bowlOutline } from './skatebowl.js';
 import { dayanActive } from './dayan/index.js';
+import { buildVehicleMesh, KINDS as VEHICLE_KINDS } from '../vehicles/models.js';
 
 // Optional modules owned by other agents. Both are guarded: without them the landmarks
 // still build, with English sign text and flat ground.
@@ -776,11 +777,42 @@ const HABERFELD = (() => {
   return { world, f: frame(cx, cz, 0) };
 })();
 
+// Round 10 phase 7: emergency buildings and Maccabi House (founder 2026-10-31, docs/ROUND10_PHASE7.md).
+// Outlines from data/rishon.raw.json (checked 2026-11-04). Real names on the signs, no emblems.
+// `dir` is the side the front faces (world x east, z south); vehicles park along that edge.
+const EMG_POLY = {
+  // OSM way 253976173, amenity=police, "Rishon LeZion Police", Jabotinsky 106. Faces Gershon Man.
+  police: [[31.974763,34.79759],[31.974633,34.797689],[31.974406,34.797276],[31.974399,34.797222],[31.974408,34.797174],[31.974424,34.797123],[31.974447,34.797091],[31.974485,34.79708],[31.974524,34.797078],[31.97457,34.797091],[31.974601,34.797115],[31.974629,34.797166],[31.974578,34.797205],[31.974618,34.797277],[31.974599,34.797293],[31.974763,34.79759]],
+  // OSM way 253976170, emergency=ambulance_station, Magen David Adom, Jabotinsky 104. Faces Jabotinsky.
+  mda: [[31.974213,34.79754],[31.97412,34.797606],[31.974068,34.797503],[31.973959,34.79758],[31.973943,34.797548],[31.973878,34.797593],[31.973817,34.797472],[31.974083,34.797284],[31.974213,34.79754]],
+  // OSM way 376296283, building=fire_station (no name in OSM), by Shmotkin / Tulipman. Faces Tulipman.
+  fire: [[31.982629,34.813985],[31.982604,34.814105],[31.982574,34.814252],[31.982454,34.814218],[31.982453,34.814217],[31.982508,34.81395],[31.982629,34.813985]],
+  // OSM way 253257069, wikidata Q7042799, National Fire and Rescue School, off Rehavam Zeevi.
+  school: [[31.991968,34.746064],[31.991842,34.746037],[31.991832,34.746102],[31.991703,34.746073],[31.991838,34.745213],[31.99201,34.745251],[31.992091,34.744735],[31.99224,34.744768],[31.992249,34.744711],[31.992347,34.744732],[31.992263,34.745261],[31.992138,34.745234],[31.9921,34.745226],[31.991968,34.746064]],
+  // OSM way 121445744, leisure=sports_centre (basketball; handball), building:levels 3, Golda Meir 21.
+  maccabi: [[31.969429,34.786239],[31.969559,34.786318],[31.969621,34.786356],[31.969575,34.786592],[31.969138,34.786861],[31.968983,34.786539],[31.969081,34.786457],[31.968956,34.786206],[31.969228,34.786025],[31.969336,34.786307],[31.969429,34.786239]],
+};
+const EMG_DIR = { police: [0.4, 1], mda: [-1, 0.3], fire: [0, -1], school: [0, -1], maccabi: [0.3, 1] };
+const EMG = Object.fromEntries(Object.entries(EMG_POLY).map(([id, ll]) => {
+  const open = ll[0][0] === ll[ll.length - 1][0] && ll[0][1] === ll[ll.length - 1][1] ? ll.slice(0, -1) : ll; // OSM rings repeat the first node
+  // Drop nodes the outline runs straight through (under ~6 degrees) or sits on twice, so a
+  // facade mapped as two collinear pieces is one front.
+  const pts = projPoly(open), world = pts.filter((q, i) => {
+    const a = pts[(i - 1 + pts.length) % pts.length], b = pts[(i + 1) % pts.length];
+    const ux = q[0] - a[0], uz = q[1] - a[1], vx = b[0] - q[0], vz = b[1] - q[1], lu = Math.hypot(ux, uz), lv = Math.hypot(vx, vz);
+    return lu > 0.5 && Math.abs(ux * vz - uz * vx) / (lu * lv || 1) > 0.1;
+  });
+  const [cx, cz] = centroid(world);
+  return [id, { world, f: frame(cx, cz, 0), front: pickEdgeOf(world, EMG_DIR[id]) }];
+}));
+
 export const LANDMARK_FOOTPRINTS = [
   // Round 8: the stadium replaces the OSM stand buildings and pitch fills inside its outline.
   { id: 'haberfeld_stadium', points: HABERFELD.world },
   // A corridor across the mapped fence (details.js drops fence samples inside a footprint): the players' entrance.
   { id: 'haberfeld_gate_south', points: HABERFELD.f.rect(0, 118, 14, 36) },
+  // Round 10 phase 7: the emergency buildings and Maccabi House replace their generic OSM copies.
+  ...Object.entries(EMG).map(([id, e]) => ({ id: `emg_${id}`, points: e.world })),
   // Round 8: Lago Events entrances (fence gaps), forecourt and back-yard patio.
   { id: 'lago_gate_east', points: LAGO.gateEFoot },
   { id: 'lago_gate_north', points: LAGO.gateNFoot },
@@ -5719,6 +5751,137 @@ function buildLagoHall(flags) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Round 10 phase 7: police, Magen David Adom, the fire station, the National Fire and Rescue
+// School and Maccabi House. Storeys, colours and the bays are ASSUMED until the look research
+// (docs/research/EMERGENCY_BUILDINGS.md) is in; the outlines are OSM. Text and colour only: the
+// emblems of the police, MDA and the fire service are protected, so none is drawn.
+// ---------------------------------------------------------------------------
+const EMG_SPEC = {
+  police: { name: 'Rishon LeZion Police Station', sign: ['POLICE'], sub: 'RISHON LEZION', floors: 3, fl: 3.6, wall: 0xe6e1d5, band: 0x1f4fa3, trim: 0xf4f4f2, signBg: '#1f4fa3', signFg: '#ffffff', flags: [C.white, C.blue], mast: true },
+  mda: { name: 'Magen David Adom Rishon LeZion', sign: ['MAGEN DAVID ADOM'], sub: 'RISHON LEZION STATION', floors: 2, fl: 3.6, ground: 5.2, wall: 0xf2f0ea, band: 0xd7263d, trim: 0xffffff, signBg: '#ffffff', signFg: '#d7263d', bays: 2, bayW: 3.6, bayH: 4.0, bayAt: 0.32, doorAt: 0.75 },
+  fire: { name: 'Fire and Rescue Station', sign: ['FIRE AND RESCUE'], sub: 'RISHON LEZION', floors: 2, fl: 3.4, ground: 6.0, wall: 0xe9e4d9, band: 0xc8102e, trim: 0xf4f4f2, signBg: '#c8102e', signFg: '#ffffff', bays: 3, bayW: 3.8, bayH: 4.6, bayAt: 0.42, doorAt: 0.88 },
+  school: { name: 'National Fire and Rescue School', sign: ['NATIONAL FIRE AND RESCUE SCHOOL'], sub: null, floors: 2, fl: 3.8, wall: 0xe4ddcf, band: 0xc8102e, trim: 0xf4f4f2, signBg: '#ffffff', signFg: '#c8102e', bays: 4, bayW: 4.0, bayH: 4.6, bayAt: 0.78, doorAt: 0.3, ground: 6.0, tower: true, flags: [C.white, C.red] },
+  maccabi: { name: 'Beit Maccabi', sign: ['BEIT MACCABI'], sub: 'RISHON LEZION', floors: 3, fl: 4.2, wall: 0xdfe4e8, band: 0xf2c230, trim: 0x2d4f8a, signBg: '#2d4f8a', signFg: '#ffffff', glassFront: true, roof: 0xb9c3cc, flags: [C.yellow, C.blue] },
+};
+const EMG_GLASS = 0x2f4757;
+
+function buildEmergencySite(id, flags) {
+  const s = EMG[id], spec = EMG_SPEC[id], { f, world } = s;
+  const g = placeGroup(f), poly = toLocal(f, world), b = new Batch();
+  const FL = spec.fl * RM, G0 = (spec.ground || spec.fl) * RM, H = G0 + FL * (spec.floors - 1);
+  const front = edgeOf(poly, poly[world.indexOf(s.front.a)], poly[world.indexOf(s.front.b)]);
+  // The body's bevel puts its wall 0.15 outside the outline; facade parts stand on that.
+  b.add(slab(poly, H, 0.15), spec.wall, M(), capTop(spec.wall, H, spec.roof || ROOFC));
+  b.add(slab(poly, 0.9, 0.42), spec.trim, M(0, H - 0.2, 0)); // parapet
+  b.add(slab(poly, 1.1, 0.38), spec.band, M(0, H - 1.9, 0)); // colour fascia under the parapet
+  b.add(slab(poly, 0.35, 0.34), spec.trim, M(0, G0 - 0.2, 0)); // ground-floor line
+  // Bays on the front: centred at bayAt along it, one door per vehicle.
+  const bays = [];
+  if (spec.bays) {
+    const bw = spec.bayW * RM, bh = spec.bayH * RM, c0 = front.lx(spec.bayAt), step = bw + 1.4;
+    for (let j = 0; j < spec.bays; j++) bays.push(c0 + (j - (spec.bays - 1) / 2) * step);
+    const at = edgeAt(front);
+    for (const lx of bays) {
+      b.add(G.cube(bw + 0.9, bh + 0.5, 0.3), spec.trim, at(lx, (bh + 0.5) / 2, 0.3));
+      b.add(G.cube(bw, bh, 0.36), 0xc4c8cc, at(lx, bh / 2, 0.36));
+      for (let r = 0.55; r < bh - 0.2; r += 0.55) b.add(G.cube(bw, 0.07, 0.44), 0x9aa1a8, at(lx, r, 0.4));
+      b.add(G.cube(bw + 0.9, 0.5, 0.5), spec.band, at(lx, bh + 0.6, 0.4)); // red/blue lintel
+    }
+  }
+  // Windows: rows of panes on every edge long enough, skipping the ground floor where the bays are.
+  for (let i = 0; i < poly.length; i++) {
+    const e = edgeOf(poly, poly[i], poly[(i + 1) % poly.length]);
+    if (e.len < 5) continue;
+    const at = edgeAt(e), isFront = e.a === front.a && e.b === front.b;
+    const n = Math.max(1, Math.floor((e.len - 1.5) / 3.4));
+    for (let k = 0; k < spec.floors; k++) {
+      const y = k === 0 ? Math.min(G0 * 0.5, 2.6) + 0.4 : G0 + FL * (k - 1) + FL * 0.5;
+      if (isFront && spec.glassFront) { b.add(G.cube(e.len - 2.4, (k ? FL : G0) - 1.0, 0.25), 0x5d8aa6, at(0, k ? G0 + FL * (k - 0.5) : G0 / 2, 0.28)); continue; }
+      for (let j = 0; j < n; j++) {
+        const lx = e.lx((j + 0.5) / n);
+        if (k === 0 && isFront && bays.some((c) => Math.abs(c - lx) < spec.bayW * RM / 2 + 1.8)) continue;
+        if (k === 0 && isFront && Math.abs(lx - front.lx(spec.doorAt ?? 0.5)) < 3.2) continue;
+        b.add(G.cube(2.1, 1.9, 0.24), EMG_GLASS, at(lx, y, 0.27));
+      }
+    }
+  }
+  // Entrance: glass doors and a canopy.
+  const fa = edgeAt(front), dl = front.lx(spec.doorAt ?? 0.5);
+  b.add(G.cube(4.2, DOOR_H, 0.3), 0x1c2a33, fa(dl, DOOR_H / 2, 0.3));
+  b.add(G.box(7, 0.45, 3.2, 0.15), spec.trim, fa(dl, DOOR_H + 0.5, 1.6));
+  b.add(G.cube(7, 0.18, 0.2), spec.band, fa(dl, DOOR_H + 0.5, 3.25));
+  if (spec.mast) {
+    const [mx, mz] = centroid(poly);
+    b.add(G.cyl(0.18, 0.32, 12, 8), 0xb8bec4, M(mx, H + 6, mz));
+    for (const y of [4, 8]) b.add(G.cube(2.4, 0.12, 0.12), 0xb8bec4, M(mx, H + y, mz));
+  }
+  const colliders = [world];
+  if (spec.tower) {
+    // Drill tower in the front yard: open window bays every storey for ladder and rope drills.
+    const T = 4.4 * RM, TH = 5 * 3.2 * RM, [tx0, tz0] = front.p(0.12, 4 + T / 2);
+    const tf = frame(tx0, tz0, front.ry);
+    b.add(G.cube(T, TH, T), 0xc8102e, M(tx0, TH / 2, tz0, 0, front.ry, 0));
+    b.add(G.cube(T + 0.6, 0.6, T + 0.6), 0xf4f4f2, M(tx0, TH + 0.3, tz0, 0, front.ry, 0));
+    for (let k = 0; k < 5; k++) for (const [ox, oz, r] of [[0, T / 2, 0], [T / 2, 0, Math.PI / 2], [0, -T / 2, Math.PI], [-T / 2, 0, -Math.PI / 2]]) {
+      b.add(G.cube(1.8, 2.2, 0.3), 0x1d1d24, M(tf.w(ox, oz)[0], k * 3.2 * RM + 2.4, tf.w(ox, oz)[1], 0, front.ry + r, 0));
+    }
+    colliders.push(tf.rect(0, 0, T, T).map(([x, z]) => [x + f.x, z + f.z]));
+  }
+  if (spec.flags) spec.flags.forEach((col, i) => {
+    const [px, pz] = front.p(spec.doorAt ?? 0.5, 5.5), lx = (i - (spec.flags.length - 1) / 2) * 3.2;
+    const wx = px + lx * Math.cos(front.ry), wz = pz - lx * Math.sin(front.ry);
+    b.add(G.cyl(0.1, 0.14, 10, 6), 0xd9dde1, M(wx, 5, wz));
+    flags.add(wx + f.x, 9.7, wz + f.z, 2.4, 1.5, col);
+  });
+  g.add(b.mesh(`emg-${id}`));
+  const sw = Math.min(front.len * 0.62, id === 'school' ? 30 : 18), sh = spec.sub ? 3.0 : 2.4;
+  const sign = signMesh(spec.sign, sw, sh, { key: `emg_${id}`, bg: spec.signBg, fg: spec.signFg, outline: spec.signBg, sub: spec.sub });
+  // Over the bays when there are any (the name is read from the street), else mid-front.
+  edgeSign(g, front, sign, bays.length ? (bays[0] + bays[bays.length - 1]) / 2 : 0, Math.max(G0 + 0.9, H - 4.2), 0.6);
+  const [px, pz] = front.p(spec.doorAt ?? 0.5, 4);
+  return { group: g, colliders, pois: [{ id: `emg_${id}`, name: spec.name, x: px + f.x, z: pz + f.z }] };
+}
+
+// Parked emergency vehicles, nose out from the front or along it ('along'), in world space so
+// settle() grounds each one. t is the fraction along the front edge, d its distance out.
+const EMG_VEHICLES = {
+  police: [{ kind: 'police', t: 0.25, along: true }, { kind: 'police', t: 0.45, along: true }],
+  mda: [{ kind: 'ambulance', bay: 0 }, { kind: 'ambulance', bay: 1 }],
+  fire: [{ kind: 'firetruck', bay: 1, color: 0xc8102e }],
+  school: [{ kind: 'firetruck', bay: 0, color: 0xc8102e }, { kind: 'firetruck', bay: 2, color: 0xc8102e }],
+};
+export const EMG_PARKED = [];
+function buildEmergencyVehicles() {
+  const g = new THREE.Group();
+  g.name = 'emergency-vehicles';
+  const colliders = [];
+  EMG_PARKED.length = 0;
+  for (const [id, list] of Object.entries(EMG_VEHICLES)) {
+    const s = EMG[id], e = s.front, spec = EMG_SPEC[id];
+    for (const v of list) {
+      const K = VEHICLE_KINDS[v.kind];
+      let t = v.t;
+      if (v.bay != null) {
+        // The bay centres in buildEmergencySite, as a fraction along the edge.
+        const bw = spec.bayW * RM, step = bw + 1.4, sgn = Math.sign(e.lx(1) - e.lx(0)) || 1;
+        t = spec.bayAt + sgn * ((v.bay - (spec.bays - 1) / 2) * step) / e.len;
+      }
+      const d = v.d ?? (v.along ? K.W / 2 + 1.8 : K.L / 2 + 1.2);
+      const [x, z] = e.p(t, d), yaw = e.ry + (v.along ? Math.PI / 2 : 0);
+      const holder = new THREE.Group();
+      holder.name = `emg-vehicle-${id}`;
+      holder.position.set(x, 0, z);
+      holder.rotation.y = yaw;
+      holder.add(buildVehicleMesh(v.kind, v.color ?? 0xf4f4f2));
+      g.add(holder);
+      colliders.push(frame(x, z, yaw).rect(0, 0, K.W + 0.2, K.L + 0.2));
+      EMG_PARKED.push({ site: id, kind: v.kind, x, z, yaw });
+    }
+  }
+  return { group: g, colliders, pois: [] };
+}
+
 export function buildLandmarks(scene) {
   _anims = [];
   _time = 0;
@@ -5750,6 +5913,7 @@ export function buildLandmarks(scene) {
     ...L5.fuel.map((st) => [() => buildFuelStation(st), 'parts']),
     [() => buildShikmaSkate(flags), 'parts'], [() => buildShikmaKarting(flags), 'parts'], [() => buildStoneFlower(flags), 'parts'], [() => buildMonuments(flags), 'parts'], [() => buildHaberfeld(flags), HABERFELD.world, 'plaza'],
     [() => buildEcoGarden(flags), 'parts'], ...L5.clubs.map((c) => [() => buildCountryClub(c), 'parts']), [() => buildHaRova(flags), 'parts'], [() => buildLagoHall(flags), 'parts'],
+    ...Object.keys(EMG).map((id) => [() => buildEmergencySite(id, flags), EMG[id].world, 'mid']), [() => buildEmergencyVehicles(), 'parts'],
     [() => buildSkatePark(flags), L.skate.seat, 'plaza'], [() => buildBeachNorth(flags), 'parts'], [() => buildBeachComplex(flags), L.beachComplex.world, 'mid'], [() => buildSurfClub(flags), 'parts'], [() => buildWelcomeSign(flags), L.welcome.f.rect(0, 0, 54, 12), 'plaza'],
   ];
   for (const [build, seat, mode, skirtColor] of builders) {

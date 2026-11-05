@@ -27,6 +27,9 @@ const C = {
   white: 0xf3f3ef, grey: 0xb9bdc2, chassis: 0x3a3d42, skin: 0xe0ac7e, hair: 0x3b2a20,
   jeans: 0x34508a, jacket: 0x3a3f4a, helmet: 0xf1f1f1, taxi: 0xffd23f, cargo: 0xeeeeea,
   stripe: 0x2e6db4, roof: 0xe9ebec, display: 0x1d1d1d, metal: 0xaab0b8,
+  // round 10 emergency services (liveries in docs/research/EMERGENCY_BUILDINGS.md)
+  policeBlue: 0x1f4fa3, lightBlue: 0x2a7fff, lightRed: 0xe0243a, mdaRed: 0xd7263d,
+  fireRed: 0xc8102e, shutter: 0xc4c8cc, reflect: 0xf2d43a,
 };
 
 // Israel's street mix is mostly white, silver and grey, with a few dark and coloured cars.
@@ -113,6 +116,11 @@ export const KINDS = {
   moto: { L: 3.4, W: 1.2, H: 5.2, paint: 'moto', two: true, vMax: 1.05 },
   ebike: { L: 3.0, W: 1.1, H: 5.0, paint: 'delivery', two: true, vMax: 0.7, cap: 13 },
   kick: { L: 2.3, W: 1.1, H: 5.4, paint: 'scooter', two: true, vMax: 0.6, cap: 10 },
+  // Round 10: emergency vehicles, parked at their stations by landmarks.js only. `fleet: false`
+  // keeps them out of the traffic pools (traffic picks kinds from its own mix anyway).
+  police: { L: 6.6, W: 2.8, H: 3.6, paint: 'van', fleet: false },
+  ambulance: { L: 7.8, W: 3.0, H: 4.9, paint: 'van', fleet: false },
+  firetruck: { L: 12, W: 3.3, H: 5.6, paint: 'truck', big: true, fleet: false },
 };
 
 // Four-wheelers are drawn at CAR_SCALE of the part sizes below. city.js widens every road
@@ -291,6 +299,72 @@ function partsOf(kind, { rider = true } = {}) {
         ...axle(0.95, 0.7, Wd / 2 - 0.35, 0.95, zc), ...axle(0.95, 0.9, Wd / 2 - 0.45, 0.95, zc - 3.2),
         ...axle(0.95, 0.9, Wd / 2 - 0.45, 0.95, -L / 2 + 4.6), ...axle(0.95, 0.9, Wd / 2 - 0.45, 0.95, -L / 2 + 2.6),
       ];
+    }
+    case 'police': {
+      // the sedan shell, with a light bar and a blue band along the doors
+      const p = partsOf('sedan').map((q) => ({ ...q }));
+      const L = k.L / k.s, Wd = k.W / k.s;
+      p.push(
+        box(Wd + 0.08, 0.36, L - 1.4, 0, 1.5, 0, C.policeBlue, { r: 0.1 }),
+        box(1.9, 0.22, 0.6, 0, 3.24, -0.3, C.trim, { r: 0.06 }),
+        box(0.85, 0.26, 0.56, 0.48, 3.45, -0.3, C.lightBlue, { r: 0.08, detail: true }),
+        box(0.85, 0.26, 0.56, -0.48, 3.45, -0.3, C.lightRed, { r: 0.08, detail: true }),
+      );
+      return p;
+    }
+    case 'ambulance': {
+      const L = k.L / k.s, Wd = k.W / k.s, zb = -1.25, Lb = L - 2.9;
+      return [
+        box(Wd + 0.1, 3.5, Lb, 0, 2.85, zb, 'P', { r: 0.25 }), // the patient box
+        box(Wd - 0.1, 1.35, 1.7, 0, 1.55, L / 2 - 0.95, 'P', { r: 0.4 }), // bonnet
+        box(Wd, 1.9, 1.3, 0, 2.55, L / 2 - 2.35, 'P', { r: 0.3 }), // cab
+        box(Wd - 0.2, 1.1, 0.5, 0, 2.95, L / 2 - 1.75, C.glass, { r: 0.12, rx: -0.38 }),
+        box(Wd + 0.04, 0.95, 1.0, 0, 2.95, L / 2 - 2.35, C.glass, { r: 0.12 }),
+        box(Wd + 0.16, 0.5, Lb + 0.02, 0, 2.05, zb, C.mdaRed, { r: 0.08 }), // red band
+        box(Wd + 0.16, 0.16, Lb + 0.02, 0, 3.75, zb, C.mdaRed, { r: 0.04, detail: true }),
+        box(Wd + 0.17, 0.22, Lb - 0.4, 0, 1.55, zb, C.reflect, { r: 0.04, detail: true }),
+        box(1.9, 0.3, 0.55, 0, 3.65, L / 2 - 2.35, C.lightRed, { r: 0.08 }), // cab light bar
+        box(0.4, 0.3, 0.4, Wd / 2 - 0.25, 4.75, zb + Lb / 2 - 0.3, C.lightRed, { r: 0.08, detail: true }),
+        box(0.4, 0.3, 0.4, -Wd / 2 + 0.25, 4.75, zb + Lb / 2 - 0.3, C.lightRed, { r: 0.08, detail: true }),
+        box(0.4, 0.3, 0.4, Wd / 2 - 0.25, 4.75, zb - Lb / 2 + 0.3, C.amber, { r: 0.08, detail: true }),
+        box(0.4, 0.3, 0.4, -Wd / 2 + 0.25, 4.75, zb - Lb / 2 + 0.3, C.amber, { r: 0.08, detail: true }),
+        box(0.06, 2.7, 0.08, 0, 2.7, zb - Lb / 2 - 0.04, C.trim, { r: 0.02, detail: true }), // rear doors
+        box(0.05, 2.3, 1.4, Wd / 2 + 0.07, 2.6, zb + Lb / 2 - 1.1, C.grey, { r: 0.04, detail: true }), // side door
+        box(Wd + 0.05, 0.42, L - 0.3, 0, 0.92, 0, C.trim, { r: 0.12 }),
+        box(Wd + 0.06, 0.5, 0.4, 0, 0.88, L / 2 - 0.12, C.trim, { r: 0.18 }),
+        box(Wd + 0.06, 0.5, 0.4, 0, 0.88, -L / 2 + 0.12, C.trim, { r: 0.18 }),
+        ...carFace(Wd, L / 2 - 0.02, -L / 2 + 0.02, 1.7, { plateY: 0.95 }),
+        ...axle(0.76, 0.6, Wd / 2 - 0.25, 0.76, L / 2 - 1.45), ...axle(0.76, 0.6, Wd / 2 - 0.25, 0.76, -L / 2 + 1.6),
+      ];
+    }
+    case 'firetruck': {
+      const L = k.L / k.s, Wd = k.W / k.s, zb = -1.6, Lb = L - 3.3;
+      const p = [
+        box(Wd, 3.0, 3.0, 0, 2.65, L / 2 - 1.5, 'P', { r: 0.35 }), // crew cab
+        box(Wd - 0.3, 1.25, 0.12, 0, 3.25, L / 2 + 0.01, C.glass, { r: 0.08 }),
+        box(Wd + 0.04, 1.0, 2.4, 0, 3.3, L / 2 - 1.5, C.glass, { r: 0.08 }),
+        box(Wd, 3.1, Lb, 0, 2.7, zb, 'P', { r: 0.2 }), // equipment body
+        box(Wd + 0.1, 0.3, L - 0.4, 0, 1.35, -0.2, C.white, { r: 0.06 }), // white band
+        box(Wd + 0.11, 0.16, Lb - 0.2, 0, 3.9, zb, C.reflect, { r: 0.04, detail: true }),
+        box(2.2, 0.6, L - 0.6, 0, 0.95, -0.2, C.chassis, { r: 0.1 }),
+        box(2.1, 0.3, 0.6, 0, 4.3, L / 2 - 1.2, C.trim, { r: 0.06 }), // light bar
+        box(0.95, 0.3, 0.56, 0.52, 4.5, L / 2 - 1.2, C.lightRed, { r: 0.08, detail: true }),
+        box(0.95, 0.3, 0.56, -0.52, 4.5, L / 2 - 1.2, C.lightBlue, { r: 0.08, detail: true }),
+        box(Wd + 0.06, 0.55, 0.4, 0, 1.0, L / 2 - 0.05, C.trim, { r: 0.15 }),
+        box(0.62, 0.34, 0.12, Wd / 2 - 0.5, 1.7, L / 2 + 0.02, C.light, { r: 0.08, detail: true }),
+        box(0.62, 0.34, 0.12, -Wd / 2 + 0.5, 1.7, L / 2 + 0.02, C.light, { r: 0.08, detail: true }),
+        box(0.5, 0.4, 0.12, Wd / 2 - 0.4, 1.5, -L / 2 - 0.02, C.tail, { r: 0.08, detail: true }),
+        box(0.5, 0.4, 0.12, -Wd / 2 + 0.4, 1.5, -L / 2 - 0.02, C.tail, { r: 0.08, detail: true }),
+        // the ladder on the roof
+        box(0.16, 0.16, L - 1.6, 0.62, 4.45, -0.6, C.metal, { r: 0.04 }),
+        box(0.16, 0.16, L - 1.6, -0.62, 4.45, -0.6, C.metal, { r: 0.04 }),
+        box(1.6, 0.45, 0.5, 0, 4.4, zb - Lb / 2 + 0.6, C.chassis, { r: 0.06 }),
+        ...axle(0.95, 0.7, Wd / 2 - 0.35, 0.95, L / 2 - 1.6), ...axle(0.95, 0.9, Wd / 2 - 0.45, 0.95, -L / 2 + 2.3),
+      ];
+      // roller shutters over the side lockers
+      for (const z of [zb + Lb / 2 - 1.4, zb, zb - Lb / 2 + 1.4]) for (const sx of [1, -1]) p.push(box(0.06, 2.0, 2.2, sx * (Wd / 2 + 0.02), 2.75, z, C.shutter, { r: 0.03, detail: true }));
+      for (let z = -L / 2 + 1.2; z < L / 2 - 1.8; z += 0.9) p.push(box(1.24, 0.1, 0.1, 0, 4.45, z, C.metal, { r: 0.02, detail: true }));
+      return p;
     }
     case 'moto': {
       const p = [

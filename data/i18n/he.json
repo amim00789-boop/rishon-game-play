@@ -118,7 +118,12 @@
     "harova": "הרובע",
     "surf_club_beach": "החוף של מועדון הגלישה",
     "arkia_plane": "המטוס של ארקיע־כאילו",
-    "llrs_airfield": "מנחת ראשון לציון"
+    "llrs_airfield": "מנחת ראשון לציון",
+    "emg_police": "תחנת משטרת ראשון לציון",
+    "emg_mda": "תחנת מד\"א ראשון לציון",
+    "emg_fire": "תחנת כיבוי אש",
+    "emg_school": "בית הספר הארצי לכבאות ולהצלה",
+    "emg_maccabi": "בית מכבי"
   },
   "map": {
     "title": "ראשון לציון",
@@ -261,7 +266,16 @@
     "lago_gate": "אולמי לגונה",
     "lago_garden_gate": "גן האירועים של לגונה",
     "lago_parking": "חניון אולמי לגונה",
-    "lago_dropoff": "הורדת נוסעים"
+    "lago_dropoff": "הורדת נוסעים",
+    "emg_police": "משטרת ישראל",
+    "emg_police_sub": "תחנת ראשון לציון",
+    "emg_mda": "מגן דוד אדום",
+    "emg_mda_sub": "תחנת ראשון לציון",
+    "emg_fire": "כבאות והצלה",
+    "emg_fire_sub": "ראשון לציון",
+    "emg_school": "בית הספר הארצי לכבאות ולהצלה",
+    "emg_maccabi": "בית מכבי",
+    "emg_maccabi_sub": "ראשון לציון"
   },
   "profile": {
     "firstName": "השחקן שלי",

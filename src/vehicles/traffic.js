@@ -109,7 +109,7 @@ export function createTraffic({ scene, city, lots = [], collision = null, camera
   let parked = null;
   try { parked = buildParked({ scene, city, lots, collision, net, rnd, restrictedAt: inZone }); } catch (e) { console.warn('[traffic] parked cars failed', e); }
 
-  const fleetKinds = [...Object.keys(KINDS), 'moto_bare'];
+  const fleetKinds = [...Object.keys(KINDS).filter((k) => KINDS[k].fleet !== false), 'moto_bare'];
   const fleet = createFleet(scene, fleetKinds, { capacity: (k) => (KINDS[k] && KINDS[k].big ? 48 : 120), farCapacity: 400, name: 'traffic' });
 
   const vehicles = [];

@@ -104,6 +104,8 @@ const MIN_S = 0.04, MAX_S = 10; // CSS px per world unit
 const GRID = 160;               // spatial index cell, world units
 const CHUNK_LEN = 400;          // long polylines are split into pieces about this long
 const POI_ICONS = [
+  // Round 10 phase 7: emergency buildings and Maccabi House (before /station/ below).
+  [/^emg_police/, '🚓', '#1f4fa3'], [/^emg_mda/, '🚑', '#d7263d'], [/^emg_(fire|school)/, '🚒', '#c8102e'], [/^emg_maccabi/, '🤾', '#2d4f8a'],
   // Round 8 landmarks, matched by id so they never catch an older poi's name.
   [/^stone_flower/, '🌸', '#e07aa0'], [/^haberfeld_stadium/, '⚽', '#2b58b8'], [/^haberfeld_entrance/, '🎟️', '#2b58b8'],
   [/^(neot_shikma_skate|skate_)/, '🛹', '#3f8efc'], [/^scooter_kid/, '🛴', '#2d57a8'], [/^tree_of_/, '🌳', '#3fa34d'],
