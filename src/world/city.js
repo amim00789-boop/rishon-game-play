@@ -122,7 +122,7 @@ const PALETTE = {
   land: 0xe4d9b8, grass: 0x8fcf63, park: 0x7cc45a, wood: 0x5fae4f, pitch: 0x6cc35c,
   sand: 0xf4dc9c, sea: 0x3aa6e0, lake: 0x4fb6dd,
   line: 0xf6f3ea, lineYellow: 0xf2c84b,
-  sidewalk: 0xd4d5d3, sidewalkSide: 0xa8a59e, kerb: 0xb3b0a9, kerbRed: 0xd2473c, kerbWhite: 0xf5f2ea,
+  sidewalk: 0xd4d5d3, sidewalkSide: 0xa8a59e, kerb: 0xb3b0a9, kerbRed: 0xd2473c, kerbWhite: 0xf5f2ea, kerbBlue: 0x2a62c9, kerbYellow: 0xf2c81e, kerbBlack: 0x26282c,
   median: 0x86c35a, medianDry: 0x9bbf6a, hedge: 0x4f9d45, barrier: 0xd9d5cc,
   concrete: 0xd3cdc1, underside: 0x9b968d, parapetTop: 0xefebe3, pillar: 0xc6c0b3,
   ballast: 0x978e83, ballastSide: 0x80786d, sleeper: 0x6b5545, rail: 0x8e8b87, railTop: 0xc9c7c2,
@@ -2978,19 +2978,82 @@ function buildNetwork(data, ctx) {
     if (w.roundabout) sides = sides.filter((s) => s !== w.innerSide);
     return sides;
   }
-  const kerbStripes = (pts, s, fromEnd) => {
-    // Red-and-white kerb (no stopping) for the last stretch before a junction, Israeli style.
-    const p = fromEnd ? [...pts].reverse() : pts;
-    const wk = walker(p), len = Math.min(16, wk.L), seg = 1.6;
-    const sg = fromEnd ? s : -s; // road side, measured in the walked direction
-    for (let d = 0, k = 0; d < len; d += seg, k++) {
-      const a = wk.at(d), b = wk.at(Math.min(len, d + seg));
-      const c = k % 2 ? kerbWhite : kerbRed;
-      const o0 = SW / 2 - 0.7, o1 = SW / 2 + 0.02;
-      const nx = -a.dz * sg, nz = a.dx * sg;
-      const y = SIDE_TOP + 0.012;
-      layers.solid.at(a.x, a.z).quad([a.x + nx * o0, y, a.z + nz * o0], [b.x + nx * o0, y, b.z + nz * o0], [b.x + nx * o1, y, b.z + nz * o1], [a.x + nx * o1, y, a.z + nz * o1], c, UP);
+  // Painted kerbs, Israeli road-marking table (docs/research/KERBS.md, checked 2026-11-05). Grey
+  // stone by default; red-white (sign 818: no stopping or parking) along primary and trunk roads,
+  // over the last stretch before a junction and on both sides of a zebra crossing; blue-white
+  // (817: regulated parking) on commercial streets, 3+ OSM shops within 25 u of the run; red-yellow
+  // at bus stops (painted where the stops are placed, below); black-white (816) on median noses.
+  const kerbBlue = C(PALETTE.kerbBlue), kerbYellow = C(PALETTE.kerbYellow), kerbBlack = C(PALETTE.kerbBlack);
+  const subRun = (pts, d0, d1, step) => {
+    const wk = walker(pts), out = [];
+    d0 = Math.max(0, d0); d1 = Math.min(wk.L, d1);
+    if (d1 - d0 < 0.5) return out;
+    for (let d = d0; d < d1; d += step) { const q = wk.at(d); out.push([q.x, q.z]); }
+    const e = wk.at(d1); out.push([e.x, e.z]);
+    return out;
+  };
+  // Recolour the kerb band of a sidewalk run (the grey band's own offsets) between d0 and d1.
+  const kerbStats = { main: 0, blue: 0, junction: 0, crossing: 0, bus: 0, nose: 0 };
+  prof.kerbPaint = kerbStats;
+  const paintKerb = (pts, s, d0, d1, ca, cb, lift, step = 1.6, kind = 'junction') => {
+    const sub = subRun(pts, d0, d1, step);
+    if (sub.length < 2) return;
+    kerbStats[kind] += sub.length - 1;
+    strip(layers.solid, sub, SIDE_TOP + lift, -s * (SW / 2 - 0.7), -s * (SW / 2 + 0.02), (i) => (i % 2 ? cb : ca), vnormals(sub));
+  };
+  const MAIN_KERB = new Set(['primary', 'trunk']);
+  const shopCell = new Map(), SC = 50;
+  for (const [x, z] of ctx.shops || []) { const k = `${Math.floor(x / SC)},${Math.floor(z / SC)}`; if (!shopCell.has(k)) shopCell.set(k, []); shopCell.get(k).push([x, z]); }
+  // Points of a cell grid near a run: one lookup per run, by its bounding box grown by r.
+  const nearRun = (grid, pts, r) => {
+    let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+    for (const [x, z] of pts) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z; }
+    const out = [];
+    for (let i = Math.floor((x0 - r) / SC); i <= Math.floor((x1 + r) / SC); i++) for (let j = Math.floor((z0 - r) / SC); j <= Math.floor((z1 + r) / SC); j++) {
+      const c = grid.get(`${i},${j}`);
+      if (c) out.push(...c);
     }
+    return out;
+  };
+  // Distances along the run of the items within r of it, each once; `keep(item, ux, uz)` filters.
+  const distAlong = (pts, items, r, px, pz, keep = null) => {
+    if (!items.length) return [];
+    const cum = cumulative(pts), out = [];
+    for (const q of items) {
+      let best = r, bd = -1;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const [ax, az] = pts[i], [bx, bz] = pts[i + 1], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1e-6;
+        const t = Math.max(0, Math.min(1, ((px(q) - ax) * dx + (pz(q) - az) * dz) / l2));
+        const d = Math.hypot(ax + dx * t - px(q), az + dz * t - pz(q));
+        if (d <= best && (!keep || keep(q, dx / Math.sqrt(l2), dz / Math.sqrt(l2)))) { best = d; bd = cum[i] + Math.sqrt(l2) * t; }
+      }
+      if (bd >= 0) out.push(bd);
+    }
+    return out.sort((x, y) => x - y);
+  };
+  const shopsAlong = (pts, r) => distAlong(pts, nearRun(shopCell, pts, r), r, (q) => q[0], (q) => q[1]);
+  // Merge [d - h, d + h] windows into runs of painted kerb.
+  const windows = (ds, h) => {
+    const out = [];
+    for (const d of ds) { const last = out[out.length - 1]; if (last && d - h <= last[1]) last[1] = d + h; else out.push([d - h, d + h]); }
+    return out;
+  };
+  const xCell = new Map();
+  for (const c of crossings) { const k = `${Math.floor(c.x / SC)},${Math.floor(c.z / SC)}`; if (!xCell.has(k)) xCell.set(k, []); xCell.get(k).push(c); }
+  // Zebra crossings over this run's own road (the road runs along the run), not over a side street.
+  const crossingsAlong = (pts, reach) => distAlong(pts, nearRun(xCell, pts, reach), reach, (c) => c.x, (c) => c.z, (c, ux, uz) => Math.abs(Math.sin(c.angle) * ux + Math.cos(c.angle) * uz) >= 0.8);
+  const paintRun = (w, pts, s, r) => {
+    const L = polylineLength(pts);
+    if (MAIN_KERB.has(w.kind)) paintKerb(pts, s, 0, L, kerbRed, kerbWhite, 0.012, 2.4, 'main');
+    else {
+      // Blue-white in front of the shops of a commercial stretch (3+ shops along the run).
+      const ds = shopsAlong(pts, 25);
+      if (ds.length >= 3) for (const [d0, d1] of windows(ds, 30)) paintKerb(pts, s, d0, d1, kerbBlue, kerbWhite, 0.010, 2.4, 'blue');
+    }
+    if (r.start === 'road') paintKerb(pts, s, 0, 16, kerbRed, kerbWhite, 0.014);
+    if (r.end === 'road') paintKerb(pts, s, L - 16, L, kerbWhite, kerbRed, 0.014);
+    // Mid-block crossings only: one by a junction is inside the junction stretch already.
+    for (const d of crossingsAlong(pts, w.hw2 + SW + 2)) if (d > 20 && d < L - 20) paintKerb(pts, s, d - 14, d + 14, kerbRed, kerbWhite, 0.014, 1.6, 'crossing');
   };
   for (const w of cars) {
     const sides = sidewalkSides(w);
@@ -3034,8 +3097,7 @@ function buildNetwork(data, ctx) {
         slab(layers.solid, pts, Y.road, -SW / 2, SW / 2, SIDE_TOP, swTop, swSide, { N: RN });
         // Kerb stone band on the road edge of the strip.
         strip(layers.solid, pts, SIDE_TOP + 0.006, -s * (SW / 2 - 0.7), -s * (SW / 2 + 0.01), kerbC, RN);
-        if (r.start === 'road') kerbStripes(pts, s, false);
-        if (r.end === 'road') kerbStripes(pts, s, true);
+        paintRun(w, pts, s, r);
         sidewalks.push({ points: pts, roadKind: w.kind, side: s > 0 ? 'right' : 'left', roadName: w.name, width: SW });
       }
     }
@@ -3050,6 +3112,19 @@ function buildNetwork(data, ctx) {
     const top = urban ? SIDE_TOP : Y.road + 0.12;
     const mid = a.map((v, i) => (v + b[i]) / 2);
     slab(layers.solid, pts, Y.road, a, b, top, urban ? grassC : dryC, kerbC, { N });
+    if (urban && !barrier) {
+      // Black-white kerb on both noses (sign 816: highlights medians and traffic islands).
+      const L = polylineLength(pts), n = pts.length - 1;
+      for (const [d0, d1, ia] of [[0, Math.min(10, L / 2), 0], [Math.max(L - 10, L / 2), L, n]]) {
+        const sub = subRun(pts, d0, d1, 1.6);
+        if (sub.length < 2) continue;
+        kerbStats.nose += 2 * (sub.length - 1);
+        const lo = Math.min(val(a, ia), val(b, ia)), hi = Math.max(val(a, ia), val(b, ia)), SN = vnormals(sub);
+        const cf = (i) => (i % 2 ? kerbWhite : kerbBlack);
+        strip(layers.solid, sub, top + 0.012, lo + 0.02, lo + 0.55, cf, SN);
+        strip(layers.solid, sub, top + 0.012, hi - 0.55, hi - 0.02, cf, SN);
+      }
+    }
     if (barrier) {
       slab(layers.solid, pts, top, mid.map((m) => m - 0.35), mid.map((m) => m + 0.35), top + 1.1, barrierC, barrierC, { N });
     } else if (urban) {
@@ -3392,6 +3467,9 @@ function buildNetwork(data, ctx) {
     const sg = s.sw.side === 'right' ? -1 : 1;
     const vx = -s.uz * sg, vz = s.ux * sg;
     busStops.push({ x: px, z: pz, angle: Math.atan2(vx, vz), name: nameEn || nameLocal, nameLocal, road: s.sw.roadName });
+    // Red-yellow kerb along the stop: buses only (painted kerbs, above).
+    const at0 = cumulative(s.sw.points)[s.i] + along0;
+    paintKerb(s.sw.points, s.sw.side === 'right' ? 1 : -1, at0 - 11, at0 + 11, kerbRed, kerbYellow, 0.018, 1.6, 'bus');
   }
 
   // ---- promenade edges count as sidewalks for the dressing ----
@@ -4088,7 +4166,13 @@ export async function buildCity(scene, { exclude = [] } = {}) {
     marks: new Layer('marks', layerMat(6)), solid: new Layer('solid', toon({ vertexColors: true }), true),
   };
   const tNet = performance.now();
-  const net = buildNetwork(data, { coast, inBuilding, colliders, layers, K, platforms, terrain, waterTop: water.topAt });
+  // OSM shop points (data/rishon.extras.json) mark commercial streets for the blue-white kerbs.
+  let shops = [];
+  try {
+    const r = await fetch(new URL('../../data/rishon.extras.json', import.meta.url));
+    if (r.ok) { const ex = await r.json(); const ek = ex.meta && ex.meta.scale ? SCALE / ex.meta.scale : 1; shops = (ex.shops || []).filter((q) => !(q.level > 0)).map((q) => [q.x * ek, q.z * ek]); }
+  } catch { /* no extras: no blue-white kerbs */ }
+  const net = buildNetwork(data, { coast, inBuilding, colliders, layers, K, platforms, terrain, waterTop: water.topAt, shops });
   if (dayan) await joinDayan(net, colliders, root, dayan);
   const netMs = Math.round(performance.now() - tNet);
   performance.measure?.('boot:city/network', { start: tNet, end: performance.now() });
