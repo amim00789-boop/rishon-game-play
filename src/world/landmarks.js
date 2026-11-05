@@ -810,6 +810,61 @@ const EMG = Object.fromEntries(Object.entries(EMG_POLY).map(([id, ll]) => {
   return [id, { world, f: frame(cx, cz, 0), front: pickEdgeOf(world, EMG_DIR[id]) }];
 }));
 
+// ---------------------------------------------------------------------------
+// Chai Kef zoo (round 10): OSM way 216265299 (tourism=zoo, barrier=fence, natural=wood), Golda
+// Meir 3. city.js, trees.js and details.js already draw its pine wood, footways, lake (way
+// 1267898682), ticket booths and perimeter fence; this adds the gates, pens and animals.
+// Animals and their groupings: he.wikipedia "Chai-Kef" (read 2026-11-05): the African yard, the
+// Australian yard, the hoofed-animal cage, the lemur cage (2023), the otters, the fenced yard, the
+// bird cages, the alligators, the big lake (flamingos, ducks, pelican), the farm and petting corner.
+// Pen POSITIONS are ASSUMED: OSM maps no enclosures, so each pen sits on an open spot between the
+// mapped footways, clear of paths, lake and outline by more than its own half-diagonal (docs/ROUND10_ZOO.md).
+// ---------------------------------------------------------------------------
+const ZOO_K = 2.2; // u per real metre for animals: sized to the avatars (drawn about twice real size), not to the map
+const ZOO_PENS = [
+  // at = pen centre; ry runs the long side (local z) along the nearest footway; face = world
+  // direction from the centre to that footway (the sign side).
+  { id: 'petting', at: [31.9752639, 34.7891727], w: 23, d: 32, ry: 1.27, face: [-0.70, 0.72], fence: 'rail', ground: 0xc9a76a },
+  { id: 'african', at: [31.9757614, 34.7894904], w: 33, d: 46, ry: -2.62, face: [0.09, 1.0], fence: 'wire', ground: 0xdcc184 },
+  { id: 'australia', at: [31.97549, 34.7900728], w: 31, d: 43, ry: -1.80, face: [-0.22, 0.97], fence: 'wire', ground: 0xd09a66 },
+  { id: 'hoofed', at: [31.9754674, 34.7909465], w: 26, d: 36, ry: -2.33, face: [-0.69, 0.72], fence: 'wire', ground: 0xc9b48a },
+  { id: 'otters', at: [31.9753091, 34.7904964], w: 18, d: 25, ry: -2.33, face: [0.69, -0.73], fence: 'low', ground: null },
+  { id: 'lemurs', at: [31.9755805, 34.7904699], w: 13, d: 18, ry: 1.15, face: [0.41, -0.91], fence: 'cage', ground: 0xa7c46a },
+  { id: 'yard', at: [31.9753091, 34.7897287], w: 12, d: 17, ry: -2.62, face: [-0.86, 0.5], fence: 'rail', ground: null },
+  { id: 'aviary', at: [31.9750377, 34.790417], w: 12, d: 16, ry: 2.73, face: [0.92, 0.4], fence: 'cage', ground: 0xb9a27a },
+  { id: 'gators', at: [31.9751282, 34.7895169], w: 11, d: 15, ry: -0.51, face: [0.87, 0.49], fence: 'low', ground: null },
+];
+// The lake (OSM way 1267898682) and the first stretch of the entrance footway (way 1267847259),
+// where the peafowl walk.
+const ZOO_LAKE = [[31.9751766, 34.790192], [31.9751986, 34.7900518], [31.9751701, 34.7899528], [31.9751223, 34.7899147], [31.9750848, 34.7899132], [31.9750435, 34.7899376], [31.9750254, 34.7899817], [31.9749905, 34.7901646], [31.975028, 34.7902499], [31.9750642, 34.790259], [31.9750952, 34.7902621], [31.9751417, 34.7902484]];
+const ZOO_WALK = [[31.975185, 34.7885654], [31.9751901, 34.7887591], [31.9751429, 34.7889372], [31.9751228, 34.7890129], [31.9750459, 34.7891048], [31.975042, 34.789184]];
+const ZOO = (() => {
+  const pens = ZOO_PENS.map((p) => {
+    const [x, z] = P(p.at), f = frame(x, z, p.ry);
+    return { ...p, f, rect: f.rect(0, 0, p.w, p.d) };
+  });
+  // Main gate: footway 485840684 crosses the outline at its node (31.975185, 34.7885654), beside the
+  // ticket booth (way 485840683). Side gate: footway 1267847261 at node (31.9754908, 34.7890329),
+  // beside the second booth (way 1267847258). Local +z points into the zoo.
+  const gate = (inLL, outLL) => { const a = P(inLL), o = P(outLL); return frame(a[0], a[1], Math.atan2(a[0] - o[0], a[1] - o[1])); };
+  // The game widens the parking road outside the main gate onto the mapped node, and the path
+  // turns east right after it, so the arch stands 8 u in, square across the path's next stretch
+  // (toward node 31.9751901, 34.7887591); at the node its outer pillar was on the carriageway.
+  const main = (() => { const a = P([31.975185, 34.7885654]), n = P([31.9751901, 34.7887591]), l = Math.hypot(n[0] - a[0], n[1] - a[1]), dx = (n[0] - a[0]) / l, dz = (n[1] - a[1]) / l; return frame(a[0] + dx * 8, a[1] + dz * 8, Math.atan2(dx, dz)); })();
+  const side = gate([31.9754908, 34.7890329], [31.9752534, 34.7888142]);
+  // The fence gap at the main gate covers the whole outline stretch from the path's node to the next
+  // node east (31.975238, 34.7887055): the game widens the parking road onto that stretch, and
+  // details.js then slid the fence inward, right across the entrance path. The corridor is long
+  // across the fence so samples cannot slide out of it (they are dropped instead).
+  const cut = (() => {
+    const a = P([31.975238, 34.7887055]), m = P([31.975185, 34.7885654]), len = Math.hypot(a[0] - m[0], a[1] - m[1]);
+    const f = frame((a[0] + m[0]) / 2, (a[1] + m[1]) / 2, Math.atan2(-(a[1] - m[1]), a[0] - m[0]));
+    f.len = len + 7;
+    return f;
+  })();
+  return { pens, main, side, cut, lake: projPoly(ZOO_LAKE), walk: projPoly(ZOO_WALK) };
+})();
+
 export const LANDMARK_FOOTPRINTS = [
   // Round 8: the stadium replaces the OSM stand buildings and pitch fills inside its outline.
   { id: 'haberfeld_stadium', points: HABERFELD.world },
@@ -817,6 +872,10 @@ export const LANDMARK_FOOTPRINTS = [
   { id: 'haberfeld_gate_south', points: HABERFELD.f.rect(0, 118, 14, 36) },
   // Round 10 phase 7: the emergency buildings and Maccabi House replace their generic OSM copies.
   ...Object.entries(EMG).map(([id, e]) => ({ id: `emg_${id}`, points: e.world })),
+  // Round 10: Chai Kef zoo pens (no trees or OSM fences inside) and gate corridors through the mapped fence.
+  ...ZOO.pens.map((p) => ({ id: `zoo_pen_${p.id}`, points: p.f.rect(0, 0, p.w + 3, p.d + 3) })),
+  { id: 'zoo_gate_main', points: ZOO.cut.rect(0, 0, ZOO.cut.len, 30) },
+  { id: 'zoo_gate_side', points: ZOO.side.rect(0, 0, 8, 22) },
   // Round 8: Lago Events entrances (fence gaps), forecourt and back-yard patio.
   { id: 'lago_gate_east', points: LAGO.gateEFoot },
   { id: 'lago_gate_north', points: LAGO.gateNFoot },
@@ -5922,6 +5981,576 @@ function buildEmergencyVehicles() {
   return { group: g, colliders, pois: [] };
 }
 
+// Small seeded random, so the herd stands the same way every load.
+function zooRng(seed) {
+  let s = seed >>> 0;
+  return () => { s = (s + 0x6d2b79f5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+
+// One animal as one merged mesh, built in real metres (scaled by ZOO_K on the mesh), feet at y=0,
+// facing local +z. Returns { mesh, gait } where gait = { speed (m/s), bob (m), freq, hop }.
+function zooAnimal(kind, rand = Math.random) {
+  const b = new Batch();
+  const box = (w, h, d, col, x, y, z, rx = 0, ry = 0, rz = 0, fn) => b.add(G.box(w, h, d, Math.min(w, h, d) * 0.3), col, M(x, y, z, rx, ry, rz), fn);
+  const cube = (w, h, d, col, x, y, z, rx = 0, ry = 0, rz = 0, fn) => b.add(G.cube(w, h, d), col, M(x, y, z, rx, ry, rz), fn);
+  const bar = (a, c, w, col) => { const { m, len } = limbMat(a, c, w); b.add(G.cube(w, len, w), col, m); };
+  const ball = (r, col, x, y, z, sx = 1, sy = 1, sz = 1, fn, rx = 0) => b.add(G.sph(r, 10, 8), col, M(x, y, z, rx, 0, 0, sx, sy, sz), fn);
+  const cone = (r, h, col, x, y, z, rx = 0, ry = 0, rz = 0) => b.add(G.cone(r, h, 8), col, M(x, y, z, rx, ry, rz));
+  const eyes = (x, y, z, col = 0x15151a, s = 0.04) => { for (const sx of [-1, 1]) cube(s, s, s, col, sx * x, y, z); };
+  const dark = 0x2a2420;
+  // Generic four-legged grazer. o: body L/H/W, leg length, neck length nl and lean na (rad from
+  // vertical), head length hl, colours c (body), lc (legs), hc (head), mc (muzzle), bodyFn.
+  const quad = (o) => {
+    const { L, H, W, leg, nl, na, hl, c } = o, lw = o.lw || W * 0.22, y0 = leg, lc = o.lc ?? c, hc = o.hc ?? c;
+    if (o.bodyFn) b.add(new THREE.BoxGeometry(W, H, L, 1, 3, 14), c, M(0, y0 + H / 2, 0), o.bodyFn);
+    else box(W, H, L, c, 0, y0 + H / 2, 0);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+      const x = sx * (W / 2 - lw * 0.6), z = sz * (L / 2 - lw * 0.9);
+      cube(lw, leg + H * 0.35, lw, lc, x, (leg + H * 0.35) / 2, z);
+      cube(lw * 1.1, 0.06, lw * 1.15, o.hoof ?? dark, x, 0.03, z);
+    }
+    const nw = o.nw || W * 0.42;
+    const nb = [0, y0 + H * 0.7, L / 2 - nw * 0.3], nt = [0, nb[1] + nl * Math.cos(na), nb[2] + nl * Math.sin(na)];
+    if (nl > 0) { const { m, len } = limbMat(nb, nt, nw); b.add(G.cube(nw, len, nw * 1.15), o.nc ?? c, m, o.neckFn); }
+    const hp = o.hp ?? 0.5, hw = o.hw || nw * 0.95, hh = o.hh || nw * 0.95;
+    const hx = nt[2] + Math.cos(hp) * hl * 0.35, hy = nt[1] - Math.sin(hp) * hl * 0.35;
+    box(hw, hh, hl, hc, 0, hy, hx, hp);
+    box(hw * 0.75, hh * 0.7, hl * 0.35, o.mc ?? hc, 0, hy - Math.sin(hp) * hl * 0.45 - hh * 0.1, hx + Math.cos(hp) * hl * 0.45, hp);
+    eyes(hw * 0.5, hy + hh * 0.2, hx + hl * 0.05);
+    const ear = o.ear ?? 0.12;
+    if (ear) for (const sx of [-1, 1]) box(ear * 0.5, ear * 0.25, ear, o.ec ?? hc, sx * (hw * 0.5 + ear * 0.3), hy + hh * 0.45, hx - hl * 0.3, -0.4, sx * 0.9, 0);
+    if (o.tail) bar([0, y0 + H * 0.85, -L / 2], [0, y0 + H * 0.85 - o.tail, -L / 2 - o.tail * 0.25], o.tw || 0.05, o.tc ?? c);
+    if (o.mane) cube(nw * 0.35, nl * 0.95, nw * 0.9, o.mane, 0, (nb[1] + nt[1]) / 2 + nw * 0.35, (nb[2] + nt[2]) / 2 - nw * 0.45, na);
+    if (o.beard) box(0.08, 0.16, 0.08, o.beard, 0, hy - hh * 0.6, hx + hl * 0.15);
+    const top = [0, hy + hh * 0.45, hx - hl * 0.2];
+    const horn = o.horn, hcol = o.hornC ?? 0x5b4a3a;
+    if (horn) for (const sx of [-1, 1]) {
+      const r0 = [sx * hw * 0.25, top[1], top[2]];
+      if (horn === 'goat') { bar(r0, [sx * hw * 0.35, top[1] + 0.18, top[2] - 0.12], 0.05, hcol); }
+      else if (horn === 'ibex') {
+        let p = r0; for (let i = 1; i <= 5; i++) { const a = i * 0.36; const q = [sx * (hw * 0.25 + i * 0.012), top[1] + Math.sin(a) * 0.5, top[2] - (1 - Math.cos(a)) * 0.5 - i * 0.02]; bar(p, q, 0.07 - i * 0.008, hcol); p = q; }
+      } else if (horn === 'buffalo') {
+        const m1 = [sx * (hw * 0.5 + 0.35), top[1] + 0.05, top[2] - 0.05], m2 = [sx * (hw * 0.5 + 0.6), top[1] + 0.25, top[2] - 0.3];
+        bar(r0, m1, 0.12, hcol); bar(m1, m2, 0.08, hcol);
+      } else if (horn === 'gazelle') {
+        const m1 = [sx * hw * 0.3, top[1] + 0.2, top[2] - 0.08], m2 = [sx * hw * 0.22, top[1] + 0.32, top[2] - 0.02];
+        bar(r0, m1, 0.035, hcol); bar(m1, m2, 0.025, hcol);
+      } else if (horn === 'addax') {
+        let p = r0; for (let i = 1; i <= 6; i++) { const q = [sx * (hw * 0.3 + Math.sin(i * 1.4) * 0.08 + i * 0.02), top[1] + i * 0.1, top[2] - i * 0.06]; bar(p, q, 0.05, hcol); p = q; }
+      } else if (horn === 'antler') {
+        const m1 = [sx * (hw * 0.35 + 0.1), top[1] + 0.35, top[2] - 0.1], m2 = [sx * (hw * 0.4 + 0.25), top[1] + 0.6, top[2] - 0.2];
+        bar(r0, m1, 0.05, hcol); bar(m1, m2, 0.045, hcol); bar(m1, [sx * (hw * 0.3 + 0.05), top[1] + 0.45, top[2] + 0.12], 0.03, hcol);
+        box(0.06, 0.22, 0.3, hcol, m2[0], m2[1] + 0.05, m2[2] - 0.05, 0.3, 0, sx * 0.4);
+      }
+    }
+    return y0 + H;
+  };
+  // Long-legged bird: body ellipsoid, legs, neck in segments, head and beak.
+  const bird = (o) => {
+    const { leg, bw, bh, bl, c } = o, y0 = leg + bh * 0.4;
+    for (const sx of [-1, 1]) {
+      if (o.oneLeg && sx > 0) { bar([sx * bw * 0.25, y0, 0], [sx * bw * 0.25, y0 - leg * 0.45, 0.1], 0.04, o.lc); bar([sx * bw * 0.25, y0 - leg * 0.45, 0.1], [sx * bw * 0.25, y0 - leg * 0.15, -0.15], 0.04, o.lc); continue; }
+      bar([sx * bw * 0.25, y0, 0], [sx * bw * 0.25, 0, 0.02], o.lw || 0.05, o.lc);
+      cube(0.12, 0.03, 0.18, o.lc, sx * bw * 0.25, 0.015, 0.06);
+    }
+    ball(1, c, 0, y0 + bh * 0.1, 0, bw / 2, bh / 2, bl / 2, o.bodyFn, o.tilt || 0);
+    let p = [0, y0 + bh * 0.3, bl * 0.35];
+    for (const [dy, dz] of o.neck) { const q = [0, p[1] + dy, p[2] + dz]; bar(p, q, o.nw || 0.08, o.nc ?? c); p = q; }
+    ball(o.hr || 0.09, o.hc ?? c, p[0], p[1], p[2] + 0.03);
+    eyes((o.hr || 0.09) * 0.8, p[1] + 0.02, p[2] + 0.05);
+    const bk = o.beak || [0.16, 0x333333];
+    cone(0.035, bk[0], bk[1], 0, p[1] - (o.beakDown || 0.02), p[2] + 0.06 + bk[0] / 2, Math.PI / 2 + (o.beakTilt || 0.2), 0, 0);
+    return p;
+  };
+  const tailRings = (p0, n, step, w, ca, cb, curl) => { let p = p0; for (let i = 0; i < n; i++) { const a = curl * i; const q = [p[0], p[1] + Math.sin(a) * step, p[2] - Math.cos(a) * step]; bar(p, q, w, i % 2 ? ca : cb); p = q; } };
+  let gait = { speed: 0.6, bob: 0.03, freq: 9, hop: false };
+  switch (kind) {
+    case 'goat': {
+      const c = rand() < 0.5 ? 0xece6da : 0x7a5638;
+      quad({ L: 0.85, H: 0.38, W: 0.3, leg: 0.42, nl: 0.25, na: 0.5, hl: 0.26, c, hc: c, horn: 'goat', beard: 0xd8d0c0, tail: 0.1, ear: 0.13 });
+      break;
+    }
+    case 'sheep': {
+      const y0 = 0.4, wool = 0xf1ece0;
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) cube(0.07, 0.5, 0.07, dark, sx * 0.12, 0.25, sz * 0.28);
+      for (const [x, y, z, r] of [[0, 0.62, 0, 0.3], [0, 0.6, 0.25, 0.26], [0, 0.6, -0.25, 0.26], [0.12, 0.72, 0, 0.22], [-0.12, 0.72, 0, 0.22], [0, 0.78, 0.1, 0.2]]) ball(r, wool, x, y, z);
+      box(0.17, 0.2, 0.26, dark, 0, y0 + 0.38, 0.55, 0.5);
+      for (const sx of [-1, 1]) box(0.06, 0.04, 0.12, dark, sx * 0.13, y0 + 0.43, 0.48, 0, sx * 1.2, 0);
+      ball(0.12, wool, 0, y0 + 0.5, 0.48);
+      eyes(0.075, y0 + 0.42, 0.6);
+      gait = { speed: 0.5, bob: 0.03, freq: 9, hop: false };
+      break;
+    }
+    case 'rabbit': {
+      const c = [0xf3efe7, 0x8a6a4a, 0x5d5a58, 0xd9c6a5][Math.floor(rand() * 4)];
+      ball(0.15, c, 0, 0.15, 0, 1, 0.9, 1.3);
+      ball(0.1, c, 0, 0.27, 0.17);
+      for (const sx of [-1, 1]) box(0.05, 0.2, 0.03, c, sx * 0.04, 0.42, 0.13, -0.2, 0, sx * 0.15);
+      ball(0.05, 0xffffff, 0, 0.17, -0.2);
+      eyes(0.07, 0.3, 0.22);
+      gait = { speed: 0.9, bob: 0.12, freq: 10, hop: true };
+      break;
+    }
+    case 'tortoise': {
+      ball(0.26, 0x6f6136, 0, 0.1, 0, 1, 0.55, 1.25, (x, y, z) => ((Math.floor(x * 9) + Math.floor(z * 7)) % 2 ? 0x6f6136 : 0x8a7a45));
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) cube(0.07, 0.1, 0.07, 0x8d8a6a, sx * 0.17, 0.05, sz * 0.2);
+      ball(0.06, 0x8d8a6a, 0, 0.1, 0.36, 1, 0.9, 1.4);
+      gait = { speed: 0.12, bob: 0.005, freq: 3, hop: false };
+      break;
+    }
+    case 'zebra': {
+      const st = (x, y, z) => (Math.floor(z * 9 + 20) % 2 ? 0x1b1b1f : 0xf5f3ee);
+      quad({ L: 1.5, H: 0.62, W: 0.5, leg: 0.68, nl: 0.62, na: 0.62, hl: 0.55, c: 0xf5f3ee, bodyFn: st, neckFn: (x, y, z) => (Math.floor(y * 9) % 2 ? 0x1b1b1f : 0xf5f3ee), lc: 0xe9e6de, hc: 0xf2efe8, mc: 0x1b1b1f, mane: 0x1b1b1f, tail: 0.5, tc: 0x1b1b1f, ear: 0.18 });
+      gait = { speed: 0.9, bob: 0.04, freq: 7, hop: false };
+      break;
+    }
+    case 'buffalo': {
+      quad({ L: 2.0, H: 0.85, W: 0.85, leg: 0.6, nl: 0.25, na: 1.2, hl: 0.55, hp: 0.9, c: 0x3e3d41, mc: 0x2b2a2e, horn: 'buffalo', hornC: 0x2a2622, tail: 0.6, ear: 0.18 });
+      gait = { speed: 0.45, bob: 0.03, freq: 5, hop: false };
+      break;
+    }
+    case 'addax': {
+      quad({ L: 1.3, H: 0.55, W: 0.42, leg: 0.6, nl: 0.45, na: 0.6, hl: 0.42, c: 0xe9e1cc, hc: 0xe6dcc6, mc: 0xf4efe5, horn: 'addax', hornC: 0x6a5a48, tail: 0.3, ear: 0.13, lc: 0xf1ebdc });
+      cube(0.2, 0.12, 0.16, 0x6b4a32, 0, 1.3, 0.83);
+      gait = { speed: 0.8, bob: 0.04, freq: 7, hop: false };
+      break;
+    }
+    case 'ibex': {
+      quad({ L: 1.05, H: 0.45, W: 0.36, leg: 0.5, nl: 0.35, na: 0.45, hl: 0.33, c: 0xb08a5a, hc: 0xa98455, mc: 0x8f6f4a, horn: 'ibex', hornC: 0x4d4034, beard: 0x3a2e25, tail: 0.12, ear: 0.1, lc: 0x9a7a52 });
+      gait = { speed: 0.7, bob: 0.04, freq: 8, hop: false };
+      break;
+    }
+    case 'gazelle': {
+      const fn = (x, y, z) => (y < -0.1 ? 0xf2ece0 : y < -0.03 ? 0x6b4a32 : 0xc89a62);
+      quad({ L: 0.9, H: 0.36, W: 0.26, leg: 0.55, nl: 0.35, na: 0.45, hl: 0.26, c: 0xc89a62, bodyFn: fn, hc: 0xc89a62, mc: 0xf2ece0, horn: 'gazelle', hornC: 0x2f2822, tail: 0.12, ear: 0.13, lw: 0.05 });
+      gait = { speed: 1.1, bob: 0.05, freq: 9, hop: false };
+      break;
+    }
+    case 'deer': {
+      const fn = (x, y, z) => ((Math.abs(Math.sin(x * 31 + z * 17)) > 0.92 && y > 0) ? 0xf6f0e2 : y < -0.12 ? 0xefe6d2 : 0xb5703a);
+      quad({ L: 1.2, H: 0.48, W: 0.36, leg: 0.6, nl: 0.45, na: 0.4, hl: 0.33, c: 0xb5703a, bodyFn: fn, hc: 0xa8683a, mc: 0x6b4a32, horn: rand() < 0.5 ? 'antler' : null, hornC: 0xc9b48a, tail: 0.15, ear: 0.15 });
+      gait = { speed: 0.8, bob: 0.04, freq: 8, hop: false };
+      break;
+    }
+    case 'mara': {
+      const fn = (x, y, z) => (z < -0.2 ? 0xf2ede4 : 0x9a8a72);
+      quad({ L: 0.65, H: 0.3, W: 0.24, leg: 0.35, nl: 0.12, na: 0.6, hl: 0.22, c: 0x9a8a72, bodyFn: fn, hc: 0x8d7d66, mc: 0x6e604f, ear: 0.13, lw: 0.05 });
+      gait = { speed: 0.9, bob: 0.05, freq: 10, hop: false };
+      break;
+    }
+    case 'kangaroo': case 'wallaby': {
+      const c = kind === 'kangaroo' ? 0xb5653a : 0x8a7a68, s = kind === 'kangaroo' ? 1 : 0.62;
+      const k = (v) => v * s;
+      for (const sx of [-1, 1]) {
+        box(k(0.16), k(0.4), k(0.3), c, sx * k(0.14), k(0.3), k(-0.02), -0.6);
+        box(k(0.1), k(0.06), k(0.38), dark, sx * k(0.14), k(0.03), k(0.12));
+      }
+      ball(1, c, 0, k(0.75), k(0.02), k(0.24), k(0.42), k(0.22), (x, y, z) => (z > 0.6 ? 0xe8d4b8 : c), 0.45);
+      bar([0, k(0.45), k(-0.2)], [0, k(0.05), k(-0.95)], k(0.13), c);
+      for (const sx of [-1, 1]) bar([sx * k(0.12), k(0.95), k(0.18)], [sx * k(0.1), k(0.75), k(0.32)], k(0.05), c);
+      box(k(0.15), k(0.15), k(0.26), c, 0, k(1.22), k(0.25), 0.2);
+      box(k(0.08), k(0.08), k(0.1), dark, 0, k(1.19), k(0.38), 0.2);
+      for (const sx of [-1, 1]) box(k(0.05), k(0.18), k(0.03), c, sx * k(0.06), k(1.38), k(0.18), -0.2, 0, sx * 0.25);
+      eyes(k(0.075), k(1.25), k(0.33));
+      gait = { speed: kind === 'kangaroo' ? 1.6 : 1.3, bob: k(0.4), freq: 7, hop: true };
+      break;
+    }
+    case 'emu': {
+      bird({ leg: 0.8, bw: 0.55, bh: 0.55, bl: 0.8, c: 0x5a4a3a, lc: 0x7d7a74, lw: 0.08, nw: 0.08, nc: 0x6f7c88, hc: 0x5c6670, hr: 0.09, neck: [[0.25, 0.08], [0.3, 0.05]], beak: [0.1, 0x2a2622], bodyFn: (x, y, z) => (Math.abs(Math.sin(x * 40 + y * 30)) > 0.7 ? 0x4a3c30 : 0x5f4f3e) });
+      gait = { speed: 0.8, bob: 0.05, freq: 7, hop: false };
+      break;
+    }
+    case 'flamingo': {
+      bird({ leg: 0.75, bw: 0.28, bh: 0.28, bl: 0.5, c: 0xf28aa8, lc: 0xe0708e, lw: 0.03, nw: 0.045, hr: 0.06, oneLeg: rand() < 0.6, neck: [[0.2, 0.08], [0.15, -0.04], [0.12, 0.06]], beak: [0.12, 0x1f1f22], beakDown: 0.04, beakTilt: 0.8 });
+      gait = { speed: 0, bob: 0, freq: 0, hop: false };
+      break;
+    }
+    case 'peacock': {
+      bird({ leg: 0.35, bw: 0.24, bh: 0.24, bl: 0.4, c: 0x1f5fbf, lc: 0x8a8070, lw: 0.035, nw: 0.06, nc: 0x2177c9, hr: 0.06, neck: [[0.22, 0.06], [0.12, 0.03]], beak: [0.06, 0x8a8070] });
+      const fan = new THREE.CylinderGeometry(0.85, 0.85, 0.03, 22, 1, false, Math.PI / 2, Math.PI);
+      b.add(fan, 0x2f8a3a, M(0, 0.5, -0.25, Math.PI / 2 - 0.25, 0, 0), (x, y, z) => {
+        const r = Math.hypot(x, z), a = Math.atan2(x, z);
+        if (r < 0.5) return 0x2f6b3a;
+        return Math.abs(Math.sin(a * 11)) > 0.75 && r > 0.65 ? (r > 0.74 ? 0x1f4fa3 : 0xe0b23a) : 0x3f9a4a;
+      });
+      for (let i = -2; i <= 2; i++) bar([i * 0.01, 0.78, 0.29], [i * 0.025, 0.86, 0.27], 0.012, 0x1f5fbf);
+      gait = { speed: 0.5, bob: 0.03, freq: 8, hop: false };
+      break;
+    }
+    case 'peahen': {
+      bird({ leg: 0.32, bw: 0.22, bh: 0.22, bl: 0.38, c: 0x8a7a60, lc: 0x8a8070, lw: 0.035, nw: 0.055, nc: 0x3f7a6a, hr: 0.055, neck: [[0.2, 0.05], [0.1, 0.03]], beak: [0.05, 0x6a6050] });
+      box(0.14, 0.05, 0.35, 0x7a6a52, 0, 0.4, -0.3, -0.25);
+      gait = { speed: 0.5, bob: 0.03, freq: 8, hop: false };
+      break;
+    }
+    case 'macaw': {
+      ball(1, 0x2f74d0, 0, 0.3, 0, 0.11, 0.17, 0.1, (x, y) => (y < -0.1 ? 0xf2c21e : 0x2f74d0));
+      ball(0.08, 0x2f74d0, 0, 0.5, 0.03);
+      cube(0.06, 0.05, 0.06, 0xf4f1ea, 0, 0.49, 0.1);
+      cone(0.03, 0.08, 0x1d1d24, 0, 0.47, 0.13, Math.PI / 2 + 0.6, 0, 0);
+      box(0.06, 0.4, 0.03, 0x2f74d0, 0, 0.0, -0.06, 0.15);
+      eyes(0.06, 0.52, 0.07);
+      gait = { speed: 0, bob: 0, freq: 0, hop: false };
+      break;
+    }
+    case 'duck': {
+      ball(1, 0x9a6a3a, 0, 0.1, 0, 0.13, 0.1, 0.22, (x, y) => (y > 0.03 ? 0x7a5a3a : 0xe8a050));
+      ball(0.08, 0x2f7a4a, 0, 0.25, 0.16, 1, 1, 1, (x, y, z) => (y < 0 ? 0xf4efe5 : 0x2f7a4a));
+      cone(0.03, 0.09, 0xe0702a, 0, 0.24, 0.27, Math.PI / 2, 0, 0);
+      eyes(0.06, 0.27, 0.2);
+      gait = { speed: 0.4, bob: 0.01, freq: 2, hop: false };
+      break;
+    }
+    case 'pelican': {
+      ball(1, 0xf4f1ea, 0, 0.28, 0, 0.3, 0.26, 0.5);
+      bar([0, 0.4, 0.35], [0, 0.72, 0.42], 0.1, 0xf4f1ea);
+      ball(0.08, 0xf4f1ea, 0, 0.75, 0.45);
+      box(0.08, 0.1, 0.42, 0xf0a030, 0, 0.66, 0.68, 0.3);
+      eyes(0.06, 0.78, 0.5);
+      gait = { speed: 0.35, bob: 0.01, freq: 2, hop: false };
+      break;
+    }
+    case 'otter': {
+      box(0.2, 0.18, 0.62, 0x6b4a2e, 0, 0.12, 0);
+      box(0.15, 0.13, 0.16, 0x7a5638, 0, 0.17, 0.36);
+      cube(0.1, 0.07, 0.05, 0xd8c6a8, 0, 0.14, 0.44);
+      eyes(0.06, 0.2, 0.43);
+      bar([0, 0.1, -0.3], [0, 0.07, -0.65], 0.08, 0x6b4a2e);
+      gait = { speed: 0.9, bob: 0.02, freq: 4, hop: false };
+      break;
+    }
+    case 'lemur': case 'ruffed': {
+      const ring = kind === 'lemur', c = ring ? 0x9a9690 : 0x1d1d22;
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) cube(0.05, 0.28, 0.05, ring ? 0x8a8680 : 0x1d1d22, sx * 0.07, 0.14, sz * 0.14);
+      box(0.18, 0.18, 0.42, c, 0, 0.32, 0, 0, 0, 0, ring ? null : (x, y, z) => (Math.abs(z) < 0.08 ? 0xf2f0ea : 0x1d1d22));
+      box(0.13, 0.12, 0.13, ring ? 0xf2f0ea : 0xf2f0ea, 0, 0.42, 0.26);
+      cube(0.09, 0.05, 0.08, 0x1d1d22, 0, 0.4, 0.33);
+      for (const sx of [-1, 1]) cube(0.035, 0.035, 0.02, ring ? 0xf28a1e : 0xf2c21e, sx * 0.035, 0.44, 0.33);
+      for (const sx of [-1, 1]) box(0.05, 0.06, 0.03, ring ? 0x8a8680 : 0xf2f0ea, sx * 0.06, 0.5, 0.22);
+      tailRings([0, 0.34, -0.2], 12, 0.065, 0.045, 0x1d1d22, ring ? 0xf2f0ea : 0x1d1d22, 0.18);
+      gait = { speed: 0.7, bob: 0.05, freq: 9, hop: false };
+      break;
+    }
+    case 'alligator': {
+      const c = 0x4a5a3a;
+      box(0.42, 0.18, 0.9, c, 0, 0.13, 0, 0, 0, 0, (x, y) => (y < -0.05 ? 0xb8b58a : c));
+      box(0.24, 0.12, 0.55, c, 0, 0.12, 0.7);
+      for (const sx of [-1, 1]) cube(0.05, 0.05, 0.05, 0xd8c84a, sx * 0.09, 0.2, 0.55);
+      for (let i = 0; i < 6; i++) bar([0, 0.12, -0.45 - i * 0.18], [0, 0.11, -0.63 - i * 0.18], 0.26 - i * 0.035, c);
+      for (let i = 0; i < 6; i++) cube(0.05, 0.05, 0.08, 0x3a4a2e, 0, 0.24, 0.35 - i * 0.18);
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) cube(0.18, 0.06, 0.08, c, sx * 0.26, 0.05, sz * 0.3);
+      gait = { speed: 0.15, bob: 0, freq: 0, hop: false };
+      break;
+    }
+    default: ball(0.3, 0xff00ff, 0, 0.3, 0);
+  }
+  const mesh = b.mesh(`zoo-${kind}`);
+  mesh.scale.setScalar(ZOO_K);
+  mesh.userData.seated = true;
+  return { mesh, gait };
+}
+
+function buildZoo(flags) {
+  const g = new THREE.Group();
+  g.name = 'chai-kef-zoo';
+  const colliders = [], fb = new Batch(), rand = zooRng(216265299), animals = [];
+  const rr = (a, b) => a + rand() * (b - a);
+  // Static world-space pieces (fb) are one plain mesh: settle() drapes it vertex by vertex.
+  const wbox = (w, h, d, col, x, y, z, ry = 0) => fb.add(G.cube(w, h, d), col, M(x, y, z, 0, ry, 0));
+  const wbar = (a, c, w, col) => { const { m, len } = limbMat(a, c, w); fb.add(G.cube(w, len, w), col, m); };
+  // A run of fence between two world points: posts every `step`, rails between each pair of posts
+  // (short pieces, so the draped mesh follows the ground).
+  const FENCES = {
+    rail: { post: 0x7a4a22, rail: 0xa8692f, h: 1.7, step: 2.8, rails: [0.7, 1.45], pw: 0.28, rw: 0.18 },
+    wire: { post: 0x3c6e47, rail: 0x8fa39a, h: 3.0, step: 3.2, rails: [0.4, 1.1, 1.8, 2.5, 2.95], pw: 0.22, rw: 0.06 },
+    low: { post: 0xb8b2a6, rail: 0x6f7880, h: 1.6, step: 2.6, rails: [1.55], pw: 0.18, rw: 0.1, wall: 0xcfc8b8 },
+    cage: { post: 0x3a4048, rail: 0x3a4048, h: 6.4, step: 0.9, rails: [0.3, 3.2, 6.35], pw: 0.12, rw: 0.12 },
+  };
+  const fenceRun = (a, c, F) => {
+    const L = Math.hypot(c[0] - a[0], c[1] - a[1]), n = Math.max(1, Math.round(L / F.step)), ry = Math.atan2(c[0] - a[0], c[1] - a[1]);
+    for (let i = 0; i <= n; i++) {
+      const x = a[0] + ((c[0] - a[0]) * i) / n, z = a[1] + ((c[1] - a[1]) * i) / n;
+      wbox(F.pw, F.h, F.pw, F.post, x, F.h / 2, z);
+      if (i === n) break;
+      const x2 = a[0] + ((c[0] - a[0]) * (i + 1)) / n, z2 = a[1] + ((c[1] - a[1]) * (i + 1)) / n, mx = (x + x2) / 2, mz = (z + z2) / 2;
+      for (const y of F.rails) wbox(F.rw, F.rw, L / n, F.rail, mx, y, mz, ry);
+      if (F.wall) wbox(0.35, 1.0, L / n, F.wall, mx, 0.5, mz, ry);
+    }
+  };
+  // Wander targets stay in the pen, `m` u from the fence (a smaller box when given).
+  const walker = (pen, kind, area, n, opts = {}) => {
+    for (let i = 0; i < n; i++) {
+      const { mesh, gait } = zooAnimal(kind, rand);
+      const [ax0, az0, ax1, az1] = area;
+      const a = { pen, mesh, gait, area, x: rr(ax0, ax1), z: rr(az0, az1), yaw: rr(-3, 3), pause: rr(0, 4), ph: rr(0, 6), lift: opts.lift || 0 };
+      a.tx = a.x; a.tz = a.z;
+      if (opts.still) { a.still = true; if (opts.at) { a.x = opts.at[0]; a.z = opts.at[1]; } if (opts.yaw != null) a.yaw = opts.yaw; }
+      animals.push(a); g.add(mesh);
+    }
+  };
+  // Swimmers circle an ellipse (local to the pen frame, or to the world when pen is null) at a fixed water level.
+  const swimmer = (f, kind, cx, cz, rx, rz, level, n) => {
+    for (let i = 0; i < n; i++) {
+      const { mesh, gait } = zooAnimal(kind, rand);
+      const k = rr(0.75, 1);
+      animals.push({ swim: true, f, mesh, gait, cx, cz, rx: rx * k, rz: rz * k, level, ph: (i / n) * Math.PI * 2 + rr(0, 0.5), dir: rand() < 0.5 ? 1 : -1 });
+      g.add(mesh);
+    }
+  };
+  // A pool: water disc at the highest ground round its rim (water stays level), a stone kerb on
+  // top and a skirt down to the lowest ground, so a slope never shows a gap under the water.
+  const pool = (f, cx, cz, rx, rz) => {
+    const ring = []; for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2; ring.push(f.w(cx + Math.cos(a) * rx, cz + Math.sin(a) * rz)); }
+    const hs = ring.map(([x, z]) => gAt(x, z)), level = Math.max(...hs) + 0.15, low = Math.min(...hs) - 0.4;
+    const [wx, wz] = f.w(cx, cz);
+    const water = new THREE.Mesh(new THREE.CircleGeometry(1, 28).rotateX(-Math.PI / 2), waterMat());
+    water.scale.set(rx, 1, rz); water.position.set(wx, level, wz); water.rotation.y = f.ry; water.userData.seated = true; water.receiveShadow = true;
+    g.add(water);
+    const sb = new Batch();
+    sb.add(G.torus(1, 0.035, 6, 32), 0xcfc8b8, M(0, 0.05, 0, Math.PI / 2, 0, 0, rx, rz, 7));
+    sb.add(new THREE.CylinderGeometry(1, 1, 1, 28, 1, true), 0xb8b2a6, M(0, (low - level) / 2 + 0.05, 0, 0, 0, 0, rx, Math.max(0.3, level - low), rz));
+    const sm = sb.mesh('zoo-pool-rim'); sm.position.set(wx, level, wz); sm.rotation.y = f.ry; sm.userData.seated = true; g.add(sm);
+    return level;
+  };
+  const shed = (f, lx, lz, w, d, ry = 0) => {
+    const [x, z] = f.w(lx, lz), r = f.ry + ry;
+    const pt = (a, c) => { const cs = Math.cos(r), sn = Math.sin(r); return [x + a * cs + c * sn, z - a * sn + c * cs]; };
+    for (const [a, c] of [[-w / 2, -d / 2], [w / 2, -d / 2], [-w / 2, d / 2], [w / 2, d / 2]]) { const [px, pz] = pt(a, c); wbox(0.35, c < 0 ? 4.2 : 3.4, 0.35, 0x7a4a22, px, c < 0 ? 2.1 : 1.7, pz); }
+    { const [px, pz] = pt(0, -d / 2); wbox(w, 3.6, 0.25, 0xa8692f, px, 1.8, pz, r); }
+    const roof = new THREE.BoxGeometry(w + 0.8, 0.25, d + 0.8);
+    fb.add(roof, 0x8a5a33, M(x, 3.95, z, 0.18, r, 0));
+    colliders.push(frame(x, z, r).rect(0, 0, w, d));
+  };
+  const trough = (f, lx, lz, ry = 0) => { const [x, z] = f.w(lx, lz); wbox(2.4, 0.6, 0.8, 0x8a8f96, x, 0.3, z, f.ry + ry); wbox(2.1, 0.08, 0.55, 0x35b8e0, x, 0.6, z, f.ry + ry); };
+  const rock = (f, lx, lz, s, col = 0xa59a88) => { const [x, z] = f.w(lx, lz); fb.add(G.sph(s, 7, 5), col, M(x, s * 0.35, z, 0, rand() * 6, 0, 1.2, 0.75, 1)); };
+  const acacia = (f, lx, lz) => {
+    const [x, z] = f.w(lx, lz);
+    wbar([x, 0, z], [x + 0.6, 5.2, z + 0.3], 0.5, 0x6b4a2b);
+    wbar([x + 0.6, 5.2, z + 0.3], [x - 1.6, 6.4, z], 0.3, 0x6b4a2b);
+    wbar([x + 0.6, 5.2, z + 0.3], [x + 2.4, 6.5, z + 0.8], 0.3, 0x6b4a2b);
+    fb.add(G.cyl(4.8, 3.6, 1.0, 12), 0x5f8f3a, M(x + 0.4, 7.0, z + 0.3));
+    colliders.push(frame(x, z).circle(0, 0, 0.6, 6));
+  };
+  const hay = (f, lx, lz) => { const [x, z] = f.w(lx, lz); fb.add(G.cyl(0.8, 0.8, 1.2, 12), 0xe0c068, M(x, 0.8, z, Math.PI / 2, f.ry + rand(), 0)); };
+  const perch = (f, lx, lz, h, w) => { const [x, z] = f.w(lx, lz); wbox(0.2, h, 0.2, 0x7a4a22, x, h / 2, z); wbar([x - w / 2 * Math.cos(f.ry), h, z + w / 2 * Math.sin(f.ry)], [x + w / 2 * Math.cos(f.ry), h, z - w / 2 * Math.sin(f.ry)], 0.15, 0x8a5a33); return h; };
+  const sign = (pen) => {
+    const { f, w, d, face } = pen, c = Math.cos(f.ry), s = Math.sin(f.ry);
+    const lx = face[0] * c - face[1] * s, lz = face[0] * s + face[1] * c;
+    const t = Math.min(w / 2 / Math.max(Math.abs(lx), 1e-3), d / 2 / Math.max(Math.abs(lz), 1e-3)) + 1.6;
+    const x = f.x + face[0] * t, z = f.z + face[1] * t, ry = Math.atan2(face[0], face[1]);
+    const names = { petting: 'PETTING CORNER', african: 'AFRICAN YARD', australia: 'AUSTRALIAN YARD', hoofed: 'HOOFED ANIMALS', otters: 'OTTERS', lemurs: 'LEMURS', yard: 'FENCED YARD', aviary: 'BIRDS', gators: 'ALLIGATORS' };
+    const sg = signMesh([names[pen.id]], 3.6, 1.4, { key: `zoo_${pen.id}`, bg: '#2f6b3a', fg: '#ffffff', outline: '#f2c21e' });
+    sg.position.set(x, 2.4, z); sg.rotation.y = ry; g.add(sg);
+    const bx = -Math.sin(ry) * 0.06, bz = -Math.cos(ry) * 0.06;
+    wbox(3.8, 1.6, 0.1, 0x6b4a2b, x + bx, 2.4, z + bz, ry);
+    for (const k of [-1, 1]) wbox(0.18, 2.4, 0.18, 0x6b4a2b, x + bx * 2 + Math.cos(ry) * k * 1.6, 1.2, z + bz * 2 - Math.sin(ry) * k * 1.6);
+    colliders.push(frame(x, z, ry).rect(0, 0, 3.8, 0.4));
+  };
+
+  for (const pen of ZOO.pens) {
+    const { f, w, d, rect } = pen, hw = w / 2, hd = d / 2, F = FENCES[pen.fence];
+    if (pen.ground != null) { const pg = new THREE.PlaneGeometry(w - 0.4, d - 0.4, Math.ceil(w / 2.5), Math.ceil(d / 2.5)).rotateX(-Math.PI / 2); fb.add(pg, pen.ground, M(f.x, 0.2, f.z, 0, f.ry, 0)); }
+    for (let i = 0; i < 4; i++) fenceRun(rect[i], rect[(i + 1) % 4], F);
+    if (pen.fence === 'cage') {
+      // Roof bars across the short side, so the cage reads as closed.
+      for (let lz = -hd; lz <= hd + 0.01; lz += 1.5) { const a = f.w(-hw, lz), c = f.w(hw, lz); wbar([a[0], 6.35, a[1]], [c[0], 6.35, c[1]], 0.1, F.rail); }
+    }
+    colliders.push(rect);
+    sign(pen);
+    const area = (m = 2, back = 0) => [-hw + m, -hd + m + back, hw - m, hd - m];
+    switch (pen.id) {
+      case 'petting':
+        shed(f, 0, -hd + 3.2, 7, 4.5); hay(f, -hw + 2.5, -hd + 7); hay(f, hw - 2.5, -hd + 7.5); trough(f, hw - 2.2, 2, Math.PI / 2);
+        walker(pen, 'goat', area(2, 7), 3); walker(pen, 'sheep', area(2, 7), 2); walker(pen, 'rabbit', area(2, 7), 3);
+        break;
+      case 'african':
+        shed(f, -hw + 6, -hd + 4, 9, 5.5); acacia(f, hw - 7, -hd + 9); acacia(f, -hw + 8, hd - 10); trough(f, 4, -hd + 4);
+        rock(f, hw - 5, hd - 6, 1.6); rock(f, hw - 3.5, hd - 4, 1.0);
+        walker(pen, 'zebra', area(3, 8), 2); walker(pen, 'buffalo', area(3, 8), 2); walker(pen, 'addax', area(3, 8), 2); walker(pen, 'tortoise', area(3, 8), 2);
+        break;
+      case 'australia':
+        shed(f, hw - 6, -hd + 4, 8, 5); rock(f, -hw + 5, -hd + 5, 1.8, 0xb07a52); rock(f, -hw + 7.5, -hd + 4, 1.2, 0xb07a52); trough(f, -4, -hd + 4);
+        walker(pen, 'kangaroo', area(3, 8), 3); walker(pen, 'wallaby', area(3, 8), 2); walker(pen, 'emu', area(3, 8), 2);
+        break;
+      case 'hoofed': {
+        shed(f, -hw + 5, -hd + 4, 7, 5);
+        // A boulder pile for the ibex, one standing on top.
+        const [rx, rz] = [hw - 6, -hd + 7];
+        rock(f, rx, rz, 3.2, 0xb7ab95); rock(f, rx - 2.5, rz + 2, 2.0, 0xa89c86); rock(f, rx + 1.5, rz + 3, 1.6, 0xb7ab95);
+        colliders.push(f.rect(rx, rz + 1, 7, 7));
+        walker(pen, 'ibex', area(3, 13), 1, { still: true, at: [rx, rz], yaw: 0.8, lift: 2.1 });
+        walker(pen, 'ibex', area(3, 13), 1); walker(pen, 'gazelle', area(3, 13), 3); walker(pen, 'deer', area(3, 13), 2);
+        break;
+      }
+      case 'otters': {
+        const lv = pool(f, 0, -1.5, hw - 2.5, hd - 4);
+        swimmer(f, 'otter', 0, -1.5, hw - 4.5, hd - 6.5, lv - 0.1, 4);
+        walker(pen, 'otter', [-hw + 2.5, hd - 3.4, hw - 2.5, hd - 2.4], 1);
+        break;
+      }
+      case 'lemurs': {
+        const h1 = perch(f, -2, -3, 2.6, 4), h2 = perch(f, 2, 3, 3.6, 4);
+        const [ax, az] = f.w(-2, -3), [cx2, cz2] = f.w(2, 3);
+        wbar([ax, h1, az], [cx2, h2, cz2], 0.25, 0x8a5a33);
+        walker(pen, 'lemur', area(1.5), 3);
+        walker(pen, 'ruffed', area(1.5), 1, { still: true, at: [2, 3], yaw: 2.2, lift: h2 + 0.08 });
+        walker(pen, 'lemur', area(1.5), 1, { still: true, at: [-2, -3], yaw: -0.6, lift: h1 + 0.08 });
+        break;
+      }
+      case 'yard':
+        shed(f, 0, -hd + 2.6, 4.5, 3.2);
+        walker(pen, 'mara', area(1.6, 5), 2); walker(pen, 'tortoise', area(1.6, 5), 3);
+        break;
+      case 'aviary': {
+        const hp = [perch(f, -2.5, -3, 3.2, 3), perch(f, 2.5, 1, 3.8, 3), perch(f, -1.5, 4.5, 2.8, 3)];
+        [[-2.5, -3], [2.5, 1], [-1.5, 4.5]].forEach(([lx, lz], i) => walker(pen, 'macaw', area(1.5), 1, { still: true, at: [lx + 0.4, lz], yaw: rr(-1, 1), lift: hp[i] + 0.07 }));
+        walker(pen, 'peacock', area(1.8), 1); walker(pen, 'peahen', area(1.8), 1);
+        break;
+      }
+      case 'gators': {
+        const lv = pool(f, 0, -1.5, hw - 1.8, hd - 4.5);
+        swimmer(f, 'alligator', 0, -1.5, hw - 3.5, hd - 6.5, lv - 0.3, 2);
+        walker(pen, 'alligator', [-hw + 1.5, hd - 3, hw - 1.5, hd - 1.6], 1, { still: true, at: [0.5, hd - 3.1], yaw: 1.5 });
+        break;
+      }
+      default: break;
+    }
+  }
+
+  // The lake (drawn by city.js, level at its highest shore point): flamingos stand in the shallows on
+  // the south shore, ducks and a pelican swim in the middle.
+  {
+    const lake = ZOO.lake, [cx, cz] = centroid(lake), level = Math.max(...lake.map(([x, z]) => gAt(x, z)));
+    const lf = frame(cx, cz, 0);
+    const south = lake.filter(([, z]) => z > cz).sort((p, q) => p[0] - q[0]);
+    for (let i = 0; i < 6; i++) {
+      const p = south[Math.min(south.length - 1, Math.floor((i / 6) * south.length))], k = 0.78 + (i % 2) * 0.06;
+      const x = cx + (p[0] - cx) * k + rr(-1, 1), z = cz + (p[1] - cz) * k;
+      const { mesh, gait } = zooAnimal('flamingo', rand);
+      animals.push({ still: true, world: true, mesh, gait, x, z, yaw: rr(-3, 3), ph: rr(0, 6), sway: 0.25, lift: 0, y: level - 0.35 });
+      g.add(mesh);
+    }
+    const xs = lake.map((q) => q[0]), zs = lake.map((q) => q[1]);
+    const rx = (Math.max(...xs) - Math.min(...xs)) / 2 - 7, rz = (Math.max(...zs) - Math.min(...zs)) / 2 - 6;
+    swimmer(lf, 'duck', 0, -2, rx, rz * 0.6, level - 0.05, 3);
+    swimmer(lf, 'pelican', 0, -2, rx * 0.6, rz * 0.4, level - 0.1, 1);
+  }
+  // Peafowl free on the entrance path: they pace its first stretch, a step off the centre line.
+  {
+    const pts = ZOO.walk, cum = [0];
+    for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    const total = cum[cum.length - 1];
+    for (const [kind, s0, off] of [['peacock', 0.3, 1.6], ['peahen', 0.6, -1.4]]) {
+      const { mesh, gait } = zooAnimal(kind, rand);
+      animals.push({ path: { pts, cum, total, off }, mesh, gait, s: s0 * total, dir: 1, pause: 0, ph: rr(0, 6) });
+      g.add(mesh);
+    }
+  }
+
+  // ---- gates ----
+  const gateArch = (f, span, h, big) => {
+    const pil = big ? 1.5 : 1.0;
+    for (const sx of [-1, 1]) {
+      const [x, z] = f.w(sx * span / 2, 0);
+      wbox(pil, h, pil, 0x3f8f43, x, h / 2, z, f.ry);
+      wbox(pil + 0.4, 0.5, pil + 0.4, 0xf2c21e, x, h + 0.25, z, f.ry);
+      colliders.push(frame(x, z, f.ry).rect(0, 0, pil, pil));
+    }
+    const [x, z] = f.w(0, 0);
+    wbox(span + pil, 0.8, 0.9, 0xf2c21e, x, h - 0.4, z, f.ry);
+    const sw = span - 0.6, sh = big ? 2.4 : 1.6;
+    for (const back of [0, 1]) {
+      const sg = signMesh(['CHAI KEF ZOO'], sw, sh, { key: 'zoo_gate', bg: '#2f6b3a', fg: '#ffffff', outline: '#f2c21e', sub: big ? 'RISHON LEZION' : null });
+      const [sx, sz] = f.w(0, back ? 0.5 : -0.5);
+      sg.position.set(sx, h + sh / 2 + 0.6, sz); sg.rotation.y = f.ry + (back ? 0 : Math.PI); g.add(sg);
+    }
+    wbox(sw + 0.2, sh + 0.2, 0.9, 0x6b4a2b, x, h + sh / 2 + 0.6, z, f.ry);
+    if (big) {
+      // Statues standing on top of the sign board: a flamingo and a zebra, the lake's and the
+      // African yard's animals (on the pillars they hid the ends of the name).
+      for (const [sx, kind] of [[-1, 'flamingo'], [1, 'zebra']]) {
+        const { mesh } = zooAnimal(kind, () => 0.9);
+        const [px, pz] = f.w(sx * (sw / 2 - 1.1), 0);
+        mesh.scale.setScalar(ZOO_K * (kind === 'zebra' ? 0.6 : 0.9));
+        mesh.userData.seated = false;
+        mesh.position.set(px, h + sh + 0.7, pz); mesh.rotation.y = f.ry + Math.PI + sx * 0.3;
+        g.add(mesh);
+      }
+    }
+  };
+  gateArch(ZOO.main, 7.5, 7.4, true); // beam underside 6.6 u: clears HEADROOM
+  gateArch(ZOO.side, 6, 7.2, false);
+
+  g.add(fb.mesh('zoo-static'));
+
+  // ---- animal motion ----
+  const TURN = 2.4, centre = ZOO.pens[0].f;
+  const place = (a, wx, wz, y, yaw) => { a.mesh.position.set(wx, y, wz); a.mesh.rotation.y = yaw; };
+  // Seat everything once (animals stay put until the player is near).
+  const tick = (t, dt) => {
+    for (const a of animals) {
+      const gt = a.gait;
+      if (a.swim) {
+        a.ph += (dt * gt.speed * ZOO_K * a.dir) / Math.max(1, (a.rx + a.rz) / 2);
+        const lx = a.cx + Math.cos(a.ph) * a.rx, lz = a.cz + Math.sin(a.ph) * a.rz;
+        const [wx, wz] = a.f.w(lx, lz), tx = -Math.sin(a.ph) * a.rx * a.dir, tz = Math.cos(a.ph) * a.rz * a.dir;
+        place(a, wx, wz, a.level + Math.sin(t * 2 + a.ph) * 0.03, a.f.ry + Math.atan2(tx, tz));
+        continue;
+      }
+      if (a.path) {
+        const P2 = a.path;
+        if (a.pause > 0) a.pause -= dt;
+        else { a.s += a.dir * gt.speed * ZOO_K * dt; if (a.s > P2.total || a.s < 0) { a.dir *= -1; a.s = Math.max(0, Math.min(P2.total, a.s)); a.pause = rr(2, 6); } else if (rand() < dt * 0.08) a.pause = rr(1, 4); }
+        let i = 1; while (i < P2.pts.length - 1 && P2.cum[i] < a.s) i++;
+        const p0 = P2.pts[i - 1], p1 = P2.pts[i], seg = P2.cum[i] - P2.cum[i - 1] || 1, u = (a.s - P2.cum[i - 1]) / seg;
+        const dx = (p1[0] - p0[0]) / seg, dz = (p1[1] - p0[1]) / seg;
+        const wx = p0[0] + (p1[0] - p0[0]) * u + dz * P2.off, wz = p0[1] + (p1[1] - p0[1]) * u - dx * P2.off;
+        const walking = a.pause <= 0;
+        a.ph += dt * gt.freq * (walking ? 1 : 0);
+        place(a, wx, wz, gAt(wx, wz) + Math.abs(Math.sin(a.ph)) * gt.bob * ZOO_K, Math.atan2(dx * a.dir, dz * a.dir));
+        continue;
+      }
+      if (a.still) {
+        const yaw = a.yaw + (a.sway ? Math.sin(t * 0.3 + a.ph) * a.sway : 0);
+        if (a.world) { place(a, a.x, a.z, a.y, yaw); continue; }
+        const [wx, wz] = a.pen.f.w(a.x, a.z);
+        place(a, wx, wz, gAt(wx, wz) + 0.12 + a.lift, a.pen.f.ry + yaw);
+        continue;
+      }
+      let moving = false;
+      if (a.pause > 0) a.pause -= dt;
+      else {
+        const dx = a.tx - a.x, dz = a.tz - a.z, dist = Math.hypot(dx, dz);
+        if (dist < 0.4) {
+          const [x0, z0, x1, z1] = a.area;
+          a.tx = rr(x0, x1); a.tz = rr(z0, z1); a.pause = rr(1.5, 7);
+        } else {
+          const want = Math.atan2(dx, dz);
+          let dyaw = want - a.yaw; dyaw = Math.atan2(Math.sin(dyaw), Math.cos(dyaw));
+          a.yaw += Math.max(-TURN * dt, Math.min(TURN * dt, dyaw));
+          if (Math.abs(dyaw) < 0.8) { const step = Math.min(dist, gt.speed * ZOO_K * dt); a.x += Math.sin(a.yaw) * step; a.z += Math.cos(a.yaw) * step; moving = true; }
+        }
+      }
+      if (moving) a.ph += dt * gt.freq; else if (gt.hop) a.ph = 0;
+      const bob = gt.hop ? (moving ? Math.abs(Math.sin(a.ph)) * gt.bob * ZOO_K : 0) : (moving ? Math.abs(Math.sin(a.ph)) * gt.bob * ZOO_K : 0);
+      const [wx, wz] = a.pen.f.w(a.x, a.z);
+      place(a, wx, wz, gAt(wx, wz) + 0.12 + a.lift + bob, a.pen.f.ry + a.yaw);
+    }
+  };
+  tick(0, 0);
+  let acc = 0;
+  anim((t, dt) => {
+    // Only while someone is close enough to see them.
+    const pl = typeof window !== 'undefined' && window.__game && window.__game.player;
+    if (pl && pl.pos && Math.hypot(pl.pos.x - centre.x, pl.pos.z - centre.z) > 520) return;
+    acc += dt; if (acc < 1 / 40) return;
+    tick(t, acc); acc = 0;
+  });
+
+  const [px, pz] = ZOO.main.w(0, 7);
+  return { group: g, colliders, pois: [{ id: 'zoo', name: 'Chai Kef zoo', x: px, z: pz }] };
+}
+
 export function buildLandmarks(scene) {
   _anims = [];
   _time = 0;
@@ -5954,6 +6583,7 @@ export function buildLandmarks(scene) {
     [() => buildShikmaSkate(flags), 'parts'], [() => buildShikmaKarting(flags), 'parts'], [() => buildStoneFlower(flags), 'parts'], [() => buildMonuments(flags), 'parts'], [() => buildHaberfeld(flags), HABERFELD.world, 'plaza'],
     [() => buildEcoGarden(flags), 'parts'], ...L5.clubs.map((c) => [() => buildCountryClub(c), 'parts']), [() => buildHaRova(flags), 'parts'], [() => buildLagoHall(flags), 'parts'],
     ...Object.keys(EMG).map((id) => [() => buildEmergencySite(id, flags), EMG[id].world, 'mid']), [() => buildEmergencyVehicles(), 'parts'],
+    [() => buildZoo(flags), 'parts'],
     [() => buildSkatePark(flags), L.skate.seat, 'plaza'], [() => buildBeachNorth(flags), 'parts'], [() => buildBeachComplex(flags), L.beachComplex.world, 'mid'], [() => buildSurfClub(flags), 'parts'], [() => buildWelcomeSign(flags), L.welcome.f.rect(0, 0, 54, 12), 'plaza'],
   ];
   for (const [build, seat, mode, skirtColor] of builders) {
