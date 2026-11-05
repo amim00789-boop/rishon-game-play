@@ -28,7 +28,7 @@ const C = {
   jeans: 0x34508a, jacket: 0x3a3f4a, helmet: 0xf1f1f1, taxi: 0xffd23f, cargo: 0xeeeeea,
   stripe: 0x2e6db4, roof: 0xe9ebec, display: 0x1d1d1d, metal: 0xaab0b8,
   // round 10 emergency services (liveries in docs/research/EMERGENCY_BUILDINGS.md)
-  policeBlue: 0x1f4fa3, lightBlue: 0x2a7fff, lightRed: 0xe0243a, mdaRed: 0xd7263d,
+  lightBlue: 0x2a7fff, lightRed: 0xe0243a, mdaRed: 0xd7263d, mdaOrange: 0xf0562a,
   fireRed: 0xc8102e, shutter: 0xc4c8cc, reflect: 0xf2d43a,
 };
 
@@ -301,11 +301,12 @@ function partsOf(kind, { rider = true } = {}) {
       ];
     }
     case 'police': {
-      // the sedan shell, with a light bar and a blue band along the doors
+      // Israel Police since 2021 (docs/research/EMERGENCY_BUILDINGS.md 3): a black body (the paint
+      // passed in), a broad white band along the doors and a red + blue light bar
       const p = partsOf('sedan').map((q) => ({ ...q }));
       const L = k.L / k.s, Wd = k.W / k.s;
       p.push(
-        box(Wd + 0.08, 0.36, L - 1.4, 0, 1.5, 0, C.policeBlue, { r: 0.1 }),
+        box(Wd + 0.08, 0.62, L - 1.4, 0, 1.55, 0, C.white, { r: 0.1 }),
         box(1.9, 0.22, 0.6, 0, 3.24, -0.3, C.trim, { r: 0.06 }),
         box(0.85, 0.26, 0.56, 0.48, 3.45, -0.3, C.lightBlue, { r: 0.08, detail: true }),
         box(0.85, 0.26, 0.56, -0.48, 3.45, -0.3, C.lightRed, { r: 0.08, detail: true }),
@@ -313,16 +314,20 @@ function partsOf(kind, { rider = true } = {}) {
       return p;
     }
     case 'ambulance': {
-      const L = k.L / k.s, Wd = k.W / k.s, zb = -1.25, Lb = L - 2.9;
+      // MDA in the 2020s (research doc 3): fluorescent lemon-yellow (the paint passed in), an
+      // orange-red side stripe that starts with a red and white checker band. No emblem.
+      const L = k.L / k.s, Wd = k.W / k.s, zb = -1.25, Lb = L - 2.9, ck = 0.32, ck0 = zb + Lb / 2 - 0.1;
+      const checker = [];
+      for (let i = 0; i < 6; i++) for (let r = 0; r < 2; r++) checker.push(box(Wd + 0.18, ck, ck, 0, 1.9 + r * ck, ck0 - (i + 0.5) * ck, (i + r) % 2 ? C.white : C.mdaRed, { r: 0.02, detail: true }));
       return [
+        ...checker,
         box(Wd + 0.1, 3.5, Lb, 0, 2.85, zb, 'P', { r: 0.25 }), // the patient box
         box(Wd - 0.1, 1.35, 1.7, 0, 1.55, L / 2 - 0.95, 'P', { r: 0.4 }), // bonnet
         box(Wd, 1.9, 1.3, 0, 2.55, L / 2 - 2.35, 'P', { r: 0.3 }), // cab
         box(Wd - 0.2, 1.1, 0.5, 0, 2.95, L / 2 - 1.75, C.glass, { r: 0.12, rx: -0.38 }),
         box(Wd + 0.04, 0.95, 1.0, 0, 2.95, L / 2 - 2.35, C.glass, { r: 0.12 }),
-        box(Wd + 0.16, 0.5, Lb + 0.02, 0, 2.05, zb, C.mdaRed, { r: 0.08 }), // red band
-        box(Wd + 0.16, 0.16, Lb + 0.02, 0, 3.75, zb, C.mdaRed, { r: 0.04, detail: true }),
-        box(Wd + 0.17, 0.22, Lb - 0.4, 0, 1.55, zb, C.reflect, { r: 0.04, detail: true }),
+        box(Wd + 0.16, 0.6, Lb - 6 * ck, 0, 2.06, zb - 3 * ck, C.mdaOrange, { r: 0.08 }), // orange-red stripe
+        box(Wd + 0.16, 0.16, Lb + 0.02, 0, 3.75, zb, C.mdaOrange, { r: 0.04, detail: true }),
         box(1.9, 0.3, 0.55, 0, 3.65, L / 2 - 2.35, C.lightRed, { r: 0.08 }), // cab light bar
         box(0.4, 0.3, 0.4, Wd / 2 - 0.25, 4.75, zb + Lb / 2 - 0.3, C.lightRed, { r: 0.08, detail: true }),
         box(0.4, 0.3, 0.4, -Wd / 2 + 0.25, 4.75, zb + Lb / 2 - 0.3, C.lightRed, { r: 0.08, detail: true }),
@@ -344,13 +349,13 @@ function partsOf(kind, { rider = true } = {}) {
         box(Wd - 0.3, 1.25, 0.12, 0, 3.25, L / 2 + 0.01, C.glass, { r: 0.08 }),
         box(Wd + 0.04, 1.0, 2.4, 0, 3.3, L / 2 - 1.5, C.glass, { r: 0.08 }),
         box(Wd, 3.1, Lb, 0, 2.7, zb, 'P', { r: 0.2 }), // equipment body
-        box(Wd + 0.1, 0.3, L - 0.4, 0, 1.35, -0.2, C.white, { r: 0.06 }), // white band
-        box(Wd + 0.11, 0.16, Lb - 0.2, 0, 3.9, zb, C.reflect, { r: 0.04, detail: true }),
+        // Israel Fire and Rescue (research doc 3): red with a yellow stripe along cab and body
+        box(Wd + 0.1, 0.34, L - 0.4, 0, 2.05, -0.2, C.reflect, { r: 0.06 }),
         box(2.2, 0.6, L - 0.6, 0, 0.95, -0.2, C.chassis, { r: 0.1 }),
         box(2.1, 0.3, 0.6, 0, 4.3, L / 2 - 1.2, C.trim, { r: 0.06 }), // light bar
         box(0.95, 0.3, 0.56, 0.52, 4.5, L / 2 - 1.2, C.lightRed, { r: 0.08, detail: true }),
-        box(0.95, 0.3, 0.56, -0.52, 4.5, L / 2 - 1.2, C.lightBlue, { r: 0.08, detail: true }),
-        box(Wd + 0.06, 0.55, 0.4, 0, 1.0, L / 2 - 0.05, C.trim, { r: 0.15 }),
+        box(0.95, 0.3, 0.56, -0.52, 4.5, L / 2 - 1.2, C.lightRed, { r: 0.08, detail: true }),
+        box(Wd + 0.06, 0.55, 0.4, 0, 1.0, L / 2 - 0.05, C.white, { r: 0.15 }), // white bumper
         box(0.62, 0.34, 0.12, Wd / 2 - 0.5, 1.7, L / 2 + 0.02, C.light, { r: 0.08, detail: true }),
         box(0.62, 0.34, 0.12, -Wd / 2 + 0.5, 1.7, L / 2 + 0.02, C.light, { r: 0.08, detail: true }),
         box(0.5, 0.4, 0.12, Wd / 2 - 0.4, 1.5, -L / 2 - 0.02, C.tail, { r: 0.08, detail: true }),

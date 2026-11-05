@@ -785,14 +785,18 @@ const EMG_POLY = {
   police: [[31.974763,34.79759],[31.974633,34.797689],[31.974406,34.797276],[31.974399,34.797222],[31.974408,34.797174],[31.974424,34.797123],[31.974447,34.797091],[31.974485,34.79708],[31.974524,34.797078],[31.97457,34.797091],[31.974601,34.797115],[31.974629,34.797166],[31.974578,34.797205],[31.974618,34.797277],[31.974599,34.797293],[31.974763,34.79759]],
   // OSM way 253976170, emergency=ambulance_station, Magen David Adom, Jabotinsky 104. Faces Jabotinsky.
   mda: [[31.974213,34.79754],[31.97412,34.797606],[31.974068,34.797503],[31.973959,34.79758],[31.973943,34.797548],[31.973878,34.797593],[31.973817,34.797472],[31.974083,34.797284],[31.974213,34.79754]],
-  // OSM way 376296283, building=fire_station (no name in OSM), by Shmotkin / Tulipman. Faces Tulipman.
+  // OSM way 376296283, building=fire_station (no name in OSM), Shmotkin 45: the "Rishon LeZion East,
+  // old industrial zone" sub-station (research doc 1, INFERRED strong). Faces Tulipman.
   fire: [[31.982629,34.813985],[31.982604,34.814105],[31.982574,34.814252],[31.982454,34.814218],[31.982453,34.814217],[31.982508,34.81395],[31.982629,34.813985]],
+  // The main "regional station Rishon LeZion" is OSM node 739484222 with no outline mapped; this is the
+  // nearest building to it (way 370953957, 15 u away), ASSUMED to be the station. Faces its service road.
+  fire_main: [[31.9785089,34.7917166],[31.9784654,34.7918108],[31.9779571,34.7914847],[31.9780006,34.7913905],[31.9785089,34.7917166]],
   // OSM way 253257069, wikidata Q7042799, National Fire and Rescue School, off Rehavam Zeevi.
   school: [[31.991968,34.746064],[31.991842,34.746037],[31.991832,34.746102],[31.991703,34.746073],[31.991838,34.745213],[31.99201,34.745251],[31.992091,34.744735],[31.99224,34.744768],[31.992249,34.744711],[31.992347,34.744732],[31.992263,34.745261],[31.992138,34.745234],[31.9921,34.745226],[31.991968,34.746064]],
   // OSM way 121445744, leisure=sports_centre (basketball; handball), building:levels 3, Golda Meir 21.
   maccabi: [[31.969429,34.786239],[31.969559,34.786318],[31.969621,34.786356],[31.969575,34.786592],[31.969138,34.786861],[31.968983,34.786539],[31.969081,34.786457],[31.968956,34.786206],[31.969228,34.786025],[31.969336,34.786307],[31.969429,34.786239]],
 };
-const EMG_DIR = { police: [0.4, 1], mda: [-1, 0.3], fire: [0, -1], school: [0, -1], maccabi: [0.3, 1] };
+const EMG_DIR = { police: [0.4, 1], mda: [-1, 0.3], fire: [0, -1], fire_main: [-0.9, -0.45], school: [0, -1], maccabi: [0.3, 1] };
 const EMG = Object.fromEntries(Object.entries(EMG_POLY).map(([id, ll]) => {
   const open = ll[0][0] === ll[ll.length - 1][0] && ll[0][1] === ll[ll.length - 1][1] ? ll.slice(0, -1) : ll; // OSM rings repeat the first node
   // Drop nodes the outline runs straight through (under ~6 degrees) or sits on twice, so a
@@ -5757,12 +5761,21 @@ function buildLagoHall(flags) {
 // (docs/research/EMERGENCY_BUILDINGS.md) is in; the outlines are OSM. Text and colour only: the
 // emblems of the police, MDA and the fire service are protected, so none is drawn.
 // ---------------------------------------------------------------------------
+// Looks from docs/research/EMERGENCY_BUILDINGS.md (checked 2026-11-05). VERIFIED there: the main fire
+// station (grey render, a red band at every storey, red roof edge, a sign box and a lattice mast on
+// the roof), the school's 3-storey white block with red floor bands and its raw-concrete drill
+// tower, and Beit Maccabi (ochre base, grey hall, clerestory glass under a blue roof edge, red and
+// white flags). No photo was found of the police or ambulance stations or of the east fire
+// station: their storeys and colours are ASSUMED (the east station takes the main one's style).
+// The ambulance station carries no "Magen David Adom" wording: the MDA Law 1950 s.7(a) bars any
+// symbol with those words without the society's permission (founder decision pending, 2026-11-05).
 const EMG_SPEC = {
   police: { name: 'Rishon LeZion Police Station', sign: ['POLICE'], sub: 'RISHON LEZION', floors: 3, fl: 3.6, wall: 0xe6e1d5, band: 0x1f4fa3, trim: 0xf4f4f2, signBg: '#1f4fa3', signFg: '#ffffff', flags: [C.white, C.blue], mast: true },
-  mda: { name: 'Magen David Adom Rishon LeZion', sign: ['MAGEN DAVID ADOM'], sub: 'RISHON LEZION STATION', floors: 2, fl: 3.6, ground: 5.2, wall: 0xf2f0ea, band: 0xd7263d, trim: 0xffffff, signBg: '#ffffff', signFg: '#d7263d', bays: 2, bayW: 3.6, bayH: 4.0, bayAt: 0.32, doorAt: 0.75 },
-  fire: { name: 'Fire and Rescue Station', sign: ['FIRE AND RESCUE'], sub: 'RISHON LEZION', floors: 2, fl: 3.4, ground: 6.0, wall: 0xe9e4d9, band: 0xc8102e, trim: 0xf4f4f2, signBg: '#c8102e', signFg: '#ffffff', bays: 3, bayW: 3.8, bayH: 4.6, bayAt: 0.42, doorAt: 0.88 },
-  school: { name: 'National Fire and Rescue School', sign: ['NATIONAL FIRE AND RESCUE SCHOOL'], sub: null, floors: 2, fl: 3.8, wall: 0xe4ddcf, band: 0xc8102e, trim: 0xf4f4f2, signBg: '#ffffff', signFg: '#c8102e', bays: 4, bayW: 4.0, bayH: 4.6, bayAt: 0.78, doorAt: 0.3, ground: 6.0, tower: true, flags: [C.white, C.red] },
-  maccabi: { name: 'Beit Maccabi', sign: ['BEIT MACCABI'], sub: 'RISHON LEZION', floors: 3, fl: 4.2, wall: 0xdfe4e8, band: 0xf2c230, trim: 0x2d4f8a, signBg: '#2d4f8a', signFg: '#ffffff', glassFront: true, roof: 0xb9c3cc, flags: [C.yellow, C.blue] },
+  mda: { name: 'Ambulance station', sign: ['AMBULANCE STATION'], sub: 'RISHON LEZION', floors: 2, fl: 3.6, ground: 5.2, wall: 0xf2f0ea, band: 0xd7263d, trim: 0xffffff, signBg: '#ffffff', signFg: '#d7263d', bays: 2, bayW: 3.6, bayH: 4.0, bayAt: 0.32, doorAt: 0.75 },
+  fire: { name: 'Fire and Rescue Station, old industrial zone', sign: ['FIRE AND RESCUE'], sub: 'RISHON LEZION', floors: 2, fl: 3.4, ground: 6.0, wall: 0xc9cbc6, band: 0xc8102e, floorBands: 0xc8102e, parapet: 0xc8102e, trim: 0xf4f4f2, signBg: '#c8102e', signFg: '#ffffff', bays: 3, bayW: 3.8, bayH: 4.6, bayAt: 0.42, doorAt: 0.88 },
+  fire_main: { name: 'Fire and Rescue regional station', sign: ['FIRE AND RESCUE'], sub: 'REGIONAL STATION RISHON LEZION', floors: 2, fl: 3.6, ground: 6.0, wall: 0xc9cbc6, band: 0xc8102e, floorBands: 0xc8102e, parapet: 0xc8102e, trim: 0xf4f4f2, signBg: '#ffffff', signFg: '#1d1d24', bays: 3, bayW: 3.8, bayH: 4.6, bayAt: 0.62, doorAt: 0.2, roofSign: true, lattice: true, flags: [C.white, C.red] },
+  school: { name: 'National Fire and Rescue School', sign: ['NATIONAL FIRE AND RESCUE SCHOOL'], sub: null, floors: 3, fl: 3.6, wall: 0xf1efe9, band: 0xc8102e, floorBands: 0xc8102e, trim: 0xf4f4f2, signBg: '#ffffff', signFg: '#c8102e', bays: 4, bayW: 4.0, bayH: 4.6, bayAt: 0.78, doorAt: 0.3, ground: 6.0, tower: true, flags: [C.white, C.red] },
+  maccabi: { name: 'Beit Maccabi', sign: ['BEIT MACCABI'], sub: 'RISHON LEZION', floors: 3, fl: 4.2, wall: 0xd8b46a, upperWall: 0xa9adb0, band: 0x6fa8c8, parapet: 0x2d5fb0, trim: 0xa9adb0, signBg: '#a9adb0', signFg: '#ffffff', clerestory: true, roof: 0xb9c3cc, flags: [C.red, C.white, C.red, C.white] },
 };
 const EMG_GLASS = 0x2f4757;
 
@@ -5772,10 +5785,15 @@ function buildEmergencySite(id, flags) {
   const FL = spec.fl * RM, G0 = (spec.ground || spec.fl) * RM, H = G0 + FL * (spec.floors - 1);
   const front = edgeOf(poly, poly[world.indexOf(s.front.a)], poly[world.indexOf(s.front.b)]);
   // The body's bevel puts its wall 0.15 outside the outline; facade parts stand on that.
-  b.add(slab(poly, H, 0.15), spec.wall, M(), capTop(spec.wall, H, spec.roof || ROOFC));
-  b.add(slab(poly, 0.9, 0.42), spec.trim, M(0, H - 0.2, 0)); // parapet
-  b.add(slab(poly, 1.1, 0.38), spec.band, M(0, H - 1.9, 0)); // colour fascia under the parapet
-  b.add(slab(poly, 0.35, 0.34), spec.trim, M(0, G0 - 0.2, 0)); // ground-floor line
+  if (spec.upperWall) {
+    b.add(slab(poly, G0, 0.15), spec.wall, M());
+    b.add(slab(poly, H - G0, 0.15), spec.upperWall, M(0, G0, 0), capTop(spec.upperWall, H - G0, spec.roof || ROOFC));
+  } else b.add(slab(poly, H, 0.15), spec.wall, M(), capTop(spec.wall, H, spec.roof || ROOFC));
+  b.add(slab(poly, 0.9, 0.42), spec.parapet ?? spec.trim, M(0, H - 0.2, 0)); // parapet
+  // A glass clerestory band (Beit Maccabi's hall) or a colour fascia under the parapet.
+  b.add(slab(poly, spec.clerestory ? 1.8 : 1.1, 0.38), spec.band, M(0, H - (spec.clerestory ? 2.4 : 1.9), 0));
+  if (spec.floorBands) for (let k = 1; k < spec.floors; k++) b.add(slab(poly, 0.55, 0.36), spec.floorBands, M(0, G0 + FL * (k - 1) - 0.35, 0));
+  if (!spec.floorBands) b.add(slab(poly, 0.35, 0.34), spec.trim, M(0, G0 - 0.2, 0)); // ground-floor line
   // Bays on the front: centred at bayAt along it, one door per vehicle.
   const bays = [];
   if (spec.bays) {
@@ -5797,7 +5815,6 @@ function buildEmergencySite(id, flags) {
     const n = Math.max(1, Math.floor((e.len - 1.5) / 3.4));
     for (let k = 0; k < spec.floors; k++) {
       const y = k === 0 ? Math.min(G0 * 0.5, 2.6) + 0.4 : G0 + FL * (k - 1) + FL * 0.5;
-      if (isFront && spec.glassFront) { b.add(G.cube(e.len - 2.4, (k ? FL : G0) - 1.0, 0.25), 0x5d8aa6, at(0, k ? G0 + FL * (k - 0.5) : G0 / 2, 0.28)); continue; }
       for (let j = 0; j < n; j++) {
         const lx = e.lx((j + 0.5) / n);
         if (k === 0 && isFront && bays.some((c) => Math.abs(c - lx) < spec.bayW * RM / 2 + 1.8)) continue;
@@ -5811,6 +5828,21 @@ function buildEmergencySite(id, flags) {
   b.add(G.cube(4.2, DOOR_H, 0.3), 0x1c2a33, fa(dl, DOOR_H / 2, 0.3));
   b.add(G.box(7, 0.45, 3.2, 0.15), spec.trim, fa(dl, DOOR_H + 0.5, 1.6));
   b.add(G.cube(7, 0.18, 0.2), spec.band, fa(dl, DOOR_H + 0.5, 3.25));
+  let roofSign = null;
+  if (spec.roofSign) {
+    // The sign box on the roof (Commons 133580, 2025): white panels with red trim.
+    const [rx, rz] = front.p(0.35, -6), RW = 11, RH = 3.4;
+    b.add(G.cube(RW + 0.6, RH + 0.6, 1.2), 0xc8102e, M(rx, H + 0.9 + RH / 2, rz, 0, front.ry, 0));
+    for (const sx of [-1, 1]) b.add(G.cube(0.25, 1.2, 0.25), 0x8d8a83, M(rx + sx * 3 * Math.cos(front.ry), H + 0.6, rz - sx * 3 * Math.sin(front.ry)));
+    roofSign = { x: rx + 0.65 * Math.sin(front.ry), z: rz + 0.65 * Math.cos(front.ry), y: H + 0.9 + RH / 2, w: RW, h: RH };
+  }
+  if (spec.lattice) {
+    // A grey steel lattice radio mast behind the sign box.
+    const [lx, lz] = front.p(0.55, -9), LH = 26;
+    for (const [ox, oz] of [[-0.7, -0.7], [0.7, -0.7], [0, 0.7]]) b.add(G.cyl(0.09, 0.09, LH, 5), 0x9aa0a6, M(lx + ox, H + LH / 2, lz + oz));
+    for (let y = 2; y < LH; y += 2.2) b.add(G.cyl(0.95, 0.95, 0.08, 3), 0x9aa0a6, M(lx, H + y, lz));
+    b.add(G.cyl(0.9, 0.9, 0.2, 12), 0xe6e6e6, M(lx + 0.6, H + LH - 4, lz, Math.PI / 2, front.ry, 0));
+  }
   if (spec.mast) {
     const [mx, mz] = centroid(poly);
     b.add(G.cyl(0.18, 0.32, 12, 8), 0xb8bec4, M(mx, H + 6, mz));
@@ -5821,8 +5853,15 @@ function buildEmergencySite(id, flags) {
     // Drill tower in the front yard: open window bays every storey for ladder and rope drills.
     const T = 4.4 * RM, TH = 5 * 3.2 * RM, [tx0, tz0] = front.p(0.12, 4 + T / 2);
     const tf = frame(tx0, tz0, front.ry);
-    b.add(G.cube(T, TH, T), 0xc8102e, M(tx0, TH / 2, tz0, 0, front.ry, 0));
-    b.add(G.cube(T + 0.6, 0.6, T + 0.6), 0xf4f4f2, M(tx0, TH + 0.3, tz0, 0, front.ry, 0));
+    // Raw concrete with steel zig-zag stairs up one side (GPO photo 2022, research doc 2c).
+    b.add(G.cube(T, TH, T), 0xa8a59d, M(tx0, TH / 2, tz0, 0, front.ry, 0));
+    b.add(G.cube(T + 0.6, 0.6, T + 0.6), 0x8d8a83, M(tx0, TH + 0.3, tz0, 0, front.ry, 0));
+    const SF = 3.2 * RM, sl = Math.atan2(SF / 2, T * 0.8);
+    for (let k = 0; k < 10; k++) {
+      const [sx, sz] = tf.w(0, -T / 2 - 1.2), [ex, ez] = tf.w((k % 2 ? 1 : -1) * T * 0.5, -T / 2 - 1.2);
+      b.add(G.cube(T * 0.85, 0.25, 1.6), 0x5b6066, M(sx, (k + 0.5) * SF / 2, sz, 0, front.ry, k % 2 ? sl : -sl)); // flight
+      b.add(G.cube(1.2, 0.2, 1.8), 0x5b6066, M(ex, (k + 1) * SF / 2, ez, 0, front.ry, 0)); // landing
+    }
     for (let k = 0; k < 5; k++) for (const [ox, oz, r] of [[0, T / 2, 0], [T / 2, 0, Math.PI / 2], [0, -T / 2, Math.PI], [-T / 2, 0, -Math.PI / 2]]) {
       b.add(G.cube(1.8, 2.2, 0.3), 0x1d1d24, M(tf.w(ox, oz)[0], k * 3.2 * RM + 2.4, tf.w(ox, oz)[1], 0, front.ry + r, 0));
     }
@@ -5838,7 +5877,8 @@ function buildEmergencySite(id, flags) {
   const sw = Math.min(front.len * 0.62, id === 'school' ? 30 : 18), sh = spec.sub ? 3.0 : 2.4;
   const sign = signMesh(spec.sign, sw, sh, { key: `emg_${id}`, bg: spec.signBg, fg: spec.signFg, outline: spec.signBg, sub: spec.sub });
   // Over the bays when there are any (the name is read from the street), else mid-front.
-  edgeSign(g, front, sign, bays.length ? (bays[0] + bays[bays.length - 1]) / 2 : 0, Math.max(G0 + 0.9, H - 4.2), 0.6);
+  if (roofSign) { sign.geometry.dispose(); const rs = signMesh(spec.sign, roofSign.w, roofSign.h, { key: `emg_${id}`, bg: spec.signBg, fg: spec.signFg, outline: spec.signBg, sub: spec.sub }); rs.position.set(roofSign.x, roofSign.y, roofSign.z); rs.rotation.y = front.ry; g.add(rs); }
+  else edgeSign(g, front, sign, bays.length ? (bays[0] + bays[bays.length - 1]) / 2 : 0, Math.max(G0 + 0.9, H - 4.2), 0.6);
   const [px, pz] = front.p(spec.doorAt ?? 0.5, 4);
   return { group: g, colliders, pois: [{ id: `emg_${id}`, name: spec.name, x: px + f.x, z: pz + f.z }] };
 }
@@ -5846,8 +5886,8 @@ function buildEmergencySite(id, flags) {
 // Parked emergency vehicles, nose out from the front or along it ('along'), in world space so
 // settle() grounds each one. t is the fraction along the front edge, d its distance out.
 const EMG_VEHICLES = {
-  police: [{ kind: 'police', t: 0.25, along: true }, { kind: 'police', t: 0.45, along: true }],
-  mda: [{ kind: 'ambulance', bay: 0 }, { kind: 'ambulance', bay: 1 }],
+  police: [{ kind: 'police', t: 0.25, along: true, color: 0x16191f }, { kind: 'police', t: 0.45, along: true, color: 0x16191f }],
+  mda: [{ kind: 'ambulance', bay: 0, color: 0xe6f03c }, { kind: 'ambulance', bay: 1, color: 0xe6f03c }],
   fire: [{ kind: 'firetruck', bay: 1, color: 0xc8102e }],
   school: [{ kind: 'firetruck', bay: 0, color: 0xc8102e }, { kind: 'firetruck', bay: 2, color: 0xc8102e }],
 };
